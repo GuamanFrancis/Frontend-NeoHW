@@ -1,139 +1,184 @@
-import type { ReactNode } from 'react';
-import {
-  ArrowRight,
-  ChevronDown,
-  Eye,
-  IdCard,
-  LockKeyhole,
-  Mail,
-  Phone,
-  User,
-} from 'lucide-react';
-import { Link } from 'react-router';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, Phone, User } from 'lucide-react';
+import { Link, useNavigate } from 'react-router';
+import { Button } from '../../components/ui/Button';
+import { FormInput } from '../../components/ui/FormInput';
+import { FormSelect } from '../../components/ui/FormSelect';
+import { registerUser, roleHomeRoutes, saveSession } from '../../services/authService';
+import type { RegisterFormValues } from '../../types/auth';
 import { AuthLayout } from './AuthLayout';
 
-const inputClassName =
-  'h-full w-full border-0 bg-transparent px-4 text-sm font-medium text-slate-900 outline-none placeholder:text-slate-500';
-
-type FieldIconProps = {
-  children: ReactNode;
-};
-
-const FieldIcon = ({ children }: FieldIconProps) => (
-  <span className="mt-1.5 flex h-11 items-center rounded-lg border border-slate-300 bg-white px-3.5 text-slate-500 transition focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
-    {children}
-  </span>
-);
+const genderOptions = [
+  { label: 'Selecciona tu genero', value: '' },
+  { label: 'Femenino', value: 'femenino' },
+  { label: 'Masculino', value: 'masculino' },
+  { label: 'Otro', value: 'otro' },
+];
 
 export const RegisterPage = () => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [formError, setFormError] = useState('');
+  const navigate = useNavigate();
+
+  const {
+    register,
+    handleSubmit,
+    getValues,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterFormValues>({
+    defaultValues: {
+      nickname: '',
+      gender: '',
+      email: '',
+      phone: '',
+      password: '',
+      confirmPassword: '',
+    },
+  });
+
+  const onSubmit = async (values: RegisterFormValues) => {
+    try {
+      setFormError('');
+      const session = await registerUser(values);
+      saveSession(session);
+      navigate(roleHomeRoutes[session.user.role]);
+    } catch {
+      setFormError('No se pudo crear la cuenta. Intentalo nuevamente.');
+    }
+  };
+
   return (
-    <AuthLayout cardClassName="py-6 lg:py-5">
+    <AuthLayout cardClassName="py-8 lg:py-7">
       <div className="text-center">
-        <h2 className="text-3xl font-extrabold leading-tight text-slate-950">
+        <h2 className="text-3xl font-extrabold leading-tight text-slate-950 dark:text-white">
           Crear cuenta
         </h2>
-        <p className="mt-2 text-base font-medium text-slate-500">
+        <p className="mt-2 text-base font-medium text-slate-600 dark:text-neutral-300">
           Completa tus datos para registrarte
         </p>
       </div>
 
-      <form className="mt-4 space-y-3">
+      <form className="mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)}>
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-950">Nombre</span>
-            <FieldIcon>
-              <User className="h-5 w-5 flex-none text-slate-500" />
-              <input type="text" placeholder="Tu nombre" className={inputClassName} />
-            </FieldIcon>
-          </label>
+          <FormInput
+            label="Nickname"
+            type="text"
+            placeholder="Ej: Francis"
+            icon={<User className="h-5 w-5 flex-none text-slate-500 dark:text-neutral-300" />}
+            error={errors.nickname?.message}
+            {...register('nickname', {
+              required: 'El nickname es obligatorio.',
+              minLength: {
+                value: 3,
+                message: 'El nickname debe tener al menos 3 caracteres.',
+              },
+            })}
+          />
 
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-950">Apellido</span>
-            <FieldIcon>
-              <User className="h-5 w-5 flex-none text-slate-500" />
-              <input type="text" placeholder="Tu apellido" className={inputClassName} />
-            </FieldIcon>
-          </label>
+          <FormSelect
+            label="Genero"
+            options={genderOptions}
+            error={errors.gender?.message}
+            {...register('gender', { required: 'Selecciona un genero.' })}
+          />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-950">Cedula de identidad</span>
-            <FieldIcon>
-              <IdCard className="h-5 w-5 flex-none text-slate-500" />
-              <input type="text" placeholder="Ej: 1234567890" className={inputClassName} />
-            </FieldIcon>
-          </label>
+        <FormInput
+          label="Correo electronico"
+          type="email"
+          placeholder="ejemplo@correo.com"
+          icon={<Mail className="h-5 w-5 flex-none text-slate-500 dark:text-neutral-300" />}
+          error={errors.email?.message}
+          {...register('email', {
+            required: 'El correo electronico es obligatorio.',
+            pattern: {
+              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+              message: 'Ingresa un correo electronico valido.',
+            },
+          })}
+        />
 
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-950">Genero</span>
-            <FieldIcon>
-              <select
-                defaultValue=""
-                className="h-full w-full appearance-none border-0 bg-transparent text-sm font-medium text-slate-500 outline-none"
+        <FormInput
+          label="Numero celular"
+          type="tel"
+          placeholder="Ej: 0991234567"
+          optional
+          icon={<Phone className="h-5 w-5 flex-none text-slate-500 dark:text-neutral-300" />}
+          error={errors.phone?.message}
+          {...register('phone', {
+            pattern: {
+              value: /^$|^[0-9]{10}$/,
+              message: 'El numero celular debe tener 10 digitos.',
+            },
+          })}
+        />
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <FormInput
+            label="Contrasena"
+            type={showPassword ? 'text' : 'password'}
+            placeholder="Crea una contrasena"
+            icon={<LockKeyhole className="h-5 w-5 flex-none text-slate-500 dark:text-neutral-300" />}
+            error={errors.password?.message}
+            endIcon={
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 dark:text-neutral-300 dark:hover:bg-white/10"
+                aria-label="Mostrar contrasena"
               >
-                <option value="" disabled>Selecciona tu genero</option>
-                <option value="femenino">Femenino</option>
-                <option value="masculino">Masculino</option>
-                <option value="otro">Otro</option>
-              </select>
-              <ChevronDown className="h-5 w-5 flex-none text-slate-500" />
-            </FieldIcon>
-          </label>
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            }
+            {...register('password', {
+              required: 'La contrasena es obligatoria.',
+              minLength: {
+                value: 6,
+                message: 'La contrasena debe tener al menos 6 caracteres.',
+              },
+            })}
+          />
+
+          <FormInput
+            label="Confirmar contrasena"
+            type={showConfirmPassword ? 'text' : 'password'}
+            placeholder="Confirma tu contrasena"
+            icon={<LockKeyhole className="h-5 w-5 flex-none text-slate-500 dark:text-neutral-300" />}
+            error={errors.confirmPassword?.message}
+            endIcon={
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 dark:text-neutral-300 dark:hover:bg-white/10"
+                aria-label="Mostrar confirmacion de contrasena"
+              >
+                {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            }
+            {...register('confirmPassword', {
+              required: 'Confirma tu contrasena.',
+              validate: (value) => value === getValues('password') || 'Las contrasenas no coinciden.',
+            })}
+          />
         </div>
 
-        <label className="block">
-          <span className="text-sm font-semibold text-slate-950">Correo electronico</span>
-          <FieldIcon>
-            <Mail className="h-5 w-5 flex-none text-slate-500" />
-            <input type="email" placeholder="ejemplo@correo.com" className={inputClassName} />
-          </FieldIcon>
-        </label>
+        {formError && (
+          <div className="rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-200">
+            {formError}
+          </div>
+        )}
 
-        <label className="block">
-          <span className="text-sm font-semibold text-slate-950">Numero celular</span>
-          <FieldIcon>
-            <Phone className="h-5 w-5 flex-none text-slate-500" />
-            <input type="tel" placeholder="Ej: 0991234567" className={inputClassName} />
-          </FieldIcon>
-        </label>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-950">Contrasena</span>
-            <FieldIcon>
-              <LockKeyhole className="h-5 w-5 flex-none text-slate-500" />
-              <input type="password" placeholder="Crea una contrasena" className={inputClassName} />
-              <button type="button" className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100" aria-label="Mostrar contrasena">
-                <Eye className="h-5 w-5" />
-              </button>
-            </FieldIcon>
-          </label>
-
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-950">Confirmar contrasena</span>
-            <FieldIcon>
-              <LockKeyhole className="h-5 w-5 flex-none text-slate-500" />
-              <input type="password" placeholder="Confirma tu contrasena" className={inputClassName} />
-              <button type="button" className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100" aria-label="Mostrar confirmacion de contrasena">
-                <Eye className="h-5 w-5" />
-              </button>
-            </FieldIcon>
-          </label>
-        </div>
-
-        <button
-          type="submit"
-          className="flex h-12 w-full items-center justify-center gap-3 rounded-lg bg-blue-600 px-6 text-base font-bold text-white shadow-lg transition hover:bg-blue-700"
-        >
-          Crear cuenta
+        <Button type="submit" fullWidth disabled={isSubmitting}>
+          {isSubmitting ? 'Creando cuenta...' : 'Crear cuenta'}
           <ArrowRight className="h-7 w-7" />
-        </button>
+        </Button>
       </form>
 
-      <div className="mt-4 text-center text-sm font-medium text-slate-500 sm:text-base">
+      <div className="mt-5 text-center text-sm font-medium text-slate-600 dark:text-neutral-300 sm:text-base">
         Ya tienes cuenta?{' '}
-        <Link to="/login" className="font-semibold text-blue-600 transition hover:text-blue-700">
+        <Link to="/login" className="font-semibold text-teal-700 transition hover:text-teal-600 dark:text-teal-300 dark:hover:text-teal-200">
           Iniciar sesion
         </Link>
       </div>
