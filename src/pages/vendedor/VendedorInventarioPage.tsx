@@ -2,58 +2,10 @@ import { useEffect, useState } from 'react';
 import { Boxes, PencilLine } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { FormInput } from '../../components/ui/FormInput';
-import { FormSelect } from '../../components/ui/FormSelect';
 import { Modal } from '../../components/ui/Modal';
 import { PageCard } from '../../components/ui/PageCard';
 import { getCatalogComponents, updateCatalogComponent } from '../../services/catalogService';
 import type { CatalogComponent, CatalogStockStatus } from '../../types/catalog';
-
-const localInventoryData: CatalogComponent[] = [
-  {
-    id: 'inv-1',
-    name: 'AMD Ryzen 7 9700X',
-    description: '8 nucleos / 16 hilos',
-    category: 'Procesadores',
-    brand: 'AMD',
-    price: 359.99,
-    stock: 14,
-    status: 'disponible',
-    imageUrl: null,
-  },
-  {
-    id: 'inv-2',
-    name: 'ASUS TUF B760-PLUS WIFI',
-    description: 'Chipset Intel B760',
-    category: 'Placas madre',
-    brand: 'ASUS',
-    price: 219.99,
-    stock: 6,
-    status: 'stock-bajo',
-    imageUrl: null,
-  },
-  {
-    id: 'inv-3',
-    name: 'Kingston Fury Beast 32GB DDR5',
-    description: '2x16GB 6000MHz',
-    category: 'Memoria RAM',
-    brand: 'Kingston',
-    price: 139.99,
-    stock: 20,
-    status: 'disponible',
-    imageUrl: null,
-  },
-  {
-    id: 'inv-4',
-    name: 'Gigabyte RTX 4060 WINDFORCE',
-    description: 'Tarjeta grafica 8GB',
-    category: 'Tarjetas graficas',
-    brand: 'Gigabyte',
-    price: 439.99,
-    stock: 0,
-    status: 'agotado',
-    imageUrl: null,
-  },
-];
 
 const statusLabel: Record<CatalogStockStatus, string> = {
   disponible: 'Disponible',
@@ -77,10 +29,8 @@ const formatCurrency = (value: number) =>
 export const VendedorInventarioPage = () => {
   const [items, setItems] = useState<CatalogComponent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [useLocalData, setUseLocalData] = useState(false);
   const [selectedItem, setSelectedItem] = useState<CatalogComponent | null>(null);
   const [stockValue, setStockValue] = useState('');
-  const [statusValue, setStatusValue] = useState<CatalogStockStatus>('disponible');
   const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState('');
   const [pageError, setPageError] = useState('');
@@ -90,16 +40,13 @@ export const VendedorInventarioPage = () => {
 
     const loadInventory = async () => {
       try {
-        const response = await getCatalogComponents({ page: 1, limit: 500 });
+        const response = await getCatalogComponents({ page: 1, limit: 100 });
         if (!isMounted) return;
         setItems(response.items);
-        setUseLocalData(false);
         setPageError('');
       } catch {
         if (!isMounted) return;
-        setItems(localInventoryData);
-        setUseLocalData(true);
-        setPageError('No fue posible sincronizar inventario con backend. Se muestran datos locales de referencia.');
+        setPageError('No fue posible sincronizar inventario con backend. Verifica la conexion e intenta de nuevo.');
       } finally {
         if (isMounted) setIsLoading(false);
       }
@@ -115,14 +62,12 @@ export const VendedorInventarioPage = () => {
   const openEdit = (item: CatalogComponent) => {
     setSelectedItem(item);
     setStockValue(item.stock.toString());
-    setStatusValue(item.status);
     setFormError('');
   };
 
   const closeEdit = () => {
     setSelectedItem(null);
     setStockValue('');
-    setStatusValue('disponible');
     setFormError('');
     setIsSaving(false);
   };
@@ -142,31 +87,8 @@ export const VendedorInventarioPage = () => {
       setIsSaving(true);
       setFormError('');
 
-      if (useLocalData) {
-        setItems((current) =>
-          current.map((item) =>
-            item.id === selectedItem.id
-              ? {
-                  ...item,
-                  stock: normalizedStock,
-                  status: statusValue,
-                }
-              : item,
-          ),
-        );
-        closeEdit();
-        return;
-      }
-
       const updated = await updateCatalogComponent(selectedItem.id, {
-        name: selectedItem.name,
-        description: selectedItem.description,
-        category: selectedItem.category,
-        brand: selectedItem.brand,
-        price: selectedItem.price,
         stock: normalizedStock,
-        status: statusValue,
-        imageUrl: selectedItem.imageUrl ?? undefined,
       });
 
       setItems((current) => current.map((item) => (item.id === selectedItem.id ? updated : item)));
@@ -257,7 +179,7 @@ export const VendedorInventarioPage = () => {
       <Modal
         open={Boolean(selectedItem)}
         title="Actualizar inventario"
-        text="Edita stock y estado del componente."
+        text="Edita el stock del componente."
         onClose={closeEdit}
         footer={
           <>
@@ -281,16 +203,6 @@ export const VendedorInventarioPage = () => {
             value={stockValue}
             onChange={(event) => setStockValue(event.target.value)}
             inputMode="numeric"
-          />
-          <FormSelect
-            label="Estado"
-            value={statusValue}
-            onChange={(event) => setStatusValue(event.target.value as CatalogStockStatus)}
-            options={[
-              { label: 'Disponible', value: 'disponible' },
-              { label: 'Stock bajo', value: 'stock-bajo' },
-              { label: 'Agotado', value: 'agotado' },
-            ]}
           />
         </div>
 

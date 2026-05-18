@@ -7,7 +7,7 @@ import  {ClienteDashboard} from '../pages/cliente/ClienteDashboard';
 import  {VendedorDashboard} from '../pages/vendedor/VendedorDashboard';
 import { AdminDashboard } from '../pages/administrador/AdminDashboard';
 import  {SimulatorPage} from '../pages/simulator/SimulatorPage';
-import { ClienteCuentaPage } from '../pages/cliente/ClienteCuentaPage';
+import { MiCuentaPage } from '../pages/shared/MiCuentaPage';
 import { VendedorPedidosPage } from '../pages/vendedor/VendedorPedidosPage';
 import { VendedorEstadisticasPage } from '../pages/vendedor/VendedorEstadisticasPage';
 import { VendedorInventarioPage } from '../pages/vendedor/VendedorInventarioPage';
@@ -43,11 +43,10 @@ export default function AppRoutes() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/registro" element={<RegisterPage />} />
-        <Route path="/register" element={<RegisterPage />} />
 
         <Route path="/cliente" element={<RequireAuth allowedRoles={['cliente']}><ClienteDashboard /></RequireAuth>}>
           <Route index element={<Navigate to="cuenta" replace />} />
-          <Route path="cuenta" element={<ClienteCuentaPage />} />
+          <Route path="cuenta" element={<MiCuentaPage />} />
         </Route>
 
         <Route path="/vendedor" element={<RequireAuth allowedRoles={['vendedor']}><VendedorDashboard /></RequireAuth>}>
@@ -55,12 +54,14 @@ export default function AppRoutes() {
           <Route path="pedidos" element={<VendedorPedidosPage />} />
           <Route path="estadisticas" element={<VendedorEstadisticasPage />} />
           <Route path="inventario" element={<VendedorInventarioPage />} />
+          <Route path="cuenta" element={<MiCuentaPage />} />
         </Route>
 
         <Route path="/admin" element={<RequireAuth allowedRoles={['admin']}><AdminDashboard /></RequireAuth>}>
           <Route index element={<Navigate to="usuarios" replace />} />
           <Route path="usuarios" element={<AdminUsuariosPage />} />
           <Route path="catalogo" element={<AdminCatalogoPage />} />
+          <Route path="cuenta" element={<MiCuentaPage />} />
         </Route>
 
         <Route path="/simulador" element={<SimulatorPage />} />

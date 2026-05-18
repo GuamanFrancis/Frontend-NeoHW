@@ -284,17 +284,6 @@ export const AdminUsuariosPage = () => {
       title="Gestion de usuarios"
       text="Administra los usuarios del sistema, roles y permisos de acceso."
       icon={<UsersRound className="h-6 w-6" />}
-      actions={
-        <Button
-          type="button"
-          className="h-10 px-4 text-sm"
-          disabled
-          title="El backend actual no expone un endpoint administrativo para crear usuarios."
-        >
-          <Plus className="h-4 w-4" />
-          Nuevo usuario
-        </Button>
-      }
     >
       <div className="space-y-4">
         {pageError && (

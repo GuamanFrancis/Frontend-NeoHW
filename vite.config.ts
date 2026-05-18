@@ -8,17 +8,10 @@ export default defineConfig(({ mode }) => {
   const apiProxyPaths = [
     '/auth',
     '/users',
-    '/componentes',
-    '/components',
-    '/catalogo',
-    '/catalog',
-    '/productos',
     '/products',
-    '/inventory',
-    '/inventario',
-    '/items',
-    '/api',
-    '/v1',
+    '/categories',
+    '/attributes',
+    '/compatibility',
   ] as const;
 
   return {

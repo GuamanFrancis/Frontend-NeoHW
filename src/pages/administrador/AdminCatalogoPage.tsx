@@ -11,29 +11,28 @@ import {
   getCatalogComponents,
   updateCatalogComponent,
 } from '../../services/catalogService';
-import type { CatalogComponent, CatalogSavePayload, CatalogStockStatus } from '../../types/catalog';
+import { getCategories, getLeafCategories } from '../../services/categoryService';
+import type { BackendCategory, CatalogComponent, CatalogSavePayload, CatalogStockStatus } from '../../types/catalog';
 
 type ModalMode = 'create' | 'edit' | 'view' | 'delete' | null;
 
 type CatalogFormValues = {
   name: string;
   description: string;
-  category: string;
+  categoryId: string;
   brand: string;
   price: string;
   stock: string;
-  status: CatalogStockStatus;
   imageUrl: string;
 };
 
 const emptyForm: CatalogFormValues = {
   name: '',
   description: '',
-  category: '',
+  categoryId: '',
   brand: '',
   price: '',
   stock: '',
-  status: 'disponible',
   imageUrl: '',
 };
 
@@ -87,86 +86,16 @@ const getVisiblePages = (totalPages: number, currentPage: number) => {
 const mapComponentToForm = (component: CatalogComponent): CatalogFormValues => ({
   name: component.name,
   description: component.description,
-  category: component.category,
+  categoryId: component.categoryId,
   brand: component.brand,
   price: component.price.toString(),
   stock: component.stock.toString(),
-  status: component.status,
   imageUrl: component.imageUrl ?? '',
 });
 
-const catalogFallbackComponents: CatalogComponent[] = [
-  {
-    id: 'catalog-fallback-1',
-    name: 'AMD Ryzen 9 7900X',
-    description: '12 nucleos / 24 hilos',
-    category: 'Procesadores',
-    brand: 'AMD',
-    price: 425.99,
-    stock: 18,
-    status: 'disponible',
-    imageUrl: null,
-  },
-  {
-    id: 'catalog-fallback-2',
-    name: 'ASUS ROG Strix B650E-F Gaming WiFi',
-    description: 'Placa madre AM5',
-    category: 'Placas madre',
-    brand: 'ASUS',
-    price: 299.99,
-    stock: 7,
-    status: 'stock-bajo',
-    imageUrl: null,
-  },
-  {
-    id: 'catalog-fallback-3',
-    name: 'Corsair Vengeance RGB 32GB 6000MHz',
-    description: 'Memoria DDR5',
-    category: 'Memoria RAM',
-    brand: 'Corsair',
-    price: 129.99,
-    stock: 24,
-    status: 'disponible',
-    imageUrl: null,
-  },
-  {
-    id: 'catalog-fallback-4',
-    name: 'Samsung 990 PRO 1TB',
-    description: 'SSD NVMe PCIe 4.0',
-    category: 'Almacenamiento',
-    brand: 'Samsung',
-    price: 119.99,
-    stock: 0,
-    status: 'agotado',
-    imageUrl: null,
-  },
-  {
-    id: 'catalog-fallback-5',
-    name: 'MSI GeForce RTX 4070 Ti VENTUS 3X',
-    description: 'Tarjeta grafica 12GB',
-    category: 'Tarjetas graficas',
-    brand: 'MSI',
-    price: 799.99,
-    stock: 5,
-    status: 'stock-bajo',
-    imageUrl: null,
-  },
-  {
-    id: 'catalog-fallback-6',
-    name: 'Corsair RM850e 850W',
-    description: 'Fuente de poder 80+ Gold',
-    category: 'Fuentes de poder',
-    brand: 'Corsair',
-    price: 119.99,
-    stock: 12,
-    status: 'disponible',
-    imageUrl: null,
-  },
-];
-
 export const AdminCatalogoPage = () => {
   const [components, setComponents] = useState<CatalogComponent[]>([]);
-  const [isUsingFallbackData, setIsUsingFallbackData] = useState(false);
+  const [categories, setCategories] = useState<BackendCategory[]>([]);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('todos');
   const [statusFilter, setStatusFilter] = useState<'todos' | CatalogStockStatus>('todos');
@@ -178,46 +107,69 @@ export const AdminCatalogoPage = () => {
   const [modalMode, setModalMode] = useState<ModalMode>(null);
   const [selectedComponent, setSelectedComponent] = useState<CatalogComponent | null>(null);
   const [formValues, setFormValues] = useState<CatalogFormValues>(emptyForm);
+  const [loadError, setLoadError] = useState('');
+
+  /* ── Load products + categories from backend ── */
 
   useEffect(() => {
     let isMounted = true;
 
-    const loadCatalog = async () => {
+    const loadData = async () => {
       try {
-        const response = await getCatalogComponents({ page: 1, limit: 500 });
+        const [productsRes, categoriesRes] = await Promise.all([
+          getCatalogComponents({ page: 1, limit: 100 }),
+          getCategories(),
+        ]);
+
         if (!isMounted) return;
-        setComponents(response.items);
-        setIsUsingFallbackData(false);
+        setComponents(productsRes.items);
+        setCategories(categoriesRes);
+        setLoadError('');
       } catch {
         if (!isMounted) return;
-        setIsUsingFallbackData(true);
-        setComponents(catalogFallbackComponents);
+        setLoadError('No se pudo conectar con el backend. Verifica la conexion e intenta de nuevo.');
       } finally {
         if (isMounted) setIsLoading(false);
       }
     };
 
-    void loadCatalog();
+    void loadData();
 
     return () => {
       isMounted = false;
     };
   }, []);
 
-  const categoryOptions = useMemo(() => {
-    const categories = Array.from(
+  /* ── Derived: leaf categories for the form select ── */
+
+  const leafCategories = useMemo(() => getLeafCategories(categories), [categories]);
+
+  const categorySelectOptions = useMemo(
+    () => [
+      { label: 'Selecciona una categoria', value: '' },
+      ...leafCategories.map((cat) => ({ label: cat.name, value: cat.id })),
+    ],
+    [leafCategories],
+  );
+
+  /* ── Derived: filter options from loaded components ── */
+
+  const categoryFilterOptions = useMemo(() => {
+    const names = Array.from(
       new Set(
         components
-          .map((component) => component.category.trim())
+          .map((c) => c.category.trim())
           .filter(Boolean),
       ),
-    ).sort((left, right) => left.localeCompare(right));
+    ).sort((a, b) => a.localeCompare(b));
 
     return [
       { label: 'Todas las categorias', value: 'todos' },
-      ...categories.map((category) => ({ label: category, value: category })),
+      ...names.map((name) => ({ label: name, value: name })),
     ];
   }, [components]);
+
+  /* ── Filtered + paginated ── */
 
   const filteredComponents = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -246,6 +198,8 @@ export const AdminCatalogoPage = () => {
       setCurrentPage(totalPages);
     }
   }, [currentPage, totalPages]);
+
+  /* ── Modal helpers ── */
 
   const resetFilters = () => {
     setSearch('');
@@ -287,13 +241,15 @@ export const AdminCatalogoPage = () => {
     setModalMode('delete');
   };
 
+  /* ── Save (create / edit) ── */
+
   const saveComponent = async () => {
     const price = Number(formValues.price);
     const stock = Number(formValues.stock);
 
     if (
       !formValues.name.trim() ||
-      !formValues.category.trim() ||
+      !formValues.categoryId ||
       !formValues.brand.trim() ||
       !Number.isFinite(price) ||
       price < 0 ||
@@ -307,57 +263,16 @@ export const AdminCatalogoPage = () => {
     const payload: CatalogSavePayload = {
       name: formValues.name,
       description: formValues.description,
-      category: formValues.category,
+      categoryId: formValues.categoryId,
       brand: formValues.brand,
       price,
       stock: Math.trunc(stock),
-      status: formValues.status,
       imageUrl: formValues.imageUrl || undefined,
     };
 
     try {
       setIsSaving(true);
       setModalError('');
-
-      if (isUsingFallbackData) {
-        if (modalMode === 'create') {
-          const localCreated: CatalogComponent = {
-            id: `catalog-local-${Date.now().toString(36)}`,
-            name: payload.name.trim(),
-            description: payload.description.trim() || 'Sin descripcion',
-            category: payload.category.trim(),
-            brand: payload.brand.trim(),
-            price: payload.price,
-            stock: payload.stock,
-            status: payload.status ?? 'disponible',
-            imageUrl: payload.imageUrl ?? null,
-          };
-          setComponents((currentComponents) => [localCreated, ...currentComponents]);
-        }
-
-        if (modalMode === 'edit' && selectedComponent) {
-          setComponents((currentComponents) =>
-            currentComponents.map((component) =>
-              component.id === selectedComponent.id
-                ? {
-                    ...component,
-                    name: payload.name.trim(),
-                    description: payload.description.trim() || 'Sin descripcion',
-                    category: payload.category.trim(),
-                    brand: payload.brand.trim(),
-                    price: payload.price,
-                    stock: payload.stock,
-                    status: payload.status ?? component.status,
-                    imageUrl: payload.imageUrl ?? null,
-                  }
-                : component,
-            ),
-          );
-        }
-
-        closeModal();
-        return;
-      }
 
       if (modalMode === 'create') {
         const created = await createCatalogComponent(payload);
@@ -373,10 +288,12 @@ export const AdminCatalogoPage = () => {
 
       closeModal();
     } catch {
-      setModalError('No se pudo guardar el componente. Revisa permisos, formato de datos y endpoint del backend.');
+      setModalError('No se pudo guardar el componente. Revisa permisos y datos ingresados.');
       setIsSaving(false);
     }
   };
+
+  /* ── Delete ── */
 
   const removeComponent = async () => {
     if (!selectedComponent) return;
@@ -384,14 +301,6 @@ export const AdminCatalogoPage = () => {
     try {
       setIsSaving(true);
       setModalError('');
-
-      if (isUsingFallbackData) {
-        setComponents((currentComponents) =>
-          currentComponents.filter((component) => component.id !== selectedComponent.id),
-        );
-        closeModal();
-        return;
-      }
 
       await deleteCatalogComponent(selectedComponent.id);
       setComponents((currentComponents) =>
@@ -416,6 +325,12 @@ export const AdminCatalogoPage = () => {
         </Button>
       }
     >
+      {loadError && (
+        <div className="mb-4 rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-200">
+          {loadError}
+        </div>
+      )}
+
       <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
         <div className="grid gap-3 lg:grid-cols-[1fr_220px_180px_auto]">
           <label className="relative">
@@ -440,7 +355,7 @@ export const AdminCatalogoPage = () => {
               setCurrentPage(1);
             }}
           >
-            {categoryOptions.map((option) => (
+            {categoryFilterOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
@@ -623,6 +538,7 @@ export const AdminCatalogoPage = () => {
         </div>
       </div>
 
+      {/* ── Create / Edit modal ── */}
       <Modal
         open={modalMode === 'create' || modalMode === 'edit'}
         title={modalMode === 'create' ? 'Nuevo componente' : 'Editar componente'}
@@ -652,23 +568,11 @@ export const AdminCatalogoPage = () => {
             onChange={(event) => setFormValues((current) => ({ ...current, brand: event.target.value }))}
             placeholder="AMD"
           />
-          <FormInput
-            label="Categoria"
-            value={formValues.category}
-            onChange={(event) => setFormValues((current) => ({ ...current, category: event.target.value }))}
-            placeholder="Procesadores"
-          />
           <FormSelect
-            label="Estado"
-            value={formValues.status}
-            onChange={(event) =>
-              setFormValues((current) => ({ ...current, status: event.target.value as CatalogStockStatus }))
-            }
-            options={[
-              { label: 'Disponible', value: 'disponible' },
-              { label: 'Stock bajo', value: 'stock-bajo' },
-              { label: 'Agotado', value: 'agotado' },
-            ]}
+            label="Categoria"
+            value={formValues.categoryId}
+            onChange={(event) => setFormValues((current) => ({ ...current, categoryId: event.target.value }))}
+            options={categorySelectOptions}
           />
           <FormInput
             label="Precio (USD)"
@@ -683,6 +587,8 @@ export const AdminCatalogoPage = () => {
             onChange={(event) => setFormValues((current) => ({ ...current, stock: event.target.value }))}
             placeholder="18"
             inputMode="numeric"
+            disabled={modalMode === 'edit'}
+            title={modalMode === 'edit' ? "El stock solo puede ser modificado por el Vendedor desde la pestaña de Inventario." : undefined}
           />
           <FormInput
             label="Descripcion"
@@ -706,6 +612,7 @@ export const AdminCatalogoPage = () => {
         )}
       </Modal>
 
+      {/* ── View modal ── */}
       <Modal
         open={modalMode === 'view' && Boolean(selectedComponent)}
         title="Detalle del componente"
@@ -739,6 +646,7 @@ export const AdminCatalogoPage = () => {
         )}
       </Modal>
 
+      {/* ── Delete modal ── */}
       <Modal
         open={modalMode === 'delete' && Boolean(selectedComponent)}
         title="Eliminar componente"

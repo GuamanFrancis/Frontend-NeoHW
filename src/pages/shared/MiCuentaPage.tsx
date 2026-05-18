@@ -7,7 +7,7 @@ import { normalizeBackendUser } from '../../services/authService';
 import { getStoredSession, updateStoredSession } from '../../services/session';
 import { updateUser } from '../../services/usersService';
 
-export const ClienteCuentaPage = () => {
+export const MiCuentaPage = () => {
   const session = getStoredSession();
   const [firstName, setFirstName] = useState(session?.user.firstName ?? '');
   const [lastName, setLastName] = useState(session?.user.lastName ?? '');
