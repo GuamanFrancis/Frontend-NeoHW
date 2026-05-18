@@ -1,43 +1,58 @@
-import type { AuthResponse, LoginFormValues, RegisterFormValues, UserRole } from '../types/auth';
+import { api } from './api';
+import { normalizeAuthResponse, normalizeBackendUser } from './authMapper';
+import { clearStoredSession, saveStoredSession } from './session';
+import type {
+  AuthResponse,
+  BackendAuthResponse,
+  BackendUser,
+  LoginFormValues,
+  RegisterFormValues,
+} from '../types/auth';
 
-const SESSION_KEY = 'neohw_session';
-
-export const roleHomeRoutes: Record<UserRole, string> = {
-  cliente: '/cliente/inicio',
-  vendedor: '/vendedor/inicio',
-  admin: '/admin/inicio',
-};
+export { normalizeAuthResponse, normalizeBackendUser, roleHomeRoutes } from './authMapper';
 
 export const loginUser = async (values: LoginFormValues): Promise<AuthResponse> => {
-  return {
-    token: 'token-temporal-neohw',
-    user: {
-      id: '1',
-      nickname: 'Francis Guaman',
-      email: values.email,
-      role: values.role,
-    },
-  };
+  const { data } = await api.post<BackendAuthResponse>('/auth/login', {
+    email: values.email,
+    password: values.password,
+  });
+
+  return normalizeAuthResponse(data);
 };
 
 export const registerUser = async (values: RegisterFormValues): Promise<AuthResponse> => {
-  return {
-    token: 'token-temporal-neohw',
-    user: {
-      id: '1',
-      nickname: values.nickname,
-      email: values.email,
-      role: 'cliente',
-    },
-  };
+  const { data } = await api.post<BackendAuthResponse>('/auth/register', {
+    email: values.email,
+    password: values.password,
+  });
+
+  const session = normalizeAuthResponse(data);
+
+  if (values.nickname.trim() || values.phone?.trim()) {
+    const { data: profileData } = await api.patch<{ user: BackendUser }>('/users/me', {
+      firstName: values.nickname.trim() || undefined,
+      phone: values.phone?.trim() || undefined,
+    });
+
+    return {
+      accessToken: session.accessToken,
+      user: normalizeBackendUser(profileData.user),
+    };
+  }
+
+  return session;
 };
 
 export const saveSession = (session: AuthResponse, remember = true) => {
-  const storage = remember ? localStorage : sessionStorage;
-  storage.setItem(SESSION_KEY, JSON.stringify(session));
+  saveStoredSession(session, remember);
 };
 
-export const logoutUser = () => {
-  localStorage.removeItem(SESSION_KEY);
-  sessionStorage.removeItem(SESSION_KEY);
+export const logoutUser = async () => {
+  try {
+    await api.post('/auth/logout');
+  } catch {
+    // Local cleanup still matters if the refresh cookie has expired.
+  } finally {
+    clearStoredSession();
+  }
 };

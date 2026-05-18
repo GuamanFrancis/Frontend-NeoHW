@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { logoutUser } from '../../services/authService';
+import { getStoredSession } from '../../services/session';
 
 type MenuItem = {
   label: string;
@@ -26,9 +27,18 @@ type DashboardLayoutProps = {
 export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayoutProps) => {
   const [showMenu, setShowMenu] = useState(false);
   const navigate = useNavigate();
+  const session = getStoredSession();
+  const currentUserName = session?.user.nickname ?? userName;
+  const currentRoleName = session?.user.role === 'admin'
+    ? 'Administrador'
+    : session?.user.role === 'vendedor'
+      ? 'Vendedor'
+      : session?.user.role === 'cliente'
+        ? 'Cliente'
+        : roleName;
 
-  const logout = () => {
-    logoutUser();
+  const logout = async () => {
+    await logoutUser();
     navigate('/login');
   };
 
@@ -55,20 +65,13 @@ export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayo
 
         <div className="flex items-center gap-3">
           <div className="hidden text-right sm:block">
-            <p className="text-sm font-bold text-slate-950 dark:text-white">{userName}</p>
-            <p className="text-xs font-medium text-slate-500 dark:text-neutral-400">{roleName}</p>
+            <p className="text-sm font-bold text-slate-950 dark:text-white">{currentUserName}</p>
+            <p className="text-xs font-medium text-slate-500 dark:text-neutral-400">{currentRoleName}</p>
           </div>
 
           <UserCircle className="h-9 w-9 text-slate-500 dark:text-neutral-300" />
 
-          <Button
-            type="button"
-            onClick={logout}
-            className="hidden h-10 px-4 text-sm sm:flex"
-          >
-            <LogOut className="h-4 w-4" />
-            Cerrar sesion
-          </Button>
+    
         </div>
       </header>
 

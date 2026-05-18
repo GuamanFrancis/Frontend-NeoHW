@@ -45,7 +45,7 @@ export const RegisterPage = () => {
       saveSession(session);
       navigate(roleHomeRoutes[session.user.role]);
     } catch {
-      setFormError('No se pudo crear la cuenta. Intentalo nuevamente.');
+      setFormError('No se pudo crear la cuenta. Revisa que el correo no exista y que la contrasena cumpla los requisitos.');
     }
   };
 
@@ -135,8 +135,12 @@ export const RegisterPage = () => {
             {...register('password', {
               required: 'La contrasena es obligatoria.',
               minLength: {
-                value: 6,
-                message: 'La contrasena debe tener al menos 6 caracteres.',
+                value: 8,
+                message: 'La contrasena debe tener al menos 8 caracteres.',
+              },
+              pattern: {
+                value: /^(?=.*[A-Z])(?=(.*\d){2})(?=(.*[\W_]){2}).*$/,
+                message: 'Debe incluir 1 mayuscula, 2 numeros y 2 caracteres especiales.',
               },
             })}
           />

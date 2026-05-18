@@ -1,9 +1,9 @@
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 
 const vendedorMenu = [
-  { label: 'Inicio', path: '/vendedor/inicio' },
   { label: 'Pedidos de clientes', path: '/vendedor/pedidos' },
-  { label: 'Atender pedidos', path: '/vendedor/atender-pedidos' },
+  { label: 'Estadisticas de ventas', path: '/vendedor/estadisticas' },
+  { label: 'Inventario', path: '/vendedor/inventario' },
 ];
 
 export const VendedorDashboard = () => {

@@ -40,7 +40,7 @@ export const LoginPage = () => {
       saveSession(session, values.remember);
       navigate(roleHomeRoutes[session.user.role]);
     } catch {
-      setFormError('No se pudo iniciar sesion. Revisa tus credenciales.');
+      setFormError('No se pudo iniciar sesion. Revisa tus credenciales o el rol asignado en el sistema.');
     }
   };
 
@@ -90,8 +90,8 @@ export const LoginPage = () => {
           {...register('password', {
             required: 'La contrasena es obligatoria.',
             minLength: {
-              value: 6,
-              message: 'La contrasena debe tener al menos 6 caracteres.',
+              value: 8,
+              message: 'La contrasena debe tener al menos 8 caracteres.',
             },
           })}
         />

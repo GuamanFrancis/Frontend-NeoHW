@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Eye,
   Filter,
@@ -13,16 +13,19 @@ import { FormInput } from '../../components/ui/FormInput';
 import { FormSelect } from '../../components/ui/FormSelect';
 import { Modal } from '../../components/ui/Modal';
 import { PageCard } from '../../components/ui/PageCard';
+import type { BackendRole, BackendUser } from '../../types/auth';
+import { changeUserRole, deactivateUser, getUsers, updateUser } from '../../services/usersService';
 
-type UserRole = 'Administrador' | 'Vendedor' | 'Cliente';
+type UserRole = 'Super administrador' | 'Administrador' | 'Vendedor' | 'Cliente';
 type UserStatus = 'Activo' | 'Inactivo';
 
 type AdminUser = {
-  id: number;
+  id: string;
   name: string;
   phone: string;
   email: string;
   role: UserRole;
+  backendRole: BackendRole;
   status: UserStatus;
   lastAccess: string;
 };
@@ -35,64 +38,8 @@ type UserFormValues = {
   status: UserStatus;
 };
 
-const initialUsers: AdminUser[] = [
-  {
-    id: 1,
-    name: 'Daniel Ramirez',
-    phone: '+593 98 123 4567',
-    email: 'daniel.ramirez@neohw.ec',
-    role: 'Administrador',
-    status: 'Activo',
-    lastAccess: 'Hoy, 10:30',
-  },
-  {
-    id: 2,
-    name: 'Maria Gonzalez',
-    phone: '+593 99 876 5432',
-    email: 'maria.gonzalez@neohw.ec',
-    role: 'Vendedor',
-    status: 'Activo',
-    lastAccess: 'Ayer, 16:45',
-  },
-  {
-    id: 3,
-    name: 'Carlos Fernandez',
-    phone: '+593 96 234 5678',
-    email: 'carlos.fernandez@neohw.ec',
-    role: 'Vendedor',
-    status: 'Activo',
-    lastAccess: 'Hoy, 09:15',
-  },
-  {
-    id: 4,
-    name: 'Laura Paredes',
-    phone: '+593 97 345 6789',
-    email: 'laura.paredes@neohw.ec',
-    role: 'Cliente',
-    status: 'Inactivo',
-    lastAccess: 'Hace 3 dias',
-  },
-  {
-    id: 5,
-    name: 'Jose Morales',
-    phone: '+593 95 456 7890',
-    email: 'jose.morales@neohw.ec',
-    role: 'Cliente',
-    status: 'Activo',
-    lastAccess: 'Hace 1 dia',
-  },
-  {
-    id: 6,
-    name: 'Andrea Vera',
-    phone: '+593 93 245 1188',
-    email: 'andrea.vera@neohw.ec',
-    role: 'Cliente',
-    status: 'Activo',
-    lastAccess: 'Hace 2 dias',
-  },
-];
-
 const roleOptions = [
+  { label: 'Super administrador', value: 'Super administrador' },
   { label: 'Administrador', value: 'Administrador' },
   { label: 'Vendedor', value: 'Vendedor' },
   { label: 'Cliente', value: 'Cliente' },
@@ -111,7 +58,22 @@ const emptyForm: UserFormValues = {
   status: 'Activo',
 };
 
+const roleLabels: Record<BackendRole, UserRole> = {
+  SUPER_ADMIN: 'Super administrador',
+  ADMIN: 'Administrador',
+  SELLER: 'Vendedor',
+  USER: 'Cliente',
+};
+
+const backendRolesByLabel: Record<UserRole, BackendRole> = {
+  'Super administrador': 'SUPER_ADMIN',
+  Administrador: 'ADMIN',
+  Vendedor: 'SELLER',
+  Cliente: 'USER',
+};
+
 const roleStyles: Record<UserRole, string> = {
+  'Super administrador': 'bg-cyan-50 text-cyan-700 ring-cyan-500/20 dark:bg-cyan-400/10 dark:text-cyan-200 dark:ring-cyan-300/25',
   Administrador: 'bg-teal-50 text-teal-700 ring-teal-500/20 dark:bg-teal-400/10 dark:text-teal-200 dark:ring-teal-300/25',
   Vendedor: 'bg-amber-50 text-amber-700 ring-amber-500/20 dark:bg-amber-400/10 dark:text-amber-200 dark:ring-amber-300/25',
   Cliente: 'bg-slate-100 text-slate-700 ring-slate-300 dark:bg-neutral-800 dark:text-neutral-200 dark:ring-neutral-700',
@@ -123,7 +85,7 @@ const statusStyles: Record<UserStatus, string> = {
 };
 
 const fieldClass =
-  'h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-teal-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200 dark:placeholder:text-neutral-500 dark:focus:border-teal-400';
+  'h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-teal-500 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200 dark:placeholder:text-neutral-500 dark:focus:border-teal-400 dark:disabled:bg-neutral-900';
 
 const actionButtonClass =
   'flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-teal-500/60 hover:bg-teal-50 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-teal-400/60 dark:hover:bg-teal-400/10 dark:hover:text-teal-200';
@@ -131,21 +93,76 @@ const actionButtonClass =
 const getInitials = (name: string) =>
   name
     .split(' ')
+    .filter(Boolean)
     .slice(0, 2)
     .map((word) => word.charAt(0))
     .join('')
     .toUpperCase();
 
+const getFullName = (user: BackendUser) => {
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+  return fullName || user.email;
+};
+
+const mapBackendUser = (user: BackendUser): AdminUser => ({
+  id: user.id,
+  name: getFullName(user),
+  phone: user.phone ?? 'Sin telefono',
+  email: user.email,
+  role: roleLabels[user.role],
+  backendRole: user.role,
+  status: user.isActive ? 'Activo' : 'Inactivo',
+  lastAccess: 'Registrado',
+});
+
+const splitName = (name: string) => {
+  const parts = name.trim().split(/\s+/);
+  const firstName = parts.shift() ?? '';
+  const lastName = parts.join(' ');
+
+  return {
+    firstName,
+    lastName: lastName || undefined,
+  };
+};
+
 export const AdminUsuariosPage = () => {
-  const [users, setUsers] = useState(initialUsers);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('todos');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [pageSize, setPageSize] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
-  const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view' | null>(null);
+  const [modalMode, setModalMode] = useState<'edit' | 'view' | null>(null);
   const [formValues, setFormValues] = useState<UserFormValues>(emptyForm);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [pageError, setPageError] = useState('');
+  const [modalError, setModalError] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadUsers = async () => {
+      try {
+        const response = await getUsers(1, 100);
+        if (!isMounted) return;
+        setUsers(response.users.map(mapBackendUser));
+      } catch {
+        if (!isMounted) return;
+        setPageError('No se pudo cargar usuarios. Verifica tu sesion y permisos de administrador.');
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    void loadUsers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const filteredUsers = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -168,7 +185,7 @@ export const AdminUsuariosPage = () => {
   const pageUsers = filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   const firstResult = filteredUsers.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const lastResult = Math.min(currentPage * pageSize, filteredUsers.length);
-  const canSaveUser = formValues.name.trim() !== '' && formValues.email.trim() !== '';
+  const canSaveUser = formValues.name.trim() !== '' && formValues.email.trim() !== '' && !isSaving;
 
   const changeSearch = (value: string) => {
     setSearch(value);
@@ -192,17 +209,12 @@ export const AdminUsuariosPage = () => {
     setCurrentPage(1);
   };
 
-  const openCreateModal = () => {
-    setSelectedUser(null);
-    setFormValues(emptyForm);
-    setModalMode('create');
-  };
-
   const openEditModal = (user: AdminUser) => {
+    setModalError('');
     setSelectedUser(user);
     setFormValues({
       name: user.name,
-      phone: user.phone,
+      phone: user.phone === 'Sin telefono' ? '' : user.phone,
       email: user.email,
       role: user.role,
       status: user.status,
@@ -218,42 +230,53 @@ export const AdminUsuariosPage = () => {
   const closeModal = () => {
     setSelectedUser(null);
     setModalMode(null);
+    setModalError('');
   };
 
-  const saveUser = () => {
-    if (!formValues.name.trim() || !formValues.email.trim()) return;
+  const saveUser = async () => {
+    if (!formValues.name.trim() || !formValues.email.trim() || !selectedUser) return;
 
-    if (modalMode === 'edit' && selectedUser) {
+    try {
+      setIsSaving(true);
+      setModalError('');
+
+      const profile = splitName(formValues.name);
+      let updatedUser = await updateUser(selectedUser.id, {
+        ...profile,
+        phone: formValues.phone.trim() || undefined,
+      });
+
+      const requestedRole = backendRolesByLabel[formValues.role];
+
+      if (requestedRole !== selectedUser.backendRole) {
+        updatedUser = await changeUserRole(selectedUser.id, requestedRole);
+      }
+
       setUsers((currentUsers) =>
-        currentUsers.map((user) =>
-          user.id === selectedUser.id ? { ...user, ...formValues } : user,
-        ),
+        currentUsers.map((user) => (user.id === selectedUser.id ? mapBackendUser(updatedUser) : user)),
       );
+      closeModal();
+    } catch {
+      setModalError('No se pudo guardar el usuario. Revisa permisos y datos ingresados.');
+    } finally {
+      setIsSaving(false);
     }
-
-    if (modalMode === 'create') {
-      setUsers((currentUsers) => [
-        {
-          id: Date.now(),
-          ...formValues,
-          lastAccess: 'Sin acceso',
-        },
-        ...currentUsers,
-      ]);
-      setCurrentPage(1);
-    }
-
-    closeModal();
   };
 
-  const toggleUserStatus = (userId: number) => {
-    setUsers((currentUsers) =>
-      currentUsers.map((user) =>
-        user.id === userId
-          ? { ...user, status: user.status === 'Activo' ? 'Inactivo' : 'Activo' }
-          : user,
-      ),
-    );
+  const toggleUserStatus = async (user: AdminUser) => {
+    if (user.status === 'Inactivo') return;
+
+    try {
+      setPageError('');
+      const updatedUser = await deactivateUser(user.id);
+      setUsers((currentUsers) =>
+        currentUsers.map((currentUser) => (
+          currentUser.id === user.id ? mapBackendUser(updatedUser) : currentUser
+        )),
+      );
+    } catch {
+      setPageError('No se pudo desactivar el usuario seleccionado.');
+    }
   };
 
   return (
@@ -262,13 +285,24 @@ export const AdminUsuariosPage = () => {
       text="Administra los usuarios del sistema, roles y permisos de acceso."
       icon={<UsersRound className="h-6 w-6" />}
       actions={
-        <Button type="button" className="h-10 px-4 text-sm" onClick={openCreateModal}>
+        <Button
+          type="button"
+          className="h-10 px-4 text-sm"
+          disabled
+          title="El backend actual no expone un endpoint administrativo para crear usuarios."
+        >
           <Plus className="h-4 w-4" />
           Nuevo usuario
         </Button>
       }
     >
       <div className="space-y-4">
+        {pageError && (
+          <div className="rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-200">
+            {pageError}
+          </div>
+        )}
+
         <div className="grid gap-3 lg:grid-cols-[1fr_170px_170px_auto]">
           <label className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-neutral-500" />
@@ -380,8 +414,9 @@ export const AdminUsuariosPage = () => {
                         <button
                           type="button"
                           className={actionButtonClass}
-                          onClick={() => toggleUserStatus(user.id)}
-                          aria-label="Cambiar estado del usuario"
+                          onClick={() => void toggleUserStatus(user)}
+                          disabled={user.status === 'Inactivo'}
+                          aria-label="Desactivar usuario"
                         >
                           <Power className="h-4 w-4" />
                         </button>
@@ -390,7 +425,15 @@ export const AdminUsuariosPage = () => {
                   </tr>
                 ))}
 
-                {pageUsers.length === 0 && (
+                {isLoading && (
+                  <tr>
+                    <td colSpan={6} className="px-5 py-10 text-center text-sm text-slate-500 dark:text-neutral-400">
+                      Cargando usuarios...
+                    </td>
+                  </tr>
+                )}
+
+                {!isLoading && pageUsers.length === 0 && (
                   <tr>
                     <td colSpan={6} className="px-5 py-10 text-center text-sm text-slate-500 dark:text-neutral-400">
                       No se encontraron usuarios con los filtros actuales.
@@ -460,8 +503,8 @@ export const AdminUsuariosPage = () => {
       </div>
 
       <Modal
-        open={modalMode === 'create' || modalMode === 'edit'}
-        title={modalMode === 'create' ? 'Nuevo usuario' : 'Editar usuario'}
+        open={modalMode === 'edit'}
+        title="Editar usuario"
         text="Completa los datos principales para mantener el acceso del usuario."
         onClose={closeModal}
         footer={
@@ -469,8 +512,8 @@ export const AdminUsuariosPage = () => {
             <Button type="button" variant="ghost" onClick={closeModal}>
               Cancelar
             </Button>
-            <Button type="button" onClick={saveUser} disabled={!canSaveUser}>
-              Guardar
+            <Button type="button" onClick={() => void saveUser()} disabled={!canSaveUser}>
+              {isSaving ? 'Guardando...' : 'Guardar'}
             </Button>
           </>
         }
@@ -493,7 +536,7 @@ export const AdminUsuariosPage = () => {
               label="Correo electronico"
               type="email"
               value={formValues.email}
-              onChange={(event) => setFormValues({ ...formValues, email: event.target.value })}
+              disabled
               placeholder="usuario@correo.com"
             />
           </div>
@@ -507,8 +550,14 @@ export const AdminUsuariosPage = () => {
             label="Estado"
             options={statusOptions}
             value={formValues.status}
-            onChange={(event) => setFormValues({ ...formValues, status: event.target.value as UserStatus })}
+            disabled
           />
+
+          {modalError && (
+            <div className="sm:col-span-2 rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-200">
+              {modalError}
+            </div>
+          )}
         </div>
       </Modal>
 

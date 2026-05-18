@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Routes, Route } from 'react-router';
+import type { ReactNode } from 'react';
 import { LoginPage } from '../pages/auth/LoginPage';
 import { RegisterPage } from '../pages/auth/RegisterPage';
 import { HomePage } from '../pages/home/HomePage';
@@ -6,16 +7,34 @@ import  {ClienteDashboard} from '../pages/cliente/ClienteDashboard';
 import  {VendedorDashboard} from '../pages/vendedor/VendedorDashboard';
 import { AdminDashboard } from '../pages/administrador/AdminDashboard';
 import  {SimulatorPage} from '../pages/simulator/SimulatorPage';
-import { ClienteHomePage } from '../pages/cliente/ClienteHomePage';
 import { ClienteCuentaPage } from '../pages/cliente/ClienteCuentaPage';
-import { VendedorHomePage } from '../pages/vendedor/VendedorHomePage';
 import { VendedorPedidosPage } from '../pages/vendedor/VendedorPedidosPage';
-import { VendedorAtenderPedidosPage } from '../pages/vendedor/VendedorAtenderPedidosPage';
-import { AdminHomePage } from '../pages/administrador/AdminHomePage';
+import { VendedorEstadisticasPage } from '../pages/vendedor/VendedorEstadisticasPage';
+import { VendedorInventarioPage } from '../pages/vendedor/VendedorInventarioPage';
 import { AdminUsuariosPage } from '../pages/administrador/AdminUsuariosPage';
 import { AdminCatalogoPage } from '../pages/administrador/AdminCatalogoPage';
-import { AdminPedidosPage } from '../pages/administrador/AdminPedidosPage';
+import { roleHomeRoutes } from '../services/authService';
+import { getStoredSession } from '../services/session';
+import type { UserRole } from '../types/auth';
 
+type RequireAuthProps = {
+  allowedRoles: UserRole[];
+  children: ReactNode;
+};
+
+const RequireAuth = ({ allowedRoles, children }: RequireAuthProps) => {
+  const session = getStoredSession();
+
+  if (!session) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!allowedRoles.includes(session.user.role)) {
+    return <Navigate to={roleHomeRoutes[session.user.role]} replace />;
+  }
+
+  return children;
+};
 
 export default function AppRoutes() {
   return (
@@ -26,25 +45,22 @@ export default function AppRoutes() {
         <Route path="/registro" element={<RegisterPage />} />
         <Route path="/register" element={<RegisterPage />} />
 
-        <Route path="/cliente" element={<ClienteDashboard />}>
-          <Route index element={<Navigate to="inicio" replace />} />
-          <Route path="inicio" element={<ClienteHomePage />} />
+        <Route path="/cliente" element={<RequireAuth allowedRoles={['cliente']}><ClienteDashboard /></RequireAuth>}>
+          <Route index element={<Navigate to="cuenta" replace />} />
           <Route path="cuenta" element={<ClienteCuentaPage />} />
         </Route>
 
-        <Route path="/vendedor" element={<VendedorDashboard />}>
-          <Route index element={<Navigate to="inicio" replace />} />
-          <Route path="inicio" element={<VendedorHomePage />} />
+        <Route path="/vendedor" element={<RequireAuth allowedRoles={['vendedor']}><VendedorDashboard /></RequireAuth>}>
+          <Route index element={<Navigate to="pedidos" replace />} />
           <Route path="pedidos" element={<VendedorPedidosPage />} />
-          <Route path="atender-pedidos" element={<VendedorAtenderPedidosPage />} />
+          <Route path="estadisticas" element={<VendedorEstadisticasPage />} />
+          <Route path="inventario" element={<VendedorInventarioPage />} />
         </Route>
 
-        <Route path="/admin" element={<AdminDashboard />}>
-          <Route index element={<Navigate to="inicio" replace />} />
-          <Route path="inicio" element={<AdminHomePage />} />
+        <Route path="/admin" element={<RequireAuth allowedRoles={['admin']}><AdminDashboard /></RequireAuth>}>
+          <Route index element={<Navigate to="usuarios" replace />} />
           <Route path="usuarios" element={<AdminUsuariosPage />} />
           <Route path="catalogo" element={<AdminCatalogoPage />} />
-          <Route path="pedidos" element={<AdminPedidosPage />} />
         </Route>
 
         <Route path="/simulador" element={<SimulatorPage />} />
