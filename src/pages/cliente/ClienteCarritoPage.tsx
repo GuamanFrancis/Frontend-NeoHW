@@ -1,0 +1,560 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router';
+import {
+  ArrowLeft,
+  Trash2,
+  Heart,
+  Lock,
+  ShieldCheck,
+  ChevronDown,
+  ChevronUp,
+  Info,
+  ShoppingCart,
+  Plus,
+  Minus,
+  CheckCircle2,
+  AlertTriangle
+} from 'lucide-react';
+import { useCart } from '../../context/CartContext';
+import { createOrder } from '../../services/ordersService';
+import { Modal } from '../../components/ui/Modal';
+import { Button } from '../../components/ui/Button';
+import { FormInput } from '../../components/ui/FormInput';
+import { getStoredSession } from '../../services/session';
+export const ClienteCarritoPage = () => {
+  const navigate = useNavigate();
+  const {
+    cartItems,
+    removeFromCart,
+    updateQuantity,
+    clearCart,
+    subtotal,
+    taxes,
+    total,
+    itemCount,
+  } = useCart();
+  const [showSummaryDetails, setShowSummaryDetails] = useState(false);
+  const [wishlistedIds, setWishlistedIds] = useState<Record<string, boolean>>({});
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [street, setStreet] = useState('');
+  const [city, setCity] = useState('');
+  const [stateName, setStateName] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [country, setCountry] = useState('Ecuador');
+  const [loadingCheckout, setLoadingCheckout] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [orderSuccess, setOrderSuccess] = useState<{ orderId: string; totalAmount: number } | null>(null);
+  const toggleWishlist = (id: string) => {
+    setWishlistedIds((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+  const handleOpenCheckout = () => {
+    setCheckoutError(null);
+    setOrderSuccess(null);
+    const session = getStoredSession();
+    const userId = session?.user.id;
+    if (userId) {
+      try {
+        const savedAddress = JSON.parse(localStorage.getItem(`shipping_address_${userId}`) || '{}');
+        if (savedAddress && typeof savedAddress === 'object') {
+          if (savedAddress.street) setStreet(savedAddress.street);
+          if (savedAddress.city) setCity(savedAddress.city);
+          if (savedAddress.state) setStateName(savedAddress.state);
+          if (savedAddress.postalCode) setPostalCode(savedAddress.postalCode);
+          if (savedAddress.country) setCountry(savedAddress.country);
+        }
+      } catch (e) {
+        console.error('Error loading shipping address:', e);
+      }
+    }
+    setIsCheckoutOpen(true);
+  };
+  const handleCheckoutSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!street.trim() || !city.trim() || !stateName.trim() || !postalCode.trim()) {
+      setCheckoutError('Por favor complete todos los campos de dirección obligatorios.');
+      return;
+    }
+    setLoadingCheckout(true);
+    setCheckoutError(null);
+    try {
+      const payload = {
+        items: cartItems.map((item) => ({
+          productId: item.product.id,
+          quantity: item.quantity,
+        })),
+        shippingAddress: {
+          street: street.trim(),
+          city: city.trim(),
+          state: stateName.trim(),
+          postalCode: postalCode.trim(),
+          country: country.trim(),
+        },
+      };
+      const response = await createOrder(payload);
+      setOrderSuccess({
+        orderId: response.orderId,
+        totalAmount: response.totalAmount,
+      });
+      clearCart();
+    } catch (err: any) {
+      console.error(err);
+      const errMsg = err.response?.data?.message || 'Error al procesar el pedido. Intente nuevamente.';
+      setCheckoutError(Array.isArray(errMsg) ? errMsg.join(', ') : errMsg);
+    } finally {
+      setLoadingCheckout(false);
+    }
+  };
+  const statusColors = {
+    disponible: 'text-emerald-500',
+    'stock-bajo': 'text-amber-500',
+    agotado: 'text-rose-500',
+  };
+  const statusLabels = {
+    disponible: 'Disponible',
+    'stock-bajo': 'Stock bajo',
+    agotado: 'Agotado',
+  };
+  if (cartItems.length === 0) {
+    return (
+      <div className="mx-auto max-w-7xl pb-16 text-slate-900 dark:text-neutral-100">
+        <div className="mb-8 border-b border-slate-100 dark:border-neutral-900 pb-6">
+          <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white leading-none">
+            Gestionar carrito de compras
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-neutral-400 mt-2 font-medium">
+            Revisa los productos que agregaste, actualiza cantidades y continúa para finalizar tu compra.
+          </p>
+        </div>
+        <div className="flex h-96 flex-col items-center justify-between rounded-2xl border border-dashed border-slate-200 dark:border-neutral-800 bg-white/50 p-8 text-center dark:bg-neutral-900/10 max-w-2xl mx-auto py-16">
+          <ShoppingCart className="h-16 w-16 text-slate-300 dark:text-neutral-700" />
+          <div>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-4">Tu carrito está vacío</h3>
+            <p className="text-sm text-slate-400 dark:text-neutral-500 mt-2 max-w-md">
+              Aún no has agregado ningún componente a tu carrito. Explora nuestro catálogo de hardware para comenzar a armar tu PC.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/cliente/catalogo')}
+            className="flex items-center justify-center gap-2 rounded-lg bg-teal-500 hover:bg-teal-600 text-white font-bold px-6 py-3 transition shadow-sm mt-6 text-sm"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Explorar catálogo
+          </button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="mx-auto max-w-7xl pb-16 text-slate-900 dark:text-neutral-100">
+      <div className="mb-6 border-b border-slate-100 dark:border-neutral-900 pb-6">
+        <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white leading-none">
+          Gestionar carrito de compras
+        </h1>
+        <p className="text-sm text-slate-500 dark:text-neutral-400 mt-2 font-medium">
+          Revisa los productos que agregaste, actualiza cantidades y continúa para finalizar tu compra.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+        <div className="lg:col-span-8 space-y-6">
+          <div className="flex items-center gap-3 rounded-lg border border-teal-500/20 bg-teal-500/5 p-4 text-teal-700 dark:text-teal-400 text-xs font-semibold">
+            <Info className="h-5 w-5 shrink-0 text-teal-500" />
+            <span>Tu carrito permanecerá disponible mientras tu sesión esté activa.</span>
+          </div>
+          <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white dark:border-neutral-900 dark:bg-neutral-950/20 shadow-sm">
+            <table className="w-full border-collapse text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-100 dark:border-neutral-900 text-[10px] font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-wider">
+                  <th className="py-4 px-4">Producto</th>
+                  <th className="py-4 px-4 text-right">Precio unitario</th>
+                  <th className="py-4 px-4 text-center">Cantidad</th>
+                  <th className="py-4 px-4 text-center">Disponibilidad</th>
+                  <th className="py-4 px-4 text-right">Subtotal</th>
+                  <th className="py-4 px-4"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-150 dark:divide-neutral-900">
+                {cartItems.map(({ product, quantity }) => {
+                  const itemSubtotal = product.price * quantity;
+                  return (
+                    <tr key={product.id} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-colors">
+                      <td className="py-4 px-4 min-w-[200px]">
+                        <div className="flex items-center gap-3">
+                          <div className="h-16 w-16 shrink-0 flex items-center justify-center rounded-lg border border-slate-100 bg-slate-50 dark:border-neutral-900 dark:bg-neutral-900/50 p-1.5">
+                            <img
+                              src={product.imageUrl || 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?q=80&w=600&auto=format&fit=crop'}
+                              alt={product.name}
+                              className="max-h-full max-w-full object-contain"
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="font-extrabold text-slate-900 dark:text-white truncate max-w-[200px]" title={product.name}>
+                              {product.name}
+                            </h4>
+                            <div className="text-[10px] text-slate-400 dark:text-neutral-500 font-bold mt-0.5 uppercase tracking-wider">
+                              {product.category} • {product.brand}
+                            </div>
+                            {product.sku && (
+                              <div className="text-[10px] text-slate-400 dark:text-neutral-500 font-medium mt-1">
+                                SKU: {product.sku}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 text-right font-bold text-slate-800 dark:text-neutral-200 whitespace-nowrap">
+                        <div>${product.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        <div className="text-[9px] text-slate-400 dark:text-neutral-500 font-medium mt-0.5">MXN</div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex justify-center">
+                          <div className="flex items-center rounded-lg border border-slate-200 dark:border-neutral-850 overflow-hidden bg-slate-50 dark:bg-neutral-900 h-9 p-0.5">
+                            <button
+                              type="button"
+                              onClick={() => updateQuantity(product.id, quantity - 1)}
+                              disabled={quantity <= 1}
+                              className="flex h-8 w-8 items-center justify-center text-slate-500 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                              aria-label="Disminuir cantidad"
+                            >
+                              <Minus className="h-3.5 w-3.5" />
+                            </button>
+                            <span className="w-9 text-center font-extrabold text-xs text-slate-800 dark:text-neutral-100">
+                              {quantity}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => updateQuantity(product.id, quantity + 1)}
+                              disabled={quantity >= product.stock}
+                              className="flex h-8 w-8 items-center justify-center text-slate-500 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                              aria-label="Aumentar cantidad"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 text-center whitespace-nowrap">
+                        <div className="flex flex-col items-center justify-center gap-0.5">
+                          <div className="flex items-center gap-1.5 font-bold">
+                            <span className={`h-1.5 w-1.5 rounded-full fill-current bg-current ${statusColors[product.status]}`} />
+                            <span className={statusColors[product.status]}>{statusLabels[product.status]}</span>
+                          </div>
+                          <div className="text-[10px] text-slate-400 dark:text-neutral-500 font-medium">
+                            Stock: {product.stock}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 text-right font-black text-slate-900 dark:text-white whitespace-nowrap">
+                        <div>${itemSubtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        <div className="text-[9px] text-slate-400 dark:text-neutral-500 font-medium mt-0.5">MXN</div>
+                      </td>
+                      <td className="py-4 px-4 min-w-[80px]">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => toggleWishlist(product.id)}
+                            className={`flex h-8 w-8 items-center justify-center rounded-lg border border-transparent hover:bg-slate-50 dark:hover:bg-neutral-900 transition ${
+                              wishlistedIds[product.id]
+                                ? 'text-rose-500'
+                                : 'text-slate-400 hover:text-slate-600 dark:text-neutral-500'
+                            }`}
+                            aria-label="Añadir a deseos"
+                          >
+                            <Heart className={`h-4 w-4 ${wishlistedIds[product.id] ? 'fill-current' : ''}`} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeFromCart(product.id)}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-slate-400 hover:text-rose-500 hover:bg-rose-50/50 dark:text-neutral-500 dark:hover:bg-rose-950/20 transition"
+                            aria-label="Quitar del carrito"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+            <button
+              type="button"
+              onClick={() => navigate('/cliente/catalogo')}
+              className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-neutral-850 px-5 py-2.5 text-xs font-bold hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-neutral-900 dark:text-neutral-200 transition"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Seguir comprando
+            </button>
+            <button
+              type="button"
+              onClick={clearCart}
+              className="flex items-center justify-center gap-2 rounded-lg border border-rose-500/30 text-rose-500 dark:border-rose-500/20 dark:hover:bg-rose-950/10 px-5 py-2.5 text-xs font-bold hover:bg-rose-50 transition"
+            >
+              <Trash2 className="h-4 w-4" />
+              Vaciar carrito
+            </button>
+          </div>
+        </div>
+        <div className="lg:col-span-4 space-y-6">
+          <div className="rounded-xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-neutral-900 dark:bg-neutral-950/20">
+            <h3 className="flex items-center justify-between font-black text-slate-900 dark:text-white border-b border-slate-100 dark:border-neutral-900 pb-4">
+              <span>Resumen del pedido</span>
+              <span className="text-xs font-bold text-slate-400 dark:text-neutral-500">
+                {itemCount} {itemCount === 1 ? 'producto' : 'productos'}
+              </span>
+            </h3>
+            <div className="space-y-3.5 py-4 border-b border-slate-100 dark:border-neutral-900 text-xs font-semibold text-slate-500 dark:text-neutral-400">
+              <div className="flex justify-between">
+                <span>Subtotal ({itemCount} {itemCount === 1 ? 'producto' : 'productos'})</span>
+                <span className="text-slate-900 dark:text-neutral-200">
+                  ${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>Envío estándar</span>
+                <span className="flex items-center gap-1.5 text-emerald-500 font-bold">
+                  $0.00
+                  <span className="bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded text-[10px] uppercase font-black">
+                    Gratis
+                  </span>
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Impuestos (IVA 16%)</span>
+                <span className="text-slate-900 dark:text-neutral-200">
+                  ${taxes.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
+            <div className="py-4 flex justify-between items-baseline">
+              <span className="text-sm font-bold text-slate-800 dark:text-neutral-300">Total</span>
+              <div className="text-right">
+                <span className="text-2xl font-black text-teal-500 dark:text-teal-400 block leading-none">
+                  ${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-neutral-500 mt-1 inline-block">
+                  MXN
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleOpenCheckout}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-500 hover:bg-teal-600 text-white font-extrabold px-6 py-3.5 shadow transition mt-2 text-sm"
+            >
+              <Lock className="h-4 w-4" />
+              Proceder al checkout
+              <span className="font-light ml-1">→</span>
+            </button>
+            <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-400 dark:text-neutral-500 font-bold mt-4">
+              <Lock className="h-3 w-3" />
+              <span>Pago 100% seguro y cifrado</span>
+            </div>
+          </div>
+          <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-neutral-900 dark:bg-neutral-950/20 text-xs font-semibold text-slate-500 dark:text-neutral-400 flex items-start gap-3">
+            <ShieldCheck className="h-5 w-5 text-teal-500 shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-extrabold text-slate-900 dark:text-white mb-1">
+                Validación de stock
+              </h4>
+              <p className="text-[11px] leading-relaxed">
+                Antes de confirmar tu compra, validaremos la disponibilidad actual de todos los productos en tu carrito.
+              </p>
+            </div>
+          </div>
+          <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-neutral-900 dark:bg-neutral-950/20">
+            <button
+              type="button"
+              onClick={() => setShowSummaryDetails((prev) => !prev)}
+              className="flex w-full items-center justify-between font-bold text-slate-900 dark:text-white text-xs outline-none"
+            >
+              <span className="uppercase tracking-wider">Resumen antes de confirmar compra</span>
+              {showSummaryDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
+            {(!showSummaryDetails || true) && (
+              <div className="mt-4 space-y-3 pt-3 border-t border-slate-100 dark:border-neutral-900">
+                {cartItems.slice(0, showSummaryDetails ? undefined : 5).map(({ product, quantity }) => (
+                  <div key={product.id} className="flex items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="h-8 w-8 shrink-0 flex items-center justify-center rounded border border-slate-100 bg-slate-50 dark:border-neutral-900 p-0.5">
+                        <img
+                          src={product.imageUrl || 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?q=80&w=600&auto=format&fit=crop'}
+                          alt={product.name}
+                          className="max-h-full max-w-full object-contain"
+                        />
+                      </div>
+                      <span className="font-bold text-slate-700 dark:text-neutral-300 truncate max-w-[150px]">
+                        {product.name}
+                      </span>
+                    </div>
+                    <span className="font-extrabold text-slate-400 dark:text-neutral-500 shrink-0">
+                      x{quantity}
+                    </span>
+                  </div>
+                ))}
+                {cartItems.length > 5 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowSummaryDetails((prev) => !prev)}
+                    className="flex items-center gap-1 text-[11px] font-bold text-teal-500 hover:text-teal-600 dark:text-teal-400 dark:hover:text-teal-500 mt-2 hover:underline transition"
+                  >
+                    <span>
+                      {showSummaryDetails
+                        ? 'Ver menos detalles'
+                        : `Ver todos los detalles (${cartItems.length})`}
+                    </span>
+                    {showSummaryDetails ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="mt-8 text-center text-[10px] font-semibold text-slate-400 dark:text-neutral-600 uppercase tracking-wider">
+        © Los precios son en MXN e incluyen IVA cuando aplica.
+      </div>
+      <Modal
+        open={isCheckoutOpen}
+        title={orderSuccess ? "¡Pedido Realizado!" : "Confirmación de Pedido"}
+        onClose={() => {
+          setIsCheckoutOpen(false);
+          if (orderSuccess) {
+            navigate('/cliente/catalogo');
+          }
+        }}
+      >
+        {orderSuccess ? (
+          <div className="flex flex-col items-center text-center p-4">
+            <CheckCircle2 className="h-16 w-16 text-emerald-500 mb-4 animate-bounce" />
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+              ¡Pedido Creado Exitosamente!
+            </h3>
+            <p className="text-sm text-slate-500 dark:text-neutral-400 mt-2 max-w-sm">
+              Tu pedido ha sido registrado en el sistema. Puedes realizar el pago correspondiente a través de tu panel de órdenes.
+            </p>
+            <div className="mt-6 rounded-xl bg-slate-50 p-4 w-full border border-slate-100 dark:bg-neutral-900 dark:border-neutral-800 text-left text-xs font-semibold text-slate-600 dark:text-neutral-400 space-y-2">
+              <div className="flex justify-between">
+                <span>Número de Orden:</span>
+                <span className="font-extrabold text-slate-900 dark:text-white select-all">
+                  {orderSuccess.orderId}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Total a Pagar:</span>
+                <span className="font-extrabold text-teal-600 dark:text-teal-400">
+                  ${orderSuccess.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} MXN
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Estado:</span>
+                <span className="font-black bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded text-[10px] uppercase">
+                  Pendiente de Pago
+                </span>
+              </div>
+            </div>
+            <div className="mt-8 w-full">
+              <Button
+                type="button"
+                fullWidth
+                onClick={() => {
+                  setIsCheckoutOpen(false);
+                  navigate('/cliente/catalogo');
+                }}
+              >
+                Volver al catálogo
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleCheckoutSubmit} className="space-y-4">
+            <p className="text-xs text-slate-500 dark:text-neutral-400">
+              Ingresa la dirección de envío para crear tu orden de compra en el sistema.
+            </p>
+            {checkoutError && (
+              <div className="flex items-start gap-2.5 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-red-500 text-xs font-semibold">
+                <AlertTriangle className="h-4.5 w-4.5 shrink-0 text-red-500 mt-0.5" />
+                <span>{checkoutError}</span>
+              </div>
+            )}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <FormInput
+                  label="Calle y Número"
+                  placeholder="Ej: Av. de las Américas 123, Apto 4B"
+                  value={street}
+                  onChange={(e) => setStreet(e.target.value)}
+                  disabled={loadingCheckout}
+                  required
+                />
+              </div>
+              <div>
+                <FormInput
+                  label="Ciudad"
+                  placeholder="Ej: CDMX / Monterrey"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  disabled={loadingCheckout}
+                  required
+                />
+              </div>
+              <div>
+                <FormInput
+                  label="Estado / Provincia"
+                  placeholder="Ej: Nuevo León"
+                  value={stateName}
+                  onChange={(e) => setStateName(e.target.value)}
+                  disabled={loadingCheckout}
+                  required
+                />
+              </div>
+              <div>
+                <FormInput
+                  label="Código Postal"
+                  placeholder="Ej: 64000"
+                  value={postalCode}
+                  onChange={(e) => setPostalCode(e.target.value)}
+                  disabled={loadingCheckout}
+                  required
+                />
+              </div>
+              <div>
+                <FormInput
+                  label="País"
+                  placeholder="Ej: Ecuador"
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  disabled={loadingCheckout}
+                  required
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-neutral-900">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setIsCheckoutOpen(false)}
+                disabled={loadingCheckout}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={loadingCheckout}
+                className="bg-teal-500 hover:bg-teal-600 text-white min-w-[140px]"
+              >
+                {loadingCheckout ? (
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                ) : (
+                  "Confirmar Pedido"
+                )}
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
+    </div>
+  );
+};

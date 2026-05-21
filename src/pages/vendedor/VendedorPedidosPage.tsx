@@ -1,8 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Eye, Filter, Pencil, Search, Truck } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { PageCard } from '../../components/ui/PageCard';
+import { Modal } from '../../components/ui/Modal';
 import { sellerOrdersData, type SellerOrderStatus } from './sellerOrdersData';
+import { getOrders, updateOrderStatus } from '../../services/ordersService';
 
 type DateFilter = 'ultimos-3' | 'ultimos-7' | 'ultimos-30' | 'todos';
 
@@ -12,6 +14,22 @@ const statusStyles: Record<SellerOrderStatus, string> = {
   Enviado: 'bg-violet-400/10 text-violet-700 ring-violet-500/20 dark:bg-violet-500/15 dark:text-violet-200',
   Entregado: 'bg-cyan-400/10 text-cyan-700 ring-cyan-500/20 dark:bg-cyan-500/15 dark:text-cyan-200',
   Cancelado: 'bg-rose-400/10 text-rose-700 ring-rose-500/20 dark:bg-rose-500/15 dark:text-rose-200',
+};
+
+const uiStatusToBackend: Record<SellerOrderStatus, string> = {
+  Pendiente: 'PENDING_PAYMENT',
+  'En proceso': 'PROCESSING',
+  Enviado: 'SHIPPED',
+  Entregado: 'DELIVERED',
+  Cancelado: 'CANCELLED',
+};
+
+const backendStatusToUi: Record<string, SellerOrderStatus> = {
+  PENDING_PAYMENT: 'Pendiente',
+  PROCESSING: 'En proceso',
+  SHIPPED: 'Enviado',
+  DELIVERED: 'Entregado',
+  CANCELLED: 'Cancelado',
 };
 
 const actionButtonClass =
@@ -51,16 +69,124 @@ const dateFilterDays: Record<Exclude<DateFilter, 'todos'>, number> = {
 };
 
 export const VendedorPedidosPage = () => {
+  const [orders, setOrders] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<SellerOrderStatus | 'todos'>('todos');
   const [dateFilter, setDateFilter] = useState<DateFilter>('ultimos-30');
   const [pageSize, setPageSize] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [modalMode, setModalMode] = useState<'view' | 'edit' | null>(null);
+  const [editStatus, setEditStatus] = useState<SellerOrderStatus>('Pendiente');
+
+  const loadOrders = async () => {
+    try {
+      setIsLoading(true);
+      const res = await getOrders();
+      const mapped = res.data.map((order) => {
+        let itemsCount = 0;
+        if (order.items && Array.isArray(order.items)) {
+          itemsCount = order.items.reduce((sum, item) => sum + Number(item.quantity), 0);
+        }
+
+        let clientName = `Usuario #${order.userId.slice(0, 8)}`;
+        let clientEmail = 'sin-correo@neohw.com';
+        let addressStr = 'No especificada';
+
+        if (order.shippingAddress) {
+          try {
+            const addr = typeof order.shippingAddress === 'string'
+              ? JSON.parse(order.shippingAddress)
+              : order.shippingAddress;
+            if (addr && typeof addr === 'object') {
+              const street = addr.street || addr.direccion || '';
+              const city = addr.city || addr.ciudad || '';
+              const state = addr.state || addr.provincia || '';
+              const country = addr.country || addr.pais || '';
+              addressStr = [street, city, state, country].filter(Boolean).join(', ') || 'No especificada';
+              if (addr.email) clientEmail = addr.email;
+              if (addr.fullName || addr.name) clientName = addr.fullName || addr.name;
+            }
+          } catch {
+            addressStr = String(order.shippingAddress);
+          }
+        }
+
+        return {
+          id: order.id,
+          itemsCount,
+          clientName,
+          clientEmail,
+          createdAt: order.createdAt,
+          total: Number(order.totalAmount),
+          status: backendStatusToUi[order.status] || 'Pendiente',
+          addressStr,
+          items: order.items || [],
+        };
+      });
+      setOrders(mapped);
+    } catch {
+      setOrders(sellerOrdersData);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadOrders();
+  }, []);
+
+  const handleDispatch = async (orderId: string) => {
+    try {
+      const isMock = orderId.startsWith('#NHW-');
+      if (isMock) {
+        setOrders((current) =>
+          current.map((o) => (o.id === orderId ? { ...o, status: 'Enviado' } : o))
+        );
+      } else {
+        await updateOrderStatus(orderId, 'SHIPPED');
+        await loadOrders();
+      }
+    } catch {
+      alert('No se pudo despachar el pedido. Revisa permisos o conexion.');
+    }
+  };
+
+  const handleUpdateStatus = async (orderId: string, newStatus: SellerOrderStatus) => {
+    try {
+      const isMock = orderId.startsWith('#NHW-');
+      if (isMock) {
+        setOrders((current) =>
+          current.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+        );
+      } else {
+        const backendStatus = uiStatusToBackend[newStatus];
+        await updateOrderStatus(orderId, backendStatus);
+        await loadOrders();
+      }
+      setModalMode(null);
+      setSelectedOrder(null);
+    } catch {
+      alert('No se pudo actualizar el estado del pedido.');
+    }
+  };
+
+  const openViewModal = (order: any) => {
+    setSelectedOrder(order);
+    setModalMode('view');
+  };
+
+  const openEditModal = (order: any) => {
+    setSelectedOrder(order);
+    setEditStatus(order.status);
+    setModalMode('edit');
+  };
 
   const filteredOrders = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
 
-    return sellerOrdersData.filter((order) => {
+    return orders.filter((order) => {
       const matchesSearch =
         !normalizedSearch ||
         order.id.toLowerCase().includes(normalizedSearch) ||
@@ -80,7 +206,7 @@ export const VendedorPedidosPage = () => {
 
       return matchesSearch && matchesStatus && matchesDate;
     });
-  }, [dateFilter, search, statusFilter]);
+  }, [orders, dateFilter, search, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
   const pageOrders = filteredOrders.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -176,10 +302,23 @@ export const VendedorPedidosPage = () => {
                         <p className="mt-0.5 text-xs text-slate-500 dark:text-neutral-400">
                           {order.itemsCount} {order.itemsCount === 1 ? 'producto' : 'productos'}
                         </p>
+                        {order.items && order.items.length > 0 && (
+                          <div className="mt-1.5 space-y-0.5 max-w-xs">
+                            {order.items.map((item: any, idx: number) => (
+                              <p key={item.id || idx} className="text-[11px] font-semibold text-teal-600 dark:text-teal-400 leading-tight">
+                                • {item.product?.name || `Componente ID: ${item.productId}`} <span className="text-slate-400 dark:text-neutral-500 font-bold">x{item.quantity}</span>
+                              </p>
+                            ))}
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <p className="font-medium text-slate-800 dark:text-neutral-200">{order.clientName}</p>
                         <p className="mt-0.5 text-xs text-slate-500 dark:text-neutral-400">{order.clientEmail}</p>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-neutral-400 leading-relaxed max-w-[280px]">
+                          <span className="font-semibold text-slate-700 dark:text-neutral-300">Dirección: </span>
+                          {order.addressStr}
+                        </p>
                       </td>
                       <td className="px-4 py-3">
                         <p className="font-medium text-slate-700 dark:text-neutral-300">{formattedDate.day}</p>
@@ -187,19 +326,35 @@ export const VendedorPedidosPage = () => {
                       </td>
                       <td className="px-4 py-3 font-semibold text-teal-700 dark:text-teal-300">{formatCurrency(order.total)}</td>
                       <td className="px-4 py-3">
-                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${statusStyles[order.status]}`}>
+                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${statusStyles[order.status as SellerOrderStatus]}`}>
                           {order.status}
                         </span>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-2">
-                          <button type="button" className={actionButtonClass} aria-label={`Ver ${order.id}`}>
+                          <button
+                            type="button"
+                            className={actionButtonClass}
+                            onClick={() => openViewModal(order)}
+                            aria-label={`Ver ${order.id}`}
+                          >
                             <Eye className="h-4 w-4" />
                           </button>
-                          <button type="button" className={actionButtonClass} aria-label={`Editar ${order.id}`}>
+                          <button
+                            type="button"
+                            className={actionButtonClass}
+                            onClick={() => openEditModal(order)}
+                            aria-label={`Editar ${order.id}`}
+                          >
                             <Pencil className="h-4 w-4" />
                           </button>
-                          <button type="button" className={actionButtonClass} aria-label={`Despachar ${order.id}`}>
+                          <button
+                            type="button"
+                            className={actionButtonClass}
+                            onClick={() => void handleDispatch(order.id)}
+                            disabled={order.status === 'Enviado' || order.status === 'Entregado' || order.status === 'Cancelado'}
+                            aria-label={`Despachar ${order.id}`}
+                          >
                             <Truck className="h-4 w-4" />
                           </button>
                         </div>
@@ -208,7 +363,15 @@ export const VendedorPedidosPage = () => {
                   );
                 })}
 
-                {pageOrders.length === 0 && (
+                {isLoading && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-500 dark:text-neutral-400">
+                      Cargando pedidos...
+                    </td>
+                  </tr>
+                )}
+
+                {!isLoading && pageOrders.length === 0 && (
                   <tr>
                     <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-500 dark:text-neutral-400">
                       No se encontraron pedidos con los filtros actuales.
@@ -276,6 +439,135 @@ export const VendedorPedidosPage = () => {
           </div>
         </div>
       </div>
+
+      <Modal
+        open={modalMode === 'view' && Boolean(selectedOrder)}
+        title="Detalles del Pedido"
+        text="Detalle completo de los componentes, total y dirección de envío."
+        onClose={() => setModalMode(null)}
+        footer={
+          <Button type="button" onClick={() => setModalMode(null)}>
+            Cerrar
+          </Button>
+        }
+      >
+        {selectedOrder && (
+          <div className="space-y-4 text-sm">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <p className="text-xs font-semibold text-slate-400 dark:text-neutral-500 uppercase tracking-wide">ID de Pedido</p>
+                <p className="font-bold text-slate-900 dark:text-white mt-0.5">{selectedOrder.id}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-400 dark:text-neutral-500 uppercase tracking-wide">Estado</p>
+                <span className={`inline-flex rounded-full px-2.5 py-0.5 mt-1 text-xs font-bold ring-1 ${statusStyles[selectedOrder.status as SellerOrderStatus]}`}>
+                  {selectedOrder.status}
+                </span>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-400 dark:text-neutral-500 uppercase tracking-wide">Fecha de Creación</p>
+                <p className="text-slate-700 dark:text-neutral-300 mt-0.5">
+                  {formatOrderDate(selectedOrder.createdAt).day} a las {formatOrderDate(selectedOrder.createdAt).time}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-400 dark:text-neutral-500 uppercase tracking-wide">Total del Pedido</p>
+                <p className="font-semibold text-teal-600 dark:text-teal-400 mt-0.5">{formatCurrency(selectedOrder.total)}</p>
+              </div>
+            </div>
+
+            <div className="border-t border-slate-100 dark:border-neutral-800 pt-3">
+              <p className="text-xs font-semibold text-slate-400 dark:text-neutral-500 uppercase tracking-wide">Información del Cliente</p>
+              <p className="font-medium text-slate-900 dark:text-white mt-1">{selectedOrder.clientName}</p>
+              <p className="text-slate-500 dark:text-neutral-400 mt-0.5 text-xs">{selectedOrder.clientEmail}</p>
+            </div>
+
+            <div className="border-t border-slate-100 dark:border-neutral-800 pt-3">
+              <p className="text-xs font-semibold text-slate-400 dark:text-neutral-500 uppercase tracking-wide">Dirección de Envío</p>
+              <p className="text-slate-700 dark:text-neutral-300 mt-1">{selectedOrder.addressStr || 'No provista'}</p>
+            </div>
+
+            {selectedOrder.items && selectedOrder.items.length > 0 && (
+              <div className="border-t border-slate-100 dark:border-neutral-800 pt-3">
+                <p className="text-xs font-semibold text-slate-400 dark:text-neutral-500 uppercase tracking-wide mb-2">Componentes Comprados</p>
+                <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-neutral-800">
+                  <table className="w-full min-w-full text-left text-xs">
+                    <thead className="bg-slate-50 text-slate-500 dark:bg-white/[0.02] dark:text-neutral-400">
+                      <tr>
+                        <th className="px-3 py-2 font-semibold">Producto</th>
+                        <th className="px-3 py-2 text-center font-semibold">Cant.</th>
+                        <th className="px-3 py-2 text-right font-semibold">Precio Unit.</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-neutral-800">
+                      {selectedOrder.items.map((item: any, idx: number) => (
+                        <tr key={item.id || idx}>
+                          <td className="px-3 py-2 font-medium text-slate-800 dark:text-neutral-200">
+                            {item.product?.name || `Componente ID: ${item.productId}`}
+                          </td>
+                          <td className="px-3 py-2 text-center text-slate-600 dark:text-neutral-300">
+                            {item.quantity}
+                          </td>
+                          <td className="px-3 py-2 text-right text-slate-600 dark:text-neutral-300">
+                            {formatCurrency(Number(item.priceAtTime))}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={modalMode === 'edit' && Boolean(selectedOrder)}
+        title="Modificar Estado del Pedido"
+        text="Selecciona el nuevo estado para este pedido en el flujo de despacho."
+        onClose={() => setModalMode(null)}
+        footer={
+          <>
+            <Button type="button" variant="ghost" onClick={() => setModalMode(null)}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void handleUpdateStatus(selectedOrder.id, editStatus)}
+            >
+              Actualizar Estado
+            </Button>
+          </>
+        }
+      >
+        {selectedOrder && (
+          <div className="space-y-4">
+            <div className="rounded-lg bg-slate-50 p-3 dark:bg-white/[0.02] text-sm">
+              <p className="text-xs text-slate-500 dark:text-neutral-400">Pedido actual</p>
+              <p className="font-semibold text-slate-900 dark:text-white mt-0.5">{selectedOrder.id}</p>
+              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-2">Cliente</p>
+              <p className="font-medium text-slate-800 dark:text-neutral-300 mt-0.5">{selectedOrder.clientName}</p>
+            </div>
+
+            <label className="block space-y-1">
+              <span className="text-sm font-semibold text-slate-700 dark:text-neutral-300">Nuevo Estado</span>
+              <select
+                className={`${fieldClass} w-full`}
+                value={editStatus}
+                onChange={(event) => setEditStatus(event.target.value as SellerOrderStatus)}
+              >
+                <option value="Pendiente">Pendiente</option>
+                <option value="En proceso">En proceso</option>
+                <option value="Enviado">Enviado</option>
+                <option value="Entregado">Entregado</option>
+                <option value="Cancelado">Cancelado</option>
+              </select>
+            </label>
+          </div>
+        )}
+      </Modal>
     </PageCard>
   );
 };
+

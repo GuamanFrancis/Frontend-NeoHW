@@ -93,8 +93,13 @@ export const VendedorInventarioPage = () => {
 
       setItems((current) => current.map((item) => (item.id === selectedItem.id ? updated : item)));
       closeEdit();
-    } catch {
-      setFormError('No se pudo actualizar el inventario del componente.');
+    } catch (err: any) {
+      const errMsg = err.response?.data?.message;
+      if (err.response?.status === 403 || (typeof errMsg === 'string' && errMsg.toLowerCase().includes('permission'))) {
+        setFormError('No tienes permisos para modificar este componente. Los vendedores solo pueden actualizar el inventario de los productos creados por ellos mismos.');
+      } else {
+        setFormError(Array.isArray(errMsg) ? errMsg.join(', ') : (errMsg || 'No se pudo actualizar el inventario del componente.'));
+      }
       setIsSaving(false);
     }
   };

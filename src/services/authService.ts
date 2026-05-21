@@ -51,7 +51,7 @@ export const logoutUser = async () => {
   try {
     await api.post('/auth/logout');
   } catch {
-    // Local cleanup still matters if the refresh cookie has expired.
+    
   } finally {
     clearStoredSession();
   }

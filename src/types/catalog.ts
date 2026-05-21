@@ -1,6 +1,6 @@
 export type CatalogStockStatus = 'disponible' | 'stock-bajo' | 'agotado';
 
-/* ── Category (from GET /categories) ── */
+
 
 export type BackendCategory = {
   id: string;
@@ -14,7 +14,7 @@ export type BackendCategory = {
   children?: BackendCategory[];
 };
 
-/* ── Product attribute (nested in product response) ── */
+
 
 export type BackendProductAttribute = {
   name: string;
@@ -22,7 +22,7 @@ export type BackendProductAttribute = {
   unit: string | null;
 };
 
-/* ── Product (from GET /products) ── */
+
 
 export type BackendProduct = {
   id: string;
@@ -48,22 +48,26 @@ export type BackendProduct = {
   attributes?: BackendProductAttribute[];
 };
 
-/* ── Normalized catalog item used in UI ── */
+
 
 export type CatalogComponent = {
   id: string;
   name: string;
   description: string;
   category: string;
+  categorySlug: string;
   categoryId: string;
   brand: string;
   price: number;
   stock: number;
   status: CatalogStockStatus;
   imageUrl: string | null;
+  model: string | null;
+  sku: string | null;
+  attributes: BackendProductAttribute[];
 };
 
-/* ── Query params for listing ── */
+
 
 export type CatalogQueryParams = {
   page?: number;
@@ -77,7 +81,7 @@ export type CatalogQueryParams = {
   order?: 'asc' | 'desc';
 };
 
-/* ── Paginated response from GET /products ── */
+
 
 export type CatalogListResponse = {
   items: CatalogComponent[];
@@ -86,7 +90,7 @@ export type CatalogListResponse = {
   limit: number;
 };
 
-/* ── Payload for create / update ── */
+
 
 export type CatalogSavePayload = {
   name: string;

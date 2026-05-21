@@ -8,8 +8,6 @@ import type {
   CatalogStockStatus,
 } from '../types/catalog';
 
-/* ── Response shapes from backend ── */
-
 type ProductsListResponse = {
   data: BackendProduct[];
   meta: {
@@ -19,34 +17,32 @@ type ProductsListResponse = {
     totalPages: number;
   };
 };
-
 type SingleProductResponse = {
   product: BackendProduct;
   message?: string;
 };
-
-/* ── Helpers ── */
 
 const stockToStatus = (stock: number): CatalogStockStatus => {
   if (stock <= 0) return 'agotado';
   if (stock <= 10) return 'stock-bajo';
   return 'disponible';
 };
-
 const normalizeProduct = (product: BackendProduct): CatalogComponent => ({
   id: product.id,
   name: product.name,
   description: product.description || 'Sin descripcion',
   category: product.category?.name ?? 'Sin categoria',
+  categorySlug: product.category?.slug ?? 'sin-categoria',
   categoryId: product.categoryId,
   brand: product.brand || 'Sin marca',
   price: product.price,
   stock: product.stock,
   status: stockToStatus(product.stock),
   imageUrl: product.imageUrl,
+  model: product.model || null,
+  sku: product.sku || null,
+  attributes: product.attributes || [],
 });
-
-/* ── Public API ── */
 
 export const getCatalogComponents = async (
   query: CatalogQueryParams = {},
@@ -64,7 +60,6 @@ export const getCatalogComponents = async (
       order: query.order || undefined,
     },
   });
-
   return {
     items: data.data.map(normalizeProduct),
     total: data.meta.total,
@@ -72,7 +67,6 @@ export const getCatalogComponents = async (
     limit: data.meta.limit,
   };
 };
-
 export const createCatalogComponent = async (
   payload: CatalogSavePayload,
 ): Promise<CatalogComponent> => {
@@ -87,16 +81,13 @@ export const createCatalogComponent = async (
     model: payload.model?.trim() || undefined,
     sku: payload.sku?.trim() || undefined,
   });
-
   return normalizeProduct(data.product);
 };
-
 export const updateCatalogComponent = async (
   id: string,
   payload: Partial<CatalogSavePayload>,
 ): Promise<CatalogComponent> => {
   const body: Record<string, unknown> = {};
-
   if (payload.name !== undefined) body.name = payload.name.trim();
   if (payload.description !== undefined) body.description = payload.description.trim() || undefined;
   if (payload.categoryId !== undefined) body.categoryId = payload.categoryId;
@@ -106,12 +97,9 @@ export const updateCatalogComponent = async (
   if (payload.imageUrl !== undefined) body.imageUrl = payload.imageUrl.trim() || undefined;
   if (payload.model !== undefined) body.model = payload.model.trim() || undefined;
   if (payload.sku !== undefined) body.sku = payload.sku.trim() || undefined;
-
   const { data } = await api.patch<SingleProductResponse>(`/products/${id}`, body);
-
   return normalizeProduct(data.product);
 };
-
 export const deleteCatalogComponent = async (id: string): Promise<void> => {
   await api.delete(`/products/${id}`);
 };

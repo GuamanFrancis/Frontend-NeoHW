@@ -1,7 +1,7 @@
 import type { AuthResponse, BackendAuthResponse, BackendRole, BackendUser, UserRole } from '../types/auth';
 
 export const roleHomeRoutes: Record<UserRole, string> = {
-  cliente: '/cliente/cuenta',
+  cliente: '/cliente/catalogo',
   vendedor: '/vendedor/pedidos',
   admin: '/admin/usuarios',
 };

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { normalizeAuthResponse } from './authMapper';
-import { getStoredAccessToken, updateStoredSession } from './session';
+import { clearStoredSession, getStoredAccessToken, updateStoredSession } from './session';
 import type { BackendAuthResponse } from '../types/auth';
 
 export const api = axios.create({
@@ -44,6 +44,16 @@ api.interceptors.response.use(
 
       return api(originalRequest);
     } catch (refreshError) {
+      clearStoredSession();
+      if (
+        window.location.pathname.startsWith('/cliente') ||
+        window.location.pathname.startsWith('/vendedor') ||
+        window.location.pathname.startsWith('/admin')
+      ) {
+        window.location.href = '/login';
+      } else {
+        window.location.reload();
+      }
       return Promise.reject(refreshError);
     }
   },

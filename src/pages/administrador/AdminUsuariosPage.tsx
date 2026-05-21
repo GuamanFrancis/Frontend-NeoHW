@@ -3,7 +3,6 @@ import {
   Eye,
   Filter,
   Pencil,
-  Plus,
   Power,
   Search,
   UsersRound,
@@ -14,7 +13,7 @@ import { FormSelect } from '../../components/ui/FormSelect';
 import { Modal } from '../../components/ui/Modal';
 import { PageCard } from '../../components/ui/PageCard';
 import type { BackendRole, BackendUser } from '../../types/auth';
-import { changeUserRole, deactivateUser, getUsers, updateUser } from '../../services/usersService';
+import { changeUserRole, deactivateUser, getUsers } from '../../services/usersService';
 
 type UserRole = 'Super administrador' | 'Administrador' | 'Vendedor' | 'Cliente';
 type UserStatus = 'Activo' | 'Inactivo';
@@ -114,17 +113,6 @@ const mapBackendUser = (user: BackendUser): AdminUser => ({
   status: user.isActive ? 'Activo' : 'Inactivo',
   lastAccess: 'Registrado',
 });
-
-const splitName = (name: string) => {
-  const parts = name.trim().split(/\s+/);
-  const firstName = parts.shift() ?? '';
-  const lastName = parts.join(' ');
-
-  return {
-    firstName,
-    lastName: lastName || undefined,
-  };
-};
 
 export const AdminUsuariosPage = () => {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -234,27 +222,24 @@ export const AdminUsuariosPage = () => {
   };
 
   const saveUser = async () => {
-    if (!formValues.name.trim() || !formValues.email.trim() || !selectedUser) return;
+    if (!selectedUser) return;
 
     try {
       setIsSaving(true);
       setModalError('');
 
-      const profile = splitName(formValues.name);
-      let updatedUser = await updateUser(selectedUser.id, {
-        ...profile,
-        phone: formValues.phone.trim() || undefined,
-      });
-
       const requestedRole = backendRolesByLabel[formValues.role];
+      let updatedUser = null;
 
       if (requestedRole !== selectedUser.backendRole) {
         updatedUser = await changeUserRole(selectedUser.id, requestedRole);
       }
 
-      setUsers((currentUsers) =>
-        currentUsers.map((user) => (user.id === selectedUser.id ? mapBackendUser(updatedUser) : user)),
-      );
+      if (updatedUser) {
+        setUsers((currentUsers) =>
+          currentUsers.map((user) => (user.id === selectedUser.id ? mapBackendUser(updatedUser) : user)),
+        );
+      }
       closeModal();
     } catch {
       setModalError('No se pudo guardar el usuario. Revisa permisos y datos ingresados.');
@@ -513,12 +498,14 @@ export const AdminUsuariosPage = () => {
             value={formValues.name}
             onChange={(event) => setFormValues({ ...formValues, name: event.target.value })}
             placeholder="Nombre completo"
+            disabled
           />
           <FormInput
             label="Telefono"
             value={formValues.phone}
             onChange={(event) => setFormValues({ ...formValues, phone: event.target.value })}
             placeholder="Ej: +593 99 999 9999"
+            disabled
           />
           <div className="sm:col-span-2">
             <FormInput

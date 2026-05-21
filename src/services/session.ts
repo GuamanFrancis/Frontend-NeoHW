@@ -8,7 +8,21 @@ export const getStoredSession = (): AuthResponse | null => {
   if (!rawSession) return null;
 
   try {
-    return JSON.parse(rawSession) as AuthResponse;
+    const parsed = JSON.parse(rawSession);
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      typeof parsed.accessToken === 'string' &&
+      parsed.user &&
+      typeof parsed.user === 'object' &&
+      typeof parsed.user.role === 'string'
+    ) {
+      return parsed as AuthResponse;
+    }
+    
+    localStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(SESSION_KEY);
+    return null;
   } catch {
     localStorage.removeItem(SESSION_KEY);
     sessionStorage.removeItem(SESSION_KEY);

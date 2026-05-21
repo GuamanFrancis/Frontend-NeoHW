@@ -109,7 +109,7 @@ export const AdminCatalogoPage = () => {
   const [formValues, setFormValues] = useState<CatalogFormValues>(emptyForm);
   const [loadError, setLoadError] = useState('');
 
-  /* ── Load products + categories from backend ── */
+  
 
   useEffect(() => {
     let isMounted = true;
@@ -140,7 +140,7 @@ export const AdminCatalogoPage = () => {
     };
   }, []);
 
-  /* ── Derived: leaf categories for the form select ── */
+  
 
   const leafCategories = useMemo(() => getLeafCategories(categories), [categories]);
 
@@ -152,7 +152,7 @@ export const AdminCatalogoPage = () => {
     [leafCategories],
   );
 
-  /* ── Derived: filter options from loaded components ── */
+  
 
   const categoryFilterOptions = useMemo(() => {
     const names = Array.from(
@@ -169,7 +169,7 @@ export const AdminCatalogoPage = () => {
     ];
   }, [components]);
 
-  /* ── Filtered + paginated ── */
+  
 
   const filteredComponents = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -199,7 +199,7 @@ export const AdminCatalogoPage = () => {
     }
   }, [currentPage, totalPages]);
 
-  /* ── Modal helpers ── */
+  
 
   const resetFilters = () => {
     setSearch('');
@@ -241,7 +241,7 @@ export const AdminCatalogoPage = () => {
     setModalMode('delete');
   };
 
-  /* ── Save (create / edit) ── */
+  
 
   const saveComponent = async () => {
     const price = Number(formValues.price);
@@ -287,13 +287,17 @@ export const AdminCatalogoPage = () => {
       }
 
       closeModal();
-    } catch {
-      setModalError('No se pudo guardar el componente. Revisa permisos y datos ingresados.');
+    } catch (error: any) {
+      const backendMessage = error?.response?.data?.message;
+      const formattedMessage = Array.isArray(backendMessage)
+        ? backendMessage.join(', ')
+        : backendMessage;
+      setModalError(formattedMessage || 'No se pudo guardar el componente. Revisa permisos y datos ingresados.');
       setIsSaving(false);
     }
   };
 
-  /* ── Delete ── */
+  
 
   const removeComponent = async () => {
     if (!selectedComponent) return;
@@ -538,7 +542,7 @@ export const AdminCatalogoPage = () => {
         </div>
       </div>
 
-      {/* ── Create / Edit modal ── */}
+      {}
       <Modal
         open={modalMode === 'create' || modalMode === 'edit'}
         title={modalMode === 'create' ? 'Nuevo componente' : 'Editar componente'}
@@ -612,7 +616,7 @@ export const AdminCatalogoPage = () => {
         )}
       </Modal>
 
-      {/* ── View modal ── */}
+      {}
       <Modal
         open={modalMode === 'view' && Boolean(selectedComponent)}
         title="Detalle del componente"
@@ -646,7 +650,7 @@ export const AdminCatalogoPage = () => {
         )}
       </Modal>
 
-      {/* ── Delete modal ── */}
+      {}
       <Modal
         open={modalMode === 'delete' && Boolean(selectedComponent)}
         title="Eliminar componente"

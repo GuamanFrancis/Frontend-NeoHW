@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router';
 import {
   Box,
   LogOut,
-  Menu,
   PanelLeftClose,
   PanelLeftOpen,
   UserCircle,
@@ -12,18 +11,15 @@ import {
 import { Button } from '../ui/Button';
 import { logoutUser } from '../../services/authService';
 import { getStoredSession } from '../../services/session';
-
 type MenuItem = {
   label: string;
   path: string;
 };
-
 type DashboardLayoutProps = {
   roleName: string;
   userName: string;
   menuItems: MenuItem[];
 };
-
 export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayoutProps) => {
   const [showMenu, setShowMenu] = useState(false);
   const navigate = useNavigate();
@@ -36,12 +32,10 @@ export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayo
       : session?.user.role === 'cliente'
         ? 'Cliente'
         : roleName;
-
   const logout = async () => {
     await logoutUser();
     navigate('/login');
   };
-
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950 dark:bg-neutral-950 dark:text-white">
       <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-sm sm:px-6 dark:border-neutral-800 dark:bg-neutral-950">
@@ -54,27 +48,26 @@ export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayo
           >
             {showMenu ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
           </button>
-
-          <div className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2 hover:opacity-90 transition">
             <Box className="h-8 w-8 text-teal-500" strokeWidth={2.5} />
             <span className="text-2xl font-extrabold">
               Neo<span className="text-teal-500">HW</span>
             </span>
-          </div>
+          </Link>
         </div>
-
         <div className="flex items-center gap-3">
-          <div className="hidden text-right sm:block">
-            <p className="text-sm font-bold text-slate-950 dark:text-white">{currentUserName}</p>
-            <p className="text-xs font-medium text-slate-500 dark:text-neutral-400">{currentRoleName}</p>
-          </div>
-
-          <UserCircle className="h-9 w-9 text-slate-500 dark:text-neutral-300" />
-
-    
+          <Link
+            to={`/${session?.user.role || 'cliente'}/cuenta`}
+            className="flex items-center gap-3 hover:opacity-80 transition cursor-pointer"
+          >
+            <div className="hidden text-right sm:block">
+              <p className="text-sm font-bold text-slate-950 dark:text-white">{currentUserName}</p>
+              <p className="text-xs font-medium text-slate-500 dark:text-neutral-400">{currentRoleName}</p>
+            </div>
+            <UserCircle className="h-9 w-9 text-slate-500 dark:text-neutral-300" />
+          </Link>
         </div>
       </header>
-
       <div className="flex min-h-[calc(100vh-64px)]">
         {showMenu && (
           <aside className="hidden w-64 border-r border-slate-200 bg-white p-4 lg:block dark:border-neutral-800 dark:bg-neutral-950">
@@ -83,19 +76,18 @@ export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayo
                 <p className="text-sm font-bold text-slate-950 dark:text-white">Menu</p>
                 <p className="text-xs text-slate-500 dark:text-neutral-400">Opciones del perfil</p>
               </div>
-              <Menu className="h-5 w-5 text-teal-500" />
             </div>
-
             <nav className="space-y-2">
               {menuItems.map((item) => (
                 <NavLink
                   key={item.path}
                   to={item.path}
+                  onClick={() => setShowMenu(false)}
                   className={({ isActive }) =>
-                    `block rounded-lg px-4 py-3 text-sm font-semibold transition ${
+                    `block rounded-lg border px-4 py-3 text-sm font-semibold transition ${
                       isActive
-                        ? 'bg-teal-500 text-white'
-                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-neutral-300 dark:hover:bg-white/10 dark:hover:text-white'
+                        ? 'border-teal-500/20 bg-teal-500/10 text-teal-500 dark:border-teal-400/20 dark:bg-teal-400/10 dark:text-teal-400'
+                        : 'border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-neutral-300 dark:hover:bg-white/10 dark:hover:text-white'
                     }`
                   }
                 >
@@ -103,7 +95,6 @@ export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayo
                 </NavLink>
               ))}
             </nav>
-
             <Button
               type="button"
               onClick={logout}
@@ -116,7 +107,6 @@ export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayo
             </Button>
           </aside>
         )}
-
         {showMenu && (
           <aside className="fixed inset-0 z-30 bg-black/50 lg:hidden">
             <div className="h-full w-72 bg-white p-4 shadow-xl dark:bg-neutral-950">
@@ -134,7 +124,6 @@ export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayo
                   <X className="h-5 w-5" />
                 </button>
               </div>
-
               <nav className="space-y-2">
                 {menuItems.map((item) => (
                   <NavLink
@@ -142,10 +131,10 @@ export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayo
                     to={item.path}
                     onClick={() => setShowMenu(false)}
                     className={({ isActive }) =>
-                      `block rounded-lg px-4 py-3 text-sm font-semibold transition ${
+                      `block rounded-lg border px-4 py-3 text-sm font-semibold transition ${
                         isActive
-                          ? 'bg-teal-500 text-white'
-                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-neutral-300 dark:hover:bg-white/10 dark:hover:text-white'
+                          ? 'border-teal-500/20 bg-teal-500/10 text-teal-500 dark:border-teal-400/20 dark:bg-teal-400/10 dark:text-teal-400'
+                          : 'border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-neutral-300 dark:hover:bg-white/10 dark:hover:text-white'
                       }`
                     }
                   >
@@ -153,7 +142,6 @@ export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayo
                   </NavLink>
                 ))}
               </nav>
-
               <Button
                 type="button"
                 onClick={logout}
@@ -167,7 +155,6 @@ export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayo
             </div>
           </aside>
         )}
-
         <section className="flex-1 p-5 sm:p-6">
           <Outlet />
         </section>

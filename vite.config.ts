@@ -12,6 +12,7 @@ export default defineConfig(({ mode }) => {
     '/categories',
     '/attributes',
     '/compatibility',
+    '/ai',
   ] as const;
 
   return {
