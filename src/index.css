@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 * {
   box-sizing: border-box;
 }
@@ -16,13 +18,29 @@ body {
   background: #f8fafc;
 }
 
+html.dark body {
+  background: #0a0a0a;
+}
+
 button,
 input {
   font: inherit;
 }
 
-@media (prefers-color-scheme: dark) {
-  body {
-    background: #0a0a0a;
-  }
+/* Hide scrollbars but keep scroll functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Also hide the thin scrollbars used throughout the simulator */
+.scrollbar-thin {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  display: none;
 }

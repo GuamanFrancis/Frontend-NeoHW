@@ -182,7 +182,7 @@ export const ClienteCarritoPage = () => {
                         <div className="flex items-center gap-3">
                           <div className="h-16 w-16 shrink-0 flex items-center justify-center rounded-lg border border-slate-100 bg-slate-50 dark:border-neutral-900 dark:bg-neutral-900/50 p-1.5">
                             <img
-                              src={product.imageUrl || 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?q=80&w=600&auto=format&fit=crop'}
+                              src={product.imageUrl || ''}
                               alt={product.name}
                               className="max-h-full max-w-full object-contain"
                             />
@@ -380,7 +380,7 @@ export const ClienteCarritoPage = () => {
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="h-8 w-8 shrink-0 flex items-center justify-center rounded border border-slate-100 bg-slate-50 dark:border-neutral-900 p-0.5">
                         <img
-                          src={product.imageUrl || 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?q=80&w=600&auto=format&fit=crop'}
+                          src={product.imageUrl || ''}
                           alt={product.name}
                           className="max-h-full max-w-full object-contain"
                         />

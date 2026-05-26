@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router';
 import {
   Box,
@@ -7,42 +7,76 @@ import {
   PanelLeftOpen,
   UserCircle,
   X,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { logoutUser } from '../../services/authService';
 import { getStoredSession } from '../../services/session';
+
 type MenuItem = {
   label: string;
   path: string;
 };
+
 type DashboardLayoutProps = {
   roleName: string;
   userName: string;
   menuItems: MenuItem[];
 };
+
+const ROLE_MAP: Record<string, string> = {
+  admin: 'Administrador',
+  vendedor: 'Vendedor',
+  cliente: 'Cliente',
+};
+
 export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayoutProps) => {
   const [showMenu, setShowMenu] = useState(false);
   const navigate = useNavigate();
-  const session = getStoredSession();
-  const currentUserName = session?.user.nickname ?? userName;
-  const currentRoleName = session?.user.role === 'admin'
-    ? 'Administrador'
-    : session?.user.role === 'vendedor'
-      ? 'Vendedor'
-      : session?.user.role === 'cliente'
-        ? 'Cliente'
-        : roleName;
-  const logout = async () => {
+
+  const session = useMemo(() => getStoredSession(), []);
+
+  const currentUserName = session?.user?.nickname ?? userName;
+  const currentRoleName = session?.user?.role ? (ROLE_MAP[session.user.role] || roleName) : roleName;
+
+  const [theme, setTheme] = useState(() => {
+    return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+  });
+
+  const toggleMenu = useCallback(() => {
+    setShowMenu((prev) => !prev);
+  }, []);
+
+  const closeMenu = useCallback(() => {
+    setShowMenu(false);
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    setTheme((prevTheme) => {
+      const newTheme = prevTheme === 'dark' ? 'light' : 'dark';
+      if (newTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      localStorage.setItem('neohw_theme', newTheme);
+      return newTheme;
+    });
+  }, []);
+
+  const handleLogout = useCallback(async () => {
     await logoutUser();
     navigate('/login');
-  };
+  }, [navigate]);
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950 dark:bg-neutral-950 dark:text-white">
       <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-sm sm:px-6 dark:border-neutral-800 dark:bg-neutral-950">
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => setShowMenu(!showMenu)}
+            onClick={toggleMenu}
             className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-700 transition hover:bg-slate-100 dark:border-teal-400/25 dark:text-neutral-200 dark:hover:bg-white/10"
             aria-label="Abrir o cerrar menu"
           >
@@ -56,8 +90,16 @@ export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayo
           </Link>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-700 transition hover:bg-slate-100 dark:border-teal-400/25 dark:text-neutral-200 dark:hover:bg-white/10 mr-1"
+            aria-label="Cambiar tema"
+          >
+            {theme === 'dark' ? <Sun className="h-5 w-5 text-teal-400" /> : <Moon className="h-5 w-5 text-slate-600" />}
+          </button>
           <Link
-            to={`/${session?.user.role || 'cliente'}/cuenta`}
+            to={`/${session?.user?.role || 'cliente'}/cuenta`}
             className="flex items-center gap-3 hover:opacity-80 transition cursor-pointer"
           >
             <div className="hidden text-right sm:block">
@@ -82,7 +124,7 @@ export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayo
                 <NavLink
                   key={item.path}
                   to={item.path}
-                  onClick={() => setShowMenu(false)}
+                  onClick={closeMenu}
                   className={({ isActive }) =>
                     `block rounded-lg border px-4 py-3 text-sm font-semibold transition ${
                       isActive
@@ -97,7 +139,7 @@ export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayo
             </nav>
             <Button
               type="button"
-              onClick={logout}
+              onClick={handleLogout}
               variant="outline"
               fullWidth
               className="mt-6"
@@ -117,7 +159,7 @@ export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayo
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowMenu(false)}
+                  onClick={closeMenu}
                   className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 dark:border-teal-400/25 dark:text-neutral-300"
                   aria-label="Cerrar menu"
                 >
@@ -129,7 +171,7 @@ export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayo
                   <NavLink
                     key={item.path}
                     to={item.path}
-                    onClick={() => setShowMenu(false)}
+                    onClick={closeMenu}
                     className={({ isActive }) =>
                       `block rounded-lg border px-4 py-3 text-sm font-semibold transition ${
                         isActive
@@ -144,7 +186,7 @@ export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayo
               </nav>
               <Button
                 type="button"
-                onClick={logout}
+                onClick={handleLogout}
                 variant="outline"
                 fullWidth
                 className="mt-6"

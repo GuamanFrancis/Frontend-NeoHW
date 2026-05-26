@@ -27,12 +27,8 @@ export const ComponenteDetalleDrawer = ({
     setActiveImageIndex(0);
   }, [componente]);
   if (!componente) return null;
-  const images = [
-    componente.imageUrl || 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?q=80&w=600&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=600&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?q=80&w=600&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=600&auto=format&fit=crop',
-  ];
+  const images = [componente.imageUrl || ''].filter(Boolean);
+  if (images.length === 0) images.push('');
   const handlePrevImage = () => {
     setActiveImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
   };
@@ -158,36 +154,40 @@ export const ComponenteDetalleDrawer = ({
               className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
             />
           </div>
-          <button
-            type="button"
-            onClick={handlePrevImage}
-            className="absolute left-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-neutral-900/90 border border-neutral-800 text-neutral-300 hover:text-white shadow hover:bg-neutral-850 transition"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={handleNextImage}
-            className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-neutral-900/90 border border-neutral-800 text-neutral-300 hover:text-white shadow hover:bg-neutral-850 transition"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-          <div className="flex justify-center gap-2 mt-4">
-            {images.map((img, idx) => (
+          {images.length > 1 && (
+            <>
               <button
-                key={idx}
                 type="button"
-                onClick={() => setActiveImageIndex(idx)}
-                className={`h-11 w-11 rounded-lg border overflow-hidden bg-neutral-950 p-1 transition ${
-                  activeImageIndex === idx
-                    ? 'border-teal-500 ring-2 ring-teal-500/20'
-                    : 'border-neutral-850 opacity-60 hover:opacity-100'
-                }`}
+                onClick={handlePrevImage}
+                className="absolute left-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-neutral-900/90 border border-neutral-800 text-neutral-300 hover:text-white shadow hover:bg-neutral-850 transition"
               >
-                <img src={img} alt="Vista" className="h-full w-full object-contain" />
+                <ChevronLeft className="h-4 w-4" />
               </button>
-            ))}
-          </div>
+              <button
+                type="button"
+                onClick={handleNextImage}
+                className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-neutral-900/90 border border-neutral-800 text-neutral-300 hover:text-white shadow hover:bg-neutral-850 transition"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              <div className="flex justify-center gap-2 mt-4">
+                {images.map((img, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setActiveImageIndex(idx)}
+                    className={`h-11 w-11 rounded-lg border overflow-hidden bg-neutral-950 p-1 transition ${
+                      activeImageIndex === idx
+                        ? 'border-teal-500 ring-2 ring-teal-500/20'
+                        : 'border-neutral-850 opacity-60 hover:opacity-100'
+                    }`}
+                  >
+                    <img src={img} alt="Vista" className="h-full w-full object-contain" />
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
         <div className="flex items-center justify-between mb-5">
           <div>

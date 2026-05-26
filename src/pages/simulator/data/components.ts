@@ -4,7 +4,7 @@ export const PC_COMPONENTS: PCComponent[] = [
   {
     id: 'case',
     label: 'Gabinete',
-    selectedName: 'Gabinete ATX Estándar',
+    selectedName: 'Sin seleccionar',
     file: '/models/case_static.glb',
     requiredAfter: null,
     installOrder: 0,
@@ -16,7 +16,7 @@ export const PC_COMPONENTS: PCComponent[] = [
   {
     id: 'psu',
     label: 'Fuente de poder',
-    selectedName: 'Fuente de Poder Modular',
+    selectedName: 'Sin seleccionar',
     file: '/models/psu_static.glb',
     requiredAfter: 'case',
     installOrder: 1,
@@ -28,7 +28,7 @@ export const PC_COMPONENTS: PCComponent[] = [
   {
     id: 'motherboard',
     label: 'Placa madre',
-    selectedName: 'Placa Madre ATX',
+    selectedName: 'Sin seleccionar',
     file: '/models/motherboard_static.glb',
     requiredAfter: 'case',
     installOrder: 2,
@@ -40,7 +40,7 @@ export const PC_COMPONENTS: PCComponent[] = [
   {
     id: 'cpu',
     label: 'Procesador (CPU)',
-    selectedName: 'Procesador',
+    selectedName: 'Sin seleccionar',
     file: '/models/cpu_static.glb',
     requiredAfter: 'motherboard',
     installOrder: 3,
@@ -51,8 +51,8 @@ export const PC_COMPONENTS: PCComponent[] = [
   },
   {
     id: 'ram_1',
-    label: 'RAM módulo 1',
-    selectedName: 'Memoria RAM DDR4/DDR5 Slot 1',
+    label: 'Memoria RAM',
+    selectedName: 'Sin seleccionar',
     file: '/models/ram_1_static.glb',
     requiredAfter: 'motherboard',
     installOrder: 4,
@@ -64,7 +64,7 @@ export const PC_COMPONENTS: PCComponent[] = [
   {
     id: 'ram_2',
     label: 'RAM módulo 2',
-    selectedName: 'Memoria RAM DDR4/DDR5 Slot 2',
+    selectedName: 'Sin seleccionar',
     file: '/models/ram_2_static.glb',
     requiredAfter: 'motherboard',
     installOrder: 5,
@@ -72,11 +72,12 @@ export const PC_COMPONENTS: PCComponent[] = [
     icon: '💾',
     categorySlug: 'memorias-ram',
     hasModel: true,
+    hidden: true,
   },
   {
     id: 'ram_3',
     label: 'RAM módulo 3',
-    selectedName: 'Memoria RAM DDR4/DDR5 Slot 3',
+    selectedName: 'Sin seleccionar',
     file: '/models/ram_3_static.glb',
     requiredAfter: 'ram_1',
     installOrder: 6,
@@ -89,7 +90,7 @@ export const PC_COMPONENTS: PCComponent[] = [
   {
     id: 'ram_4',
     label: 'RAM módulo 4',
-    selectedName: 'Memoria RAM DDR4/DDR5 Slot 4',
+    selectedName: 'Sin seleccionar',
     file: '/models/ram_4_static.glb',
     requiredAfter: 'ram_2',
     installOrder: 7,
@@ -102,7 +103,7 @@ export const PC_COMPONENTS: PCComponent[] = [
   {
     id: 'gpu',
     label: 'Tarjeta gráfica (GPU)',
-    selectedName: 'Tarjeta de Video PCIe',
+    selectedName: 'Sin seleccionar',
     file: '/models/gpu_static.glb',
     requiredAfter: 'motherboard',
     installOrder: 8,
@@ -114,7 +115,7 @@ export const PC_COMPONENTS: PCComponent[] = [
   {
     id: 'storage',
     label: 'Almacenamiento',
-    selectedName: 'SSD NVMe M.2',
+    selectedName: 'Sin seleccionar',
     file: '',
     requiredAfter: 'motherboard',
     installOrder: 9,
@@ -126,7 +127,7 @@ export const PC_COMPONENTS: PCComponent[] = [
   {
     id: 'cooler',
     label: 'Refrigeración',
-    selectedName: 'Disipador de aire / AIO',
+    selectedName: 'Sin seleccionar',
     file: '',
     requiredAfter: 'cpu',
     installOrder: 10,
@@ -138,19 +139,19 @@ export const PC_COMPONENTS: PCComponent[] = [
   {
     id: 'fans',
     label: 'Ventiladores (opc.)',
-    selectedName: 'Ventiladores adicionales',
+    selectedName: 'Sin seleccionar',
     file: '',
     requiredAfter: 'case',
     installOrder: 11,
     startOffset: [0, 0, 0],
     icon: '🌀',
-    categorySlug: '',
+    categorySlug: 'ventiladores',
     hasModel: false,
   },
   {
     id: 'cables',
     label: 'Cables de Conexión',
-    selectedName: 'Set de Cables de Alimentación',
+    selectedName: 'Sin seleccionar',
     file: '/models/cables_static.glb',
     requiredAfter: 'gpu',
     installOrder: 12,

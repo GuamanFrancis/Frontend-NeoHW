@@ -16,6 +16,7 @@ export interface PCComponent {
   dbProduct?: CatalogComponent | null;
   hasModel?: boolean;
   hidden?: boolean;
+  quantity?: number;
 }
 
 export type CameraAction = {

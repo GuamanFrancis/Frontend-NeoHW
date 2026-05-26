@@ -12,9 +12,8 @@ import {
   Box as BoxIcon,
   LayoutGrid,
   List,
-  ChevronDown,
   Check,
-  AlertCircle,
+  ChevronDown,
   ShoppingCart
 } from 'lucide-react';
 import { getCatalogComponents } from '../../services/catalogService';
@@ -43,196 +42,10 @@ const CATEGORIES = [
   { id: '7', name: 'Refrigeración', slug: 'refrigeracion' },
   { id: '8', name: 'Gabinetes', slug: 'gabinetes' },
 ];
-const MOCK_COMPONENTS: CatalogComponent[] = [
-  {
-    id: 'mock-1',
-    name: 'AMD Ryzen 7 7800X3D',
-    description: 'Procesador premium ideal para videojuegos con tecnología 3D V-Cache.',
-    category: 'Procesadores',
-    categorySlug: 'procesadores',
-    categoryId: '1',
-    brand: 'AMD',
-    price: 8499.0,
-    stock: 15,
-    status: 'disponible',
-    imageUrl: 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?q=80&w=600&auto=format&fit=crop',
-    model: 'Ryzen 7 7800X3D',
-    sku: '100-100000910WOF',
-    attributes: [
-      { name: 'Núcleos / Hilos', value: '8 / 16', unit: '' },
-      { name: 'Frecuencia base', value: '4.2', unit: 'GHz' },
-      { name: 'Frecuencia turbo', value: '5.0', unit: 'GHz' },
-      { name: 'Caché L3', value: '96', unit: 'MB' },
-      { name: 'TDP', value: '120', unit: 'W' },
-      { name: 'Socket', value: 'AM5', unit: '' },
-      { name: 'Arquitectura', value: 'Zen 4', unit: '' },
-      { name: 'Tecnología', value: '5', unit: 'nm' },
-      { name: 'Gráficos integrados', value: 'No', unit: '' },
-      { name: 'Desbloqueado', value: 'Sí', unit: '' },
-    ],
-  },
-  {
-    id: 'mock-2',
-    name: 'MSI B650 TOMAHAWK WiFi',
-    description: 'Placa madre ATX con excelente entrega de energía y soporte DDR5.',
-    category: 'Placas madre',
-    categorySlug: 'placas-madre',
-    categoryId: '2',
-    brand: 'MSI',
-    price: 4299.0,
-    stock: 3,
-    status: 'stock-bajo',
-    imageUrl: 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48?q=80&w=600&auto=format&fit=crop',
-    model: 'MAG B650 TOMAHAWK WIFI',
-    sku: 'B650-TOMAHAWK',
-    attributes: [
-      { name: 'Socket', value: 'AM5', unit: '' },
-      { name: 'Chipset', value: 'B650', unit: '' },
-      { name: 'DDR5 hasta', value: '7200', unit: 'MHz (OC)' },
-      { name: 'Factor de forma', value: 'ATX', unit: '' },
-      { name: 'Ranuras M.2', value: '3', unit: '' },
-      { name: 'WiFi', value: '6E', unit: '' },
-    ],
-  },
-  {
-    id: 'mock-3',
-    name: 'Corsair Vengeance 32GB DDR5',
-    description: 'Memoria RAM de alto rendimiento con optimización para plataformas AMD e Intel.',
-    category: 'Memoria RAM',
-    categorySlug: 'memorias-ram',
-    categoryId: '3',
-    brand: 'Corsair',
-    price: 2799.0,
-    stock: 18,
-    status: 'disponible',
-    imageUrl: 'https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=600&auto=format&fit=crop',
-    model: 'CMK32GX5M2B6000C36',
-    sku: 'RAM-DDR5-32GB',
-    attributes: [
-      { name: 'Capacidad', value: '32GB (2x16GB)', unit: '' },
-      { name: 'Tipo', value: 'DDR5', unit: '' },
-      { name: 'Frecuencia', value: '6000', unit: 'MHz' },
-      { name: 'Latencia', value: 'CL36', unit: '' },
-      { name: 'Voltaje', value: '1.35', unit: 'V' },
-    ],
-  },
-  {
-    id: 'mock-4',
-    name: 'ASUS TUF RTX 4070 Ti Gaming',
-    description: 'Tarjeta gráfica con arquitectura Ada Lovelace y refrigeración avanzada.',
-    category: 'Tarjetas gráficas',
-    categorySlug: 'tarjetas-graficas',
-    categoryId: '4',
-    brand: 'ASUS',
-    price: 19999.0,
-    stock: 5,
-    status: 'disponible',
-    imageUrl: 'https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=600&auto=format&fit=crop',
-    model: 'TUF-RTX4070TI-12G-GAMING',
-    sku: 'GPU-4070TI',
-    attributes: [
-      { name: 'VRAM', value: '12GB GDDR6X', unit: '' },
-      { name: 'Núcleos CUDA', value: '7680', unit: '' },
-      { name: 'Boost Clock', value: '2.61', unit: 'GHz' },
-      { name: 'PCIe', value: '4.0', unit: '' },
-      { name: 'Puertos HDMI', value: '2', unit: '' },
-      { name: 'Puertos DisplayPort', value: '3', unit: '' },
-    ],
-  },
-  {
-    id: 'mock-5',
-    name: 'Samsung 980 PRO 1TB',
-    description: 'SSD NVMe PCIe Gen4 M.2 de máxima velocidad para cargas ultra rápidas.',
-    category: 'Almacenamiento',
-    categorySlug: 'almacenamiento',
-    categoryId: '5',
-    brand: 'Samsung',
-    price: 2199.0,
-    stock: 10,
-    status: 'disponible',
-    imageUrl: 'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?q=80&w=600&auto=format&fit=crop',
-    model: 'MZ-V8P1T0BW',
-    sku: 'SSD-SAMSUNG-980PRO',
-    attributes: [
-      { name: 'Interfaz', value: 'NVMe PCIe 4.0', unit: '' },
-      { name: 'Lectura', value: '7000', unit: 'MB/s' },
-      { name: 'Escritura', value: '5000', unit: 'MB/s' },
-      { name: 'Factor de forma', value: 'M.2 2280', unit: '' },
-      { name: 'MTBF', value: '1.5 Millones de horas', unit: '' },
-    ],
-  },
-  {
-    id: 'mock-6',
-    name: 'Corsair RM850x 850W 80+',
-    description: 'Fuente de poder modular silenciosa con certificación de eficiencia Gold.',
-    category: 'Fuentes de poder',
-    categorySlug: 'fuentes-de-poder',
-    categoryId: '6',
-    brand: 'Corsair',
-    price: 2599.0,
-    stock: 2,
-    status: 'stock-bajo',
-    imageUrl: 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?q=80&w=600&auto=format&fit=crop',
-    model: 'CP-9020201-NA',
-    sku: 'PSU-CORSAIR-850',
-    attributes: [
-      { name: 'Potencia', value: '850', unit: 'W' },
-      { name: 'Certificación', value: '80+ Gold', unit: '' },
-      { name: 'Modularidad', value: 'Modular', unit: '' },
-      { name: 'Compatibilidad', value: 'ATX 3.0 / PCIe 5.0', unit: '' },
-      { name: 'Ventilador', value: '135mm FDB', unit: '' },
-    ],
-  },
-  {
-    id: 'mock-7',
-    name: 'Cooler Master Hyper 212 Halo',
-    description: 'Disipador de aire clásico con ventilador ARGB rediseñado.',
-    category: 'Refrigeración',
-    categorySlug: 'refrigeracion',
-    categoryId: '7',
-    brand: 'Cooler Master',
-    price: 799.0,
-    stock: 24,
-    status: 'disponible',
-    imageUrl: 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?q=80&w=600&auto=format&fit=crop',
-    model: 'RR-S4KK-20PA-R1',
-    sku: 'COOLER-HYPER-212',
-    attributes: [
-      { name: 'Ventilador', value: '120', unit: 'mm' },
-      { name: 'Control', value: 'PWM', unit: '' },
-      { name: 'TDP Máximo', value: '150', unit: 'W' },
-      { name: 'Compatibilidad', value: 'Intel LGA 1700 / AMD AM5', unit: '' },
-      { name: 'Iluminación', value: 'Addressable Gen 2 RGB', unit: '' },
-    ],
-  },
-  {
-    id: 'mock-8',
-    name: 'NZXT H5 Flow Black',
-    description: 'Gabinete Mid-Tower con panel frontal perforado para un flujo de aire óptimo.',
-    category: 'Gabinetes',
-    categorySlug: 'gabinetes',
-    categoryId: '8',
-    brand: 'NZXT',
-    price: 1699.0,
-    stock: 0,
-    status: 'agotado',
-    imageUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=600&auto=format&fit=crop',
-    model: 'CC-H51FB-01',
-    sku: 'CASE-NZXT-H5FLOW',
-    attributes: [
-      { name: 'Tamaño', value: 'Mid Tower', unit: '' },
-      { name: 'Diseño', value: 'Flujo de aire optimizado', unit: '' },
-      { name: 'Panel lateral', value: 'Vidrio templado', unit: '' },
-      { name: 'Compatibilidad placa', value: 'ATX / mATX / Mini-ITX', unit: '' },
-      { name: 'Ventiladores incluidos', value: '2 x 120mm', unit: '' },
-    ],
-  },
-];
 export const ClienteCatalogoPage = () => {
   const { addToCart } = useCart();
   const [components, setComponents] = useState<CatalogComponent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isUsingMockData, setIsUsingMockData] = useState(false);
   const [searchText, setSearchText] = useState('');
   const location = useLocation();
   const initialCategory = location.state?.categorySlug || 'todos';
@@ -309,17 +122,12 @@ export const ClienteCatalogoPage = () => {
       setLoading(true);
       try {
         const response = await getCatalogComponents({ limit: 100 });
-        if (response.items && response.items.length > 0) {
+        if (response.items) {
           setComponents(response.items);
-          setIsUsingMockData(false);
-        } else {
-          setComponents(MOCK_COMPONENTS);
-          setIsUsingMockData(true);
         }
       } catch (error) {
-        console.warn('API de catálogo no disponible. Cargando mockup local offline...');
-        setComponents(MOCK_COMPONENTS);
-        setIsUsingMockData(true);
+        console.warn('API de catálogo no disponible.');
+        setComponents([]);
       } finally {
         setLoading(false);
       }
@@ -444,14 +252,6 @@ export const ClienteCatalogoPage = () => {
         <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-lg bg-teal-500 px-4 py-3 text-white shadow-lg animate-bounce">
           <Check className="h-5 w-5" />
           <span className="text-sm font-bold">{cartSuccessMessage}</span>
-        </div>
-      )}
-      {isUsingMockData && (
-        <div className="mb-6 flex items-center gap-3 rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-4 text-yellow-700 dark:text-yellow-400">
-          <AlertCircle className="h-5 w-5 shrink-0" />
-          <div className="text-sm">
-            <span className="font-bold">Modo Demostración:</span> El backend no está conectado actualmente. Se está visualizando catálogo de componentes interactivo con mockup.
-          </div>
         </div>
       )}
       <div className="relative mb-8 flex flex-col items-center justify-between gap-4 md:flex-row border-b border-slate-100 dark:border-neutral-900 pb-6">
@@ -687,7 +487,7 @@ export const ClienteCatalogoPage = () => {
                   onClick={() => handleOpenDrawer(item)}
                 >
                   <img
-                    src={item.imageUrl || 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?q=80&w=600&auto=format&fit=crop'}
+                    src={item.imageUrl || ''}
                     alt={item.name}
                     className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
                   />
@@ -764,7 +564,7 @@ export const ClienteCatalogoPage = () => {
                   onClick={() => handleOpenDrawer(item)}
                 >
                   <img
-                    src={item.imageUrl || 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?q=80&w=600&auto=format&fit=crop'}
+                    src={item.imageUrl || ''}
                     alt={item.name}
                     className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
                   />

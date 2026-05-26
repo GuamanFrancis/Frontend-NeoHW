@@ -49,11 +49,12 @@ export default function AppRoutes() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
         <Route path="/registro" element={<PublicOnlyRoute><RegisterPage /></PublicOnlyRoute>} />
+        <Route path="/simulador" element={<SimulatorPage />} />
         <Route path="/cliente" element={<RequireAuth allowedRoles={['cliente']}><ClienteDashboard /></RequireAuth>}>
           <Route index element={<Navigate to="catalogo" replace />} />
           <Route path="catalogo" element={<ClienteCatalogoPage />} />
-          <Route path="carrito" element={<ClienteCarritoPage />} />
           <Route path="simulador" element={<SimulatorPage />} />
+          <Route path="carrito" element={<ClienteCarritoPage />} />
           <Route path="proyectos" element={<ClienteProyectosPage />} />
           <Route path="cuenta" element={<MiCuentaPage />} />
         </Route>

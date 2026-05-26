@@ -20,6 +20,22 @@ export const loginUser = async (values: LoginFormValues): Promise<AuthResponse> 
   return normalizeAuthResponse(data);
 };
 
+export const loginWithGoogle = async (token: string): Promise<AuthResponse> => {
+  const { data } = await api.post<BackendAuthResponse>('/auth/social/google', {
+    token,
+  });
+
+  return normalizeAuthResponse(data);
+};
+
+export const loginWithFacebook = async (token: string): Promise<AuthResponse> => {
+  const { data } = await api.post<BackendAuthResponse>('/auth/social/facebook', {
+    token,
+  });
+
+  return normalizeAuthResponse(data);
+};
+
 export const registerUser = async (values: RegisterFormValues): Promise<AuthResponse> => {
   const { data } = await api.post<BackendAuthResponse>('/auth/register', {
     email: values.email,

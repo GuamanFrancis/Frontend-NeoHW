@@ -4,7 +4,6 @@ export type BackendRole = 'USER' | 'SELLER' | 'ADMIN' | 'SUPER_ADMIN';
 export type LoginFormValues = {
   email: string;
   password: string;
-  role: UserRole;
   remember: boolean;
 };
 
