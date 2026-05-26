@@ -13,6 +13,8 @@ export default defineConfig(({ mode }) => {
     '/attributes',
     '/compatibility',
     '/ai',
+    '/orders',
+    '/payments',
   ] as const;
 
   return {

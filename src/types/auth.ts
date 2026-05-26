@@ -8,12 +8,12 @@ export type LoginFormValues = {
 };
 
 export type RegisterFormValues = {
-  nickname: string;
-  gender: string;
   email: string;
-  phone?: string;
   password: string;
   confirmPassword: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
 };
 
 export type AuthUser = {

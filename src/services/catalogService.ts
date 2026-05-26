@@ -42,6 +42,7 @@ const normalizeProduct = (product: BackendProduct): CatalogComponent => ({
   model: product.model || null,
   sku: product.sku || null,
   attributes: product.attributes || [],
+  sellerId: product.sellerId,
 });
 
 export const getCatalogComponents = async (
@@ -58,6 +59,7 @@ export const getCatalogComponents = async (
       maxPrice: query.maxPrice ?? undefined,
       sort: query.sort || undefined,
       order: query.order || undefined,
+      sellerId: query.sellerId || undefined,
     },
   });
   return {
@@ -80,6 +82,7 @@ export const createCatalogComponent = async (
     imageUrl: payload.imageUrl?.trim() || undefined,
     model: payload.model?.trim() || undefined,
     sku: payload.sku?.trim() || undefined,
+    sellerId: payload.sellerId || undefined,
   });
   return normalizeProduct(data.product);
 };
@@ -97,9 +100,16 @@ export const updateCatalogComponent = async (
   if (payload.imageUrl !== undefined) body.imageUrl = payload.imageUrl.trim() || undefined;
   if (payload.model !== undefined) body.model = payload.model.trim() || undefined;
   if (payload.sku !== undefined) body.sku = payload.sku.trim() || undefined;
+  if (payload.sellerId !== undefined) body.sellerId = payload.sellerId;
   const { data } = await api.patch<SingleProductResponse>(`/products/${id}`, body);
   return normalizeProduct(data.product);
 };
 export const deleteCatalogComponent = async (id: string): Promise<void> => {
   await api.delete(`/products/${id}`);
 };
+
+export const getCatalogComponentById = async (id: string): Promise<CatalogComponent> => {
+  const { data } = await api.get<SingleProductResponse>(`/products/${id}`);
+  return normalizeProduct(data.product);
+};
+

@@ -36,10 +36,16 @@ export type OrderBackend = {
   userId: string;
   status: 'PENDING_PAYMENT' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
   totalAmount: number | string;
-  shippingAddress: any;
+  shippingAddress: string | Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
   items: OrderItemBackend[];
+  user?: {
+    firstName?: string | null;
+    lastName?: string | null;
+    email?: string | null;
+    phone?: string | null;
+  };
 };
 
 export type OrdersMeta = {
@@ -80,4 +86,21 @@ export const updateOrderStatus = async (
   );
   return data;
 };
+
+export const uploadOrderDocument = async (
+  id: string,
+  file: File,
+  documentType: 'SHIPPING_PROOF' | 'DELIVERY_PHOTO' | 'CUSTOMER_SIGNATURE'
+): Promise<any> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('documentType', documentType);
+  const { data } = await api.post(`/orders/${id}/documents`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return data;
+};
+
 

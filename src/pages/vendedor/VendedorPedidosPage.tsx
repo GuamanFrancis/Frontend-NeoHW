@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Eye, Filter, Pencil, Search, Truck } from 'lucide-react';
+import { Eye, Filter, Pencil, Search, Truck, AlertTriangle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { PageCard } from '../../components/ui/PageCard';
 import { Modal } from '../../components/ui/Modal';
-import { sellerOrdersData, type SellerOrderStatus } from './sellerOrdersData';
-import { getOrders, updateOrderStatus } from '../../services/ordersService';
+import { getOrders, updateOrderStatus, uploadOrderDocument, type OrderItemBackend } from '../../services/ordersService';
+import { getUsers } from '../../services/usersService';
+import type { BackendUser } from '../../types/auth';
+
+export type SellerOrderStatus = 'Pendiente' | 'En proceso' | 'Enviado' | 'Entregado' | 'Cancelado';
 
 type DateFilter = 'ultimos-3' | 'ultimos-7' | 'ultimos-30' | 'todos';
 
@@ -68,31 +71,82 @@ const dateFilterDays: Record<Exclude<DateFilter, 'todos'>, number> = {
   'ultimos-30': 30,
 };
 
+export interface MappedSellerOrder {
+  id: string;
+  itemsCount: number;
+  clientName: string;
+  clientEmail: string;
+  clientPhone: string;
+  createdAt: string;
+  total: number;
+  status: SellerOrderStatus;
+  addressStr: string;
+  items: OrderItemBackend[];
+}
+
 export const VendedorPedidosPage = () => {
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<MappedSellerOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<SellerOrderStatus | 'todos'>('todos');
   const [dateFilter, setDateFilter] = useState<DateFilter>('ultimos-30');
   const [pageSize, setPageSize] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<MappedSellerOrder | null>(null);
   const [modalMode, setModalMode] = useState<'view' | 'edit' | null>(null);
   const [editStatus, setEditStatus] = useState<SellerOrderStatus>('Pendiente');
+
+  const [orderToDispatch, setOrderToDispatch] = useState<MappedSellerOrder | null>(null);
+  const [dispatchFile, setDispatchFile] = useState<File | null>(null);
+  const [isDispatching, setIsDispatching] = useState(false);
+  const [dispatchError, setDispatchError] = useState<string | null>(null);
 
   const loadOrders = async () => {
     try {
       setIsLoading(true);
+
+      let usersMap: Record<string, BackendUser> = {};
+      try {
+        const usersRes = await getUsers(1, 500);
+        if (usersRes && Array.isArray(usersRes.users)) {
+          usersRes.users.forEach((u) => {
+            usersMap[u.id] = u;
+          });
+        }
+      } catch (e) {
+        console.error('Error al cargar la lista de usuarios para mapeo:', e);
+      }
+
       const res = await getOrders();
-      const mapped = res.data.map((order) => {
+      const mapped = res.data.map((order): MappedSellerOrder => {
         let itemsCount = 0;
         if (order.items && Array.isArray(order.items)) {
-          itemsCount = order.items.reduce((sum, item) => sum + Number(item.quantity), 0);
+          itemsCount = order.items.reduce((sum: number, item) => sum + Number(item.quantity), 0);
         }
 
         let clientName = `Usuario #${order.userId.slice(0, 8)}`;
         let clientEmail = 'sin-correo@neohw.com';
+        let clientPhone = 'Sin teléfono';
         let addressStr = 'No especificada';
+
+        
+        const dbUser = usersMap[order.userId];
+        if (dbUser) {
+          const fn = dbUser.firstName || '';
+          const ln = dbUser.lastName || '';
+          const fullName = [fn, ln].filter(Boolean).join(' ');
+          if (fullName) clientName = fullName;
+          if (dbUser.email) clientEmail = dbUser.email;
+          if (dbUser.phone) clientPhone = dbUser.phone;
+        } else if (order.user) {
+          
+          const fn = order.user.firstName || '';
+          const ln = order.user.lastName || '';
+          const fullName = [fn, ln].filter(Boolean).join(' ');
+          if (fullName) clientName = fullName;
+          if (order.user.email) clientEmail = order.user.email;
+          if (order.user.phone) clientPhone = order.user.phone;
+        }
 
         if (order.shippingAddress) {
           try {
@@ -105,8 +159,13 @@ export const VendedorPedidosPage = () => {
               const state = addr.state || addr.provincia || '';
               const country = addr.country || addr.pais || '';
               addressStr = [street, city, state, country].filter(Boolean).join(', ') || 'No especificada';
-              if (addr.email) clientEmail = addr.email;
-              if (addr.fullName || addr.name) clientName = addr.fullName || addr.name;
+              
+              
+              if (!dbUser && !order.user) {
+                if (addr.email) clientEmail = addr.email;
+                if (addr.fullName || addr.name) clientName = addr.fullName || addr.name;
+                if (addr.phone || addr.telefono) clientPhone = addr.phone || addr.telefono;
+              }
             }
           } catch {
             addressStr = String(order.shippingAddress);
@@ -118,6 +177,7 @@ export const VendedorPedidosPage = () => {
           itemsCount,
           clientName,
           clientEmail,
+          clientPhone,
           createdAt: order.createdAt,
           total: Number(order.totalAmount),
           status: backendStatusToUi[order.status] || 'Pendiente',
@@ -126,8 +186,9 @@ export const VendedorPedidosPage = () => {
         };
       });
       setOrders(mapped);
-    } catch {
-      setOrders(sellerOrdersData);
+    } catch (e) {
+      console.error('Error fetching seller orders:', e);
+      setOrders([]);
     } finally {
       setIsLoading(false);
     }
@@ -135,21 +196,61 @@ export const VendedorPedidosPage = () => {
 
   useEffect(() => {
     void loadOrders();
+    
+    const intervalId = setInterval(() => {
+      void loadOrders();
+    }, 300000);
+    return () => clearInterval(intervalId);
   }, []);
 
-  const handleDispatch = async (orderId: string) => {
+  const handleOpenDispatchModal = (order: MappedSellerOrder) => {
+    setOrderToDispatch(order);
+    setDispatchFile(null);
+    setDispatchError(null);
+    setIsDispatching(false);
+  };
+
+  const handleConfirmDispatch = async () => {
+    if (!orderToDispatch) return;
+    setDispatchError(null);
+    setIsDispatching(true);
+
+    const isMock = orderToDispatch.id.startsWith('#NHW-');
+    if (isMock) {
+      setOrders((current) =>
+        current.map((o) => (o.id === orderToDispatch.id ? { ...o, status: 'Enviado' } : o))
+      );
+      setOrderToDispatch(null);
+      setIsDispatching(false);
+      return;
+    }
+
     try {
-      const isMock = orderId.startsWith('#NHW-');
-      if (isMock) {
-        setOrders((current) =>
-          current.map((o) => (o.id === orderId ? { ...o, status: 'Enviado' } : o))
-        );
-      } else {
-        await updateOrderStatus(orderId, 'SHIPPED');
-        await loadOrders();
+      
+      if (orderToDispatch.status !== 'En proceso') {
+        throw new Error('Solo se pueden enviar pedidos que están en estado "En proceso" (pagados por el cliente).');
       }
-    } catch {
-      alert('No se pudo despachar el pedido. Revisa permisos o conexion.');
+
+      
+      if (!dispatchFile) {
+        throw new Error('Es obligatorio subir una Prueba de Envío (SHIPPING_PROOF) en formato PDF o Imagen para despachar este pedido.');
+      }
+
+      
+      await uploadOrderDocument(orderToDispatch.id, dispatchFile, 'SHIPPING_PROOF');
+
+      
+      await updateOrderStatus(orderToDispatch.id, 'SHIPPED');
+
+      await loadOrders();
+      setOrderToDispatch(null);
+    } catch (err) {
+      console.error(err);
+      const errorMsg = err as { response?: { data?: { message?: string | string[] } }; message: string };
+      const backendMsg = errorMsg.response?.data?.message || errorMsg.message;
+      setDispatchError(Array.isArray(backendMsg) ? backendMsg.join(', ') : backendMsg);
+    } finally {
+      setIsDispatching(false);
     }
   };
 
@@ -172,12 +273,12 @@ export const VendedorPedidosPage = () => {
     }
   };
 
-  const openViewModal = (order: any) => {
+  const openViewModal = (order: MappedSellerOrder) => {
     setSelectedOrder(order);
     setModalMode('view');
   };
 
-  const openEditModal = (order: any) => {
+  const openEditModal = (order: MappedSellerOrder) => {
     setSelectedOrder(order);
     setEditStatus(order.status);
     setModalMode('edit');
@@ -304,7 +405,7 @@ export const VendedorPedidosPage = () => {
                         </p>
                         {order.items && order.items.length > 0 && (
                           <div className="mt-1.5 space-y-0.5 max-w-xs">
-                            {order.items.map((item: any, idx: number) => (
+                            {order.items.map((item, idx) => (
                               <p key={item.id || idx} className="text-[11px] font-semibold text-teal-600 dark:text-teal-400 leading-tight">
                                 • {item.product?.name || `Componente ID: ${item.productId}`} <span className="text-slate-400 dark:text-neutral-500 font-bold">x{item.quantity}</span>
                               </p>
@@ -313,8 +414,21 @@ export const VendedorPedidosPage = () => {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <p className="font-medium text-slate-800 dark:text-neutral-200">{order.clientName}</p>
+                        <div className="flex items-baseline gap-1.5">
+                          <p className="font-medium text-slate-800 dark:text-neutral-200">{order.clientName}</p>
+                          {/* Destacar pedidos nuevos creados hace menos de 24 horas (HU-012) */}
+                          {new Date(order.createdAt).getTime() > Date.now() - 24 * 60 * 60 * 1000 && (
+                            <span className="relative flex h-2 w-2 shrink-0">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 animate-pulse" title="¡Pedido nuevo!"></span>
+                            </span>
+                          )}
+                        </div>
                         <p className="mt-0.5 text-xs text-slate-500 dark:text-neutral-400">{order.clientEmail}</p>
+                        <p className="mt-0.5 text-xs text-slate-500 dark:text-neutral-400">
+                          <span className="font-semibold text-slate-700 dark:text-neutral-350">Teléf: </span>
+                          {order.clientPhone || 'No registrado'}
+                        </p>
                         <p className="mt-1 text-xs text-slate-500 dark:text-neutral-400 leading-relaxed max-w-[280px]">
                           <span className="font-semibold text-slate-700 dark:text-neutral-300">Dirección: </span>
                           {order.addressStr}
@@ -351,7 +465,7 @@ export const VendedorPedidosPage = () => {
                           <button
                             type="button"
                             className={actionButtonClass}
-                            onClick={() => void handleDispatch(order.id)}
+                            onClick={() => handleOpenDispatchModal(order)}
                             disabled={order.status === 'Enviado' || order.status === 'Entregado' || order.status === 'Cancelado'}
                             aria-label={`Despachar ${order.id}`}
                           >
@@ -480,6 +594,10 @@ export const VendedorPedidosPage = () => {
               <p className="text-xs font-semibold text-slate-400 dark:text-neutral-500 uppercase tracking-wide">Información del Cliente</p>
               <p className="font-medium text-slate-900 dark:text-white mt-1">{selectedOrder.clientName}</p>
               <p className="text-slate-500 dark:text-neutral-400 mt-0.5 text-xs">{selectedOrder.clientEmail}</p>
+              <p className="text-slate-500 dark:text-neutral-400 mt-0.5 text-xs">
+                <span className="font-semibold text-slate-700 dark:text-neutral-350">Teléfono: </span>
+                {selectedOrder.clientPhone || 'No registrado'}
+              </p>
             </div>
 
             <div className="border-t border-slate-100 dark:border-neutral-800 pt-3">
@@ -500,7 +618,7 @@ export const VendedorPedidosPage = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-neutral-800">
-                      {selectedOrder.items.map((item: any, idx: number) => (
+                      {selectedOrder.items.map((item, idx) => (
                         <tr key={item.id || idx}>
                           <td className="px-3 py-2 font-medium text-slate-800 dark:text-neutral-200">
                             {item.product?.name || `Componente ID: ${item.productId}`}
@@ -534,7 +652,7 @@ export const VendedorPedidosPage = () => {
             </Button>
             <Button
               type="button"
-              onClick={() => void handleUpdateStatus(selectedOrder.id, editStatus)}
+              onClick={() => selectedOrder && void handleUpdateStatus(selectedOrder.id, editStatus)}
             >
               Actualizar Estado
             </Button>
@@ -550,6 +668,13 @@ export const VendedorPedidosPage = () => {
               <p className="font-medium text-slate-800 dark:text-neutral-300 mt-0.5">{selectedOrder.clientName}</p>
             </div>
 
+             {selectedOrder.status === 'Pendiente' && (
+              <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-amber-600 text-xs font-semibold leading-relaxed">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500 mt-0.5" />
+                <span>Este pedido está pendiente de pago. Solo el cliente mediante Stripe puede marcarlo como "En proceso". Evita forzar este estado manualmente.</span>
+              </div>
+            )}
+
             <label className="block space-y-1">
               <span className="text-sm font-semibold text-slate-700 dark:text-neutral-300">Nuevo Estado</span>
               <select
@@ -557,13 +682,114 @@ export const VendedorPedidosPage = () => {
                 value={editStatus}
                 onChange={(event) => setEditStatus(event.target.value as SellerOrderStatus)}
               >
-                <option value="Pendiente">Pendiente</option>
-                <option value="En proceso">En proceso</option>
-                <option value="Enviado">Enviado</option>
-                <option value="Entregado">Entregado</option>
-                <option value="Cancelado">Cancelado</option>
+                {selectedOrder.status === 'Pendiente' ? (
+                  <>
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="Cancelado">Cancelado</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="En proceso">En proceso</option>
+                    <option value="Enviado">Enviado</option>
+                    <option value="Entregado">Entregado</option>
+                    <option value="Cancelado">Cancelado</option>
+                  </>
+                )}
               </select>
             </label>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal Premium para Confirmación de Despacho (HU-012) */}
+      <Modal
+        open={!!orderToDispatch}
+        title="Preparar Despacho del Pedido"
+        onClose={() => setOrderToDispatch(null)}
+      >
+        {orderToDispatch && (
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-teal-500/10 text-teal-600 shrink-0">
+                <Truck className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">
+                  ¿Estás listo para despachar el pedido {orderToDispatch.id}?
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">
+                  Para actualizar el estado a <span className="font-bold text-teal-500">Enviado (SHIPPED)</span>, es obligatorio cumplir con las reglas del negocio:
+                </p>
+              </div>
+            </div>
+
+            {/* Checklist de requisitos de negocio */}
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-neutral-800 dark:bg-neutral-900/40 text-xs font-semibold space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Requisito 1: Pago y Estado</span>
+                {orderToDispatch.status === 'En proceso' ? (
+                  <span className="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✓ Cumplido (En proceso)</span>
+                ) : (
+                  <span className="bg-rose-500/10 text-rose-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✗ Requerido ({orderToDispatch.status})</span>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-400 dark:text-neutral-500 leading-normal -mt-2">
+                El pedido debe estar pagado (estado "En proceso") para poder realizar el envío.
+              </p>
+
+              <div className="border-t border-slate-200/40 dark:border-neutral-800 pt-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-slate-500">Requisito 2: Prueba de Envío (SHIPPING_PROOF)</span>
+                  {dispatchFile ? (
+                    <span className="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✓ Cargado</span>
+                  ) : (
+                    <span className="bg-rose-500/10 text-rose-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✗ Obligatorio</span>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  onChange={(e) => {
+                    const files = e.target.files;
+                    if (files && files.length > 0) {
+                      setDispatchFile(files[0]);
+                    }
+                  }}
+                  className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-[10px] file:font-bold file:bg-teal-500/10 file:text-teal-600 hover:file:bg-teal-500/20 file:cursor-pointer cursor-pointer border border-dashed border-slate-300 dark:border-neutral-700 rounded-lg p-2 bg-white dark:bg-neutral-950"
+                  disabled={orderToDispatch.status !== 'En proceso'}
+                />
+                <p className="text-[9px] text-slate-400 dark:text-neutral-500 mt-1 font-medium">
+                  Soporta imágenes (JPEG, PNG, WEBP) o documentos PDF de hasta 5 MB.
+                </p>
+              </div>
+            </div>
+
+            {dispatchError && (
+              <div className="flex items-start gap-2.5 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-red-600 dark:text-red-300 text-xs font-semibold">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-red-500 mt-0.5" />
+                <span>{dispatchError}</span>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-neutral-900">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setOrderToDispatch(null)}
+                disabled={isDispatching}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void handleConfirmDispatch()}
+                disabled={isDispatching || orderToDispatch.status !== 'En proceso' || !dispatchFile}
+                className="bg-teal-500 hover:bg-teal-600 text-white font-extrabold"
+              >
+                {isDispatching ? 'Despachando...' : 'Confirmar Envío'}
+              </Button>
+            </div>
           </div>
         )}
       </Modal>

@@ -1,5 +1,5 @@
 import { api } from './api';
-import { normalizeAuthResponse, normalizeBackendUser } from './authMapper';
+import { normalizeAuthResponse } from './authMapper';
 import { clearStoredSession, saveStoredSession } from './session';
 import type {
   AuthResponse,
@@ -42,21 +42,7 @@ export const registerUser = async (values: RegisterFormValues): Promise<AuthResp
     password: values.password,
   });
 
-  const session = normalizeAuthResponse(data);
-
-  if (values.nickname.trim() || values.phone?.trim()) {
-    const { data: profileData } = await api.patch<{ user: BackendUser }>('/users/me', {
-      firstName: values.nickname.trim() || undefined,
-      phone: values.phone?.trim() || undefined,
-    });
-
-    return {
-      accessToken: session.accessToken,
-      user: normalizeBackendUser(profileData.user),
-    };
-  }
-
-  return session;
+  return normalizeAuthResponse(data);
 };
 
 export const saveSession = (session: AuthResponse, remember = true) => {
@@ -71,4 +57,9 @@ export const logoutUser = async () => {
   } finally {
     clearStoredSession();
   }
+};
+
+export const getMyProfile = async (): Promise<BackendUser> => {
+  const { data } = await api.get<{ user: BackendUser }>('/auth/me');
+  return data.user;
 };

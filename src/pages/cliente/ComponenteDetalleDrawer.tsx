@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ShoppingCart, X, Star, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShoppingCart, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import type { CatalogComponent } from '../../types/catalog';
+import { getCatalogComponentById, getCatalogComponents } from '../../services/catalogService';
 type ComponenteDetalleDrawerProps = {
   componente: CatalogComponent | null;
   open: boolean;
@@ -11,6 +12,7 @@ type ComponenteDetalleDrawerProps = {
   anchorRect?: DOMRect | null;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
+  showAddToCart?: boolean;
 };
 export const ComponenteDetalleDrawer = ({
   componente,
@@ -21,13 +23,55 @@ export const ComponenteDetalleDrawer = ({
   anchorRect = null,
   onMouseEnter,
   onMouseLeave,
+  showAddToCart = true,
 }: ComponenteDetalleDrawerProps) => {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [detailedComponent, setDetailedComponent] = useState<CatalogComponent | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+
   useEffect(() => {
     setActiveImageIndex(0);
-  }, [componente]);
+    setDetailedComponent(null);
+
+    if (!componente || !open) return;
+
+    const fetchDetails = async () => {
+      setLoadingDetails(true);
+      try {
+        let details: CatalogComponent | null = null;
+        if (componente.id) {
+          try {
+            details = await getCatalogComponentById(componente.id);
+          } catch (err) {
+            console.error('Error fetching by ID, trying search by name:', err);
+          }
+        }
+        if (!details && componente.name) {
+          const searchRes = await getCatalogComponents({ search: componente.name });
+          const exactMatch = searchRes.items.find(
+            (item) => item.name.toLowerCase() === componente.name.toLowerCase()
+          );
+          if (exactMatch) {
+            details = exactMatch;
+          }
+        }
+        if (details) {
+          setDetailedComponent(details);
+        }
+      } catch (err) {
+        console.error('Error fetching component details:', err);
+      } finally {
+        setLoadingDetails(false);
+      }
+    };
+
+    void fetchDetails();
+  }, [componente, open]);
+
   if (!componente) return null;
-  const images = [componente.imageUrl || ''].filter(Boolean);
+
+  const displayComponent = detailedComponent || componente;
+  const images = [displayComponent.imageUrl || ''].filter(Boolean);
   if (images.length === 0) images.push('');
   const handlePrevImage = () => {
     setActiveImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
@@ -115,11 +159,11 @@ export const ComponenteDetalleDrawer = ({
         <div className="flex items-center justify-between mb-4">
           <div>
             <span className="text-xs font-bold text-neutral-450 uppercase tracking-wider">
-              {componente.category}
+              {displayComponent.category}
             </span>
             <span className="mx-2 text-neutral-800">•</span>
             <span className="text-xs font-bold text-neutral-450 uppercase tracking-wider">
-              {componente.brand}
+              {displayComponent.brand}
             </span>
           </div>
           <button
@@ -133,24 +177,14 @@ export const ComponenteDetalleDrawer = ({
         </div>
         <div className="mb-5">
           <h2 className="text-xl font-black text-white leading-tight">
-            {componente.name}
+            {displayComponent.name}
           </h2>
-          <div className="flex items-center gap-1.5 mt-2">
-            <div className="flex text-amber-400">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className="h-3.5 w-3.5 fill-current" />
-              ))}
-            </div>
-            <span className="text-[11px] text-neutral-400 font-medium">
-              (128 reseñas)
-            </span>
-          </div>
         </div>
         <div className="relative mb-5 rounded-xl border border-neutral-900 bg-neutral-900/40 p-4 group">
           <div className="flex h-48 items-center justify-center overflow-hidden rounded-lg">
             <img
               src={images[activeImageIndex]}
-              alt={componente.name}
+              alt={displayComponent.name}
               className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
             />
           </div>
@@ -192,14 +226,11 @@ export const ComponenteDetalleDrawer = ({
         <div className="flex items-center justify-between mb-5">
           <div>
             <div className="text-2xl font-black text-teal-400">
-              ${componente.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </div>
-            <div className="text-[10px] text-neutral-500 mt-0.5 font-medium">
-              Envío estimado: 24 - 48 horas
+              ${displayComponent.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           </div>
-          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${statusColors[componente.status]}`}>
-            {statusLabels[componente.status]}
+          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${statusColors[displayComponent.status]}`}>
+            {statusLabels[displayComponent.status]}
           </span>
         </div>
         <div className="mb-6">
@@ -208,8 +239,23 @@ export const ComponenteDetalleDrawer = ({
           </h3>
           <div className="rounded-lg border border-neutral-900/80 overflow-hidden text-xs bg-neutral-950">
             <div className="divide-y divide-neutral-900">
-              {componente.attributes && componente.attributes.length > 0 ? (
-                componente.attributes.map((attr, idx) => (
+              {loadingDetails ? (
+                <div className="space-y-3.5 p-4">
+                  <div className="flex justify-between items-center animate-pulse">
+                    <div className="h-3.5 w-24 bg-neutral-800 rounded"></div>
+                    <div className="h-3.5 w-16 bg-neutral-800 rounded"></div>
+                  </div>
+                  <div className="flex justify-between items-center animate-pulse">
+                    <div className="h-3.5 w-20 bg-neutral-800 rounded"></div>
+                    <div className="h-3.5 w-12 bg-neutral-800 rounded"></div>
+                  </div>
+                  <div className="flex justify-between items-center animate-pulse">
+                    <div className="h-3.5 w-28 bg-neutral-800 rounded"></div>
+                    <div className="h-3.5 w-24 bg-neutral-800 rounded"></div>
+                  </div>
+                </div>
+              ) : displayComponent.attributes && displayComponent.attributes.length > 0 ? (
+                displayComponent.attributes.map((attr, idx) => (
                   <div
                     key={idx}
                     className="flex justify-between py-2 px-3 transition hover:bg-white/[0.01]"
@@ -230,26 +276,20 @@ export const ComponenteDetalleDrawer = ({
             </div>
           </div>
         </div>
-        <div className="flex gap-3 pt-4 border-t border-neutral-900/80">
-          <Button
-            type="button"
-            fullWidth
-            onClick={() => onAddToCart?.(componente)}
-            disabled={componente.status === 'agotado'}
-            className="flex-1 bg-teal-500 hover:bg-teal-400 text-neutral-950 font-bold h-10 transition duration-200"
-          >
-            <ShoppingCart className="h-4 w-4 mr-1.5" strokeWidth={2.5} />
-            Añadir al carrito
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="w-10 h-10 p-0 border-neutral-850 hover:bg-neutral-900 text-neutral-400 hover:text-white flex items-center justify-center rounded-lg"
-            aria-label="Comparar"
-          >
-            <BarChart3 className="h-4 w-4" />
-          </Button>
-        </div>
+        {showAddToCart && (
+          <div className="flex gap-3 pt-4 border-t border-neutral-900/80">
+            <Button
+              type="button"
+              fullWidth
+              onClick={() => onAddToCart?.(displayComponent)}
+              disabled={displayComponent.status === 'agotado'}
+              className="flex-1 bg-teal-500 hover:bg-teal-400 text-neutral-950 font-bold h-10 transition duration-200"
+            >
+              <ShoppingCart className="h-4 w-4 mr-1.5" strokeWidth={2.5} />
+              Añadir al carrito
+            </Button>
+          </div>
+        )}
       </div>
     </>
   );

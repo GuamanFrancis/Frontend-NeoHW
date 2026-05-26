@@ -42,7 +42,28 @@ export const saveStoredSession = (session: AuthResponse, remember = true) => {
 
 export const updateStoredSession = (session: AuthResponse) => {
   const storage = localStorage.getItem(SESSION_KEY) ? localStorage : sessionStorage;
-  storage.setItem(SESSION_KEY, JSON.stringify(session));
+  const currentSession = getStoredSession();
+
+  if (currentSession && currentSession.user.id === session.user.id) {
+    const mergedUser = {
+      ...currentSession.user,
+      ...session.user,
+      firstName: session.user.firstName ?? currentSession.user.firstName,
+      lastName: session.user.lastName ?? currentSession.user.lastName,
+      phone: session.user.phone ?? currentSession.user.phone,
+    };
+
+    const fullName = [mergedUser.firstName, mergedUser.lastName].filter(Boolean).join(' ').trim();
+    mergedUser.nickname = fullName || mergedUser.email;
+
+    const mergedSession = {
+      ...session,
+      user: mergedUser,
+    };
+    storage.setItem(SESSION_KEY, JSON.stringify(mergedSession));
+  } else {
+    storage.setItem(SESSION_KEY, JSON.stringify(session));
+  }
 };
 
 export const clearStoredSession = () => {

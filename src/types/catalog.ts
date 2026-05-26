@@ -65,6 +65,7 @@ export type CatalogComponent = {
   model: string | null;
   sku: string | null;
   attributes: BackendProductAttribute[];
+  sellerId: string;
 };
 
 
@@ -79,6 +80,7 @@ export type CatalogQueryParams = {
   maxPrice?: number;
   sort?: string;
   order?: 'asc' | 'desc';
+  sellerId?: string;
 };
 
 
@@ -102,4 +104,5 @@ export type CatalogSavePayload = {
   imageUrl?: string;
   model?: string;
   sku?: string;
+  sellerId?: string;
 };

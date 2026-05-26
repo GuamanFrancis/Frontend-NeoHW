@@ -1,20 +1,14 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, Phone, User } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, User, Phone } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { Button } from '../../components/ui/Button';
 import { FormInput } from '../../components/ui/FormInput';
-import { FormSelect } from '../../components/ui/FormSelect';
-import { registerUser, roleHomeRoutes, saveSession } from '../../services/authService';
+import { registerUser, roleHomeRoutes, saveSession, normalizeBackendUser } from '../../services/authService';
+import { updateUser } from '../../services/usersService';
+import { updateStoredSession } from '../../services/session';
 import type { RegisterFormValues } from '../../types/auth';
 import { AuthLayout } from './AuthLayout';
-
-const genderOptions = [
-  { label: 'Selecciona tu genero', value: '' },
-  { label: 'Femenino', value: 'femenino' },
-  { label: 'Masculino', value: 'masculino' },
-  { label: 'Otro', value: 'otro' },
-];
 
 export const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -30,20 +24,43 @@ export const RegisterPage = () => {
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormValues>({
     defaultValues: {
-      nickname: '',
-      gender: '',
       email: '',
-      phone: '',
       password: '',
       confirmPassword: '',
+      firstName: '',
+      lastName: '',
+      phone: '',
     },
   });
 
   const onSubmit = async (values: RegisterFormValues) => {
     try {
       setFormError('');
+      
       const session = await registerUser(values);
+      
+      
       saveSession(session);
+
+      
+      if (values.firstName?.trim() || values.lastName?.trim() || values.phone?.trim()) {
+        try {
+          const updatedUser = await updateUser('me', {
+            firstName: values.firstName?.trim() || undefined,
+            lastName: values.lastName?.trim() || undefined,
+            phone: values.phone?.trim() || undefined,
+          });
+
+          // Sincronizar el almacenamiento local con los datos actualizados del perfil
+          updateStoredSession({
+            accessToken: session.accessToken,
+            user: normalizeBackendUser(updatedUser),
+          });
+        } catch (profileError) {
+          console.error('Error al actualizar datos de perfil tras registro:', profileError);
+        }
+      }
+
       const redirect = searchParams.get('redirect');
       navigate(redirect || roleHomeRoutes[session.user.role]);
     } catch {
@@ -56,7 +73,7 @@ export const RegisterPage = () => {
   };
 
   return (
-    <AuthLayout cardClassName="py-8 lg:py-7 !max-w-[540px]">
+    <AuthLayout cardClassName="py-8 lg:py-7 !max-w-[480px]">
       <div className="text-center">
         <h2 className="text-3xl font-extrabold leading-tight text-slate-950 dark:text-white">
           Crear cuenta
@@ -67,29 +84,41 @@ export const RegisterPage = () => {
       </div>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)}>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-2 gap-4">
           <FormInput
-            label="Nickname"
-            type="text"
-            placeholder="Ej: Francis"
+            label="Nombre"
+            placeholder="Juan"
             icon={<User className="h-5 w-5 flex-none text-slate-500 dark:text-neutral-300" />}
-            error={errors.nickname?.message}
-            {...register('nickname', {
-              required: 'El nickname es obligatorio.',
-              minLength: {
-                value: 3,
-                message: 'El nickname debe tener al menos 3 caracteres.',
-              },
+            error={errors.firstName?.message}
+            {...register('firstName', {
+              required: 'El nombre es obligatorio.',
             })}
           />
 
-          <FormSelect
-            label="Genero"
-            options={genderOptions}
-            error={errors.gender?.message}
-            {...register('gender', { required: 'Selecciona un genero.' })}
+          <FormInput
+            label="Apellido"
+            placeholder="Perez"
+            icon={<User className="h-5 w-5 flex-none text-slate-500 dark:text-neutral-300" />}
+            error={errors.lastName?.message}
+            {...register('lastName', {
+              required: 'El apellido es obligatorio.',
+            })}
           />
         </div>
+
+        <FormInput
+          label="Numero celular"
+          placeholder="0999999999"
+          icon={<Phone className="h-5 w-5 flex-none text-slate-500 dark:text-neutral-300" />}
+          error={errors.phone?.message}
+          {...register('phone', {
+            required: 'El numero celular es obligatorio.',
+            pattern: {
+              value: /^[0-9]{10}$/,
+              message: 'El celular debe tener 10 digitos.',
+            },
+          })}
+        />
 
         <FormInput
           label="Correo electronico"
@@ -107,72 +136,55 @@ export const RegisterPage = () => {
         />
 
         <FormInput
-          label="Numero celular"
-          type="tel"
-          placeholder="Ej: 0991234567"
-          optional
-          icon={<Phone className="h-5 w-5 flex-none text-slate-500 dark:text-neutral-300" />}
-          error={errors.phone?.message}
-          {...register('phone', {
+          label="Contrasena"
+          type={showPassword ? 'text' : 'password'}
+          placeholder="Crea una contrasena"
+          icon={<LockKeyhole className="h-5 w-5 flex-none text-slate-500 dark:text-neutral-300" />}
+          error={errors.password?.message}
+          endIcon={
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 dark:text-neutral-300 dark:hover:bg-white/10"
+              aria-label="Mostrar contrasena"
+            >
+              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
+          }
+          {...register('password', {
+            required: 'La contrasena es obligatoria.',
+            minLength: {
+              value: 8,
+              message: 'La contrasena debe tener al menos 8 caracteres.',
+            },
             pattern: {
-              value: /^$|^[0-9]{10}$/,
-              message: 'El numero celular debe tener 10 digitos.',
+              value: /^(?=.*[A-Z])(?=(.*\d){2})(?=(.*[\W_]){2}).*$/,
+              message: 'Debe incluir 1 mayuscula, 2 numeros y 2 caracteres especiales.',
             },
           })}
         />
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <FormInput
-            label="Contrasena"
-            type={showPassword ? 'text' : 'password'}
-            placeholder="Crea una contrasena"
-            icon={<LockKeyhole className="h-5 w-5 flex-none text-slate-500 dark:text-neutral-300" />}
-            error={errors.password?.message}
-            endIcon={
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 dark:text-neutral-300 dark:hover:bg-white/10"
-                aria-label="Mostrar contrasena"
-              >
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </button>
-            }
-            {...register('password', {
-              required: 'La contrasena es obligatoria.',
-              minLength: {
-                value: 8,
-                message: 'La contrasena debe tener al menos 8 caracteres.',
-              },
-              pattern: {
-                value: /^(?=.*[A-Z])(?=(.*\d){2})(?=(.*[\W_]){2}).*$/,
-                message: 'Debe incluir 1 mayuscula, 2 numeros y 2 caracteres especiales.',
-              },
-            })}
-          />
-
-          <FormInput
-            label="Confirmar contrasena"
-            type={showConfirmPassword ? 'text' : 'password'}
-            placeholder="Confirma tu contrasena"
-            icon={<LockKeyhole className="h-5 w-5 flex-none text-slate-500 dark:text-neutral-300" />}
-            error={errors.confirmPassword?.message}
-            endIcon={
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 dark:text-neutral-300 dark:hover:bg-white/10"
-                aria-label="Mostrar confirmacion de contrasena"
-              >
-                {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </button>
-            }
-            {...register('confirmPassword', {
-              required: 'Confirma tu contrasena.',
-              validate: (value) => value === getValues('password') || 'Las contrasenas no coinciden.',
-            })}
-          />
-        </div>
+        <FormInput
+          label="Confirmar contrasena"
+          type={showConfirmPassword ? 'text' : 'password'}
+          placeholder="Confirma tu contrasena"
+          icon={<LockKeyhole className="h-5 w-5 flex-none text-slate-500 dark:text-neutral-300" />}
+          error={errors.confirmPassword?.message}
+          endIcon={
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 dark:text-neutral-300 dark:hover:bg-white/10"
+              aria-label="Mostrar confirmacion de contrasena"
+            >
+              {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
+          }
+          {...register('confirmPassword', {
+            required: 'Confirma tu contrasena.',
+            validate: (value) => value === getValues('password') || 'Las contrasenas no coinciden.',
+          })}
+        />
 
         {formError && (
           <div className="rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-200">

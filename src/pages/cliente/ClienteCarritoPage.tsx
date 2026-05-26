@@ -3,11 +3,7 @@ import { useNavigate } from 'react-router';
 import {
   ArrowLeft,
   Trash2,
-  Heart,
   Lock,
-  ShieldCheck,
-  ChevronDown,
-  ChevronUp,
   Info,
   ShoppingCart,
   Plus,
@@ -21,6 +17,10 @@ import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { FormInput } from '../../components/ui/FormInput';
 import { getStoredSession } from '../../services/session';
+import type { CatalogComponent } from '../../types/catalog';
+import { ComponenteDetalleDrawer } from './ComponenteDetalleDrawer';
+import { createStripeSession } from '../../services/paymentsService';
+
 export const ClienteCarritoPage = () => {
   const navigate = useNavigate();
   const {
@@ -33,7 +33,7 @@ export const ClienteCarritoPage = () => {
     total,
     itemCount,
   } = useCart();
-  const [showSummaryDetails, setShowSummaryDetails] = useState(false);
+  
   const [wishlistedIds, setWishlistedIds] = useState<Record<string, boolean>>({});
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [street, setStreet] = useState('');
@@ -41,17 +41,55 @@ export const ClienteCarritoPage = () => {
   const [stateName, setStateName] = useState('');
   const [postalCode, setPostalCode] = useState('');
   const [country, setCountry] = useState('Ecuador');
+  
+ 
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+
   const [loadingCheckout, setLoadingCheckout] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [orderSuccess, setOrderSuccess] = useState<{ orderId: string; totalAmount: number } | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<CatalogComponent | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [loadingPayment, setLoadingPayment] = useState(false);
+
+  const handlePayWithStripe = async (orderId: string) => {
+    setLoadingPayment(true);
+    try {
+      const sessionData = await createStripeSession(orderId);
+      if (sessionData.url) {
+        window.location.href = sessionData.url;
+      } else {
+        alert('No se pudo redirigir a Stripe. Por favor intente desde su panel de pedidos.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error al iniciar el pago con Stripe.');
+    } finally {
+      setLoadingPayment(false);
+    }
+  };
+
+  const handleOpenDetail = (product: any) => {
+    setSelectedProduct(product as CatalogComponent);
+    setIsDetailOpen(true);
+  };
+
   const toggleWishlist = (id: string) => {
     setWishlistedIds((prev) => ({ ...prev, [id]: !prev[id] }));
   };
+
   const handleOpenCheckout = () => {
     setCheckoutError(null);
     setOrderSuccess(null);
     const session = getStoredSession();
     const userId = session?.user.id;
+    if (session?.user) {
+      setFullName(`${session.user.firstName || ''} ${session.user.lastName || ''}`.trim());
+      setEmail(session.user.email || '');
+      setPhone(session.user.phone || '');
+    }
     if (userId) {
       try {
         const savedAddress = JSON.parse(localStorage.getItem(`shipping_address_${userId}`) || '{}');
@@ -68,10 +106,11 @@ export const ClienteCarritoPage = () => {
     }
     setIsCheckoutOpen(true);
   };
+
   const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!street.trim() || !city.trim() || !stateName.trim() || !postalCode.trim()) {
-      setCheckoutError('Por favor complete todos los campos de dirección obligatorios.');
+    if (!street.trim() || !city.trim() || !stateName.trim() || !postalCode.trim() || !fullName.trim() || !email.trim() || !phone.trim()) {
+      setCheckoutError('Por favor complete todos los campos obligatorios del formulario.');
       return;
     }
     setLoadingCheckout(true);
@@ -83,6 +122,9 @@ export const ClienteCarritoPage = () => {
           quantity: item.quantity,
         })),
         shippingAddress: {
+          fullName: fullName.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
           street: street.trim(),
           city: city.trim(),
           state: stateName.trim(),
@@ -91,6 +133,35 @@ export const ClienteCarritoPage = () => {
         },
       };
       const response = await createOrder(payload);
+      
+      const session = getStoredSession();
+      const userId = session?.user.id;
+      if (userId) {
+        try {
+          const ordersKey = `client_orders_${userId}`;
+          const currentOrders = JSON.parse(localStorage.getItem(ordersKey) || '[]');
+          const newOrder = {
+            id: response.orderId,
+            totalAmount: response.totalAmount,
+            status: 'PENDING_PAYMENT',
+            createdAt: new Date().toISOString(),
+            items: cartItems.map((item) => ({
+              product: {
+                id: item.product.id,
+                name: item.product.name,
+                imageUrl: item.product.imageUrl,
+              },
+              quantity: item.quantity,
+              priceAtTime: item.product.price,
+            })),
+          };
+          currentOrders.unshift(newOrder);
+          localStorage.setItem(ordersKey, JSON.stringify(currentOrders));
+        } catch (e) {
+          console.error('Error saving client order to history:', e);
+        }
+      }
+
       setOrderSuccess({
         orderId: response.orderId,
         totalAmount: response.totalAmount,
@@ -104,16 +175,19 @@ export const ClienteCarritoPage = () => {
       setLoadingCheckout(false);
     }
   };
+
   const statusColors = {
     disponible: 'text-emerald-500',
     'stock-bajo': 'text-amber-500',
     agotado: 'text-rose-500',
   };
+
   const statusLabels = {
     disponible: 'Disponible',
     'stock-bajo': 'Stock bajo',
     agotado: 'Agotado',
   };
+
   if (cartItems.length === 0) {
     return (
       <div className="mx-auto max-w-7xl pb-16 text-slate-900 dark:text-neutral-100">
@@ -145,6 +219,7 @@ export const ClienteCarritoPage = () => {
       </div>
     );
   }
+
   return (
     <div className="mx-auto max-w-7xl pb-16 text-slate-900 dark:text-neutral-100">
       <div className="mb-6 border-b border-slate-100 dark:border-neutral-900 pb-6">
@@ -180,7 +255,11 @@ export const ClienteCarritoPage = () => {
                     <tr key={product.id} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-colors">
                       <td className="py-4 px-4 min-w-[200px]">
                         <div className="flex items-center gap-3">
-                          <div className="h-16 w-16 shrink-0 flex items-center justify-center rounded-lg border border-slate-100 bg-slate-50 dark:border-neutral-900 dark:bg-neutral-900/50 p-1.5">
+                          <div
+                            className="h-16 w-16 shrink-0 flex items-center justify-center rounded-lg border border-slate-100 bg-slate-50 dark:border-neutral-900 dark:bg-neutral-900/50 p-1.5 cursor-pointer hover:opacity-80 transition"
+                            onClick={() => handleOpenDetail(product)}
+                            title="Ver detalles"
+                          >
                             <img
                               src={product.imageUrl || ''}
                               alt={product.name}
@@ -188,7 +267,11 @@ export const ClienteCarritoPage = () => {
                             />
                           </div>
                           <div className="min-w-0">
-                            <h4 className="font-extrabold text-slate-900 dark:text-white truncate max-w-[200px]" title={product.name}>
+                            <h4
+                              className="font-extrabold text-slate-900 dark:text-white truncate max-w-[200px] cursor-pointer hover:text-teal-500 hover:underline transition"
+                              title={product.name}
+                              onClick={() => handleOpenDetail(product)}
+                            >
                               {product.name}
                             </h4>
                             <div className="text-[10px] text-slate-400 dark:text-neutral-500 font-bold mt-0.5 uppercase tracking-wider">
@@ -204,7 +287,7 @@ export const ClienteCarritoPage = () => {
                       </td>
                       <td className="py-4 px-4 text-right font-bold text-slate-800 dark:text-neutral-200 whitespace-nowrap">
                         <div>${product.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                        <div className="text-[9px] text-slate-400 dark:text-neutral-500 font-medium mt-0.5">MXN</div>
+                        <div className="text-[9px] text-slate-400 dark:text-neutral-500 font-medium mt-0.5">USD</div>
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex justify-center">
@@ -246,7 +329,7 @@ export const ClienteCarritoPage = () => {
                       </td>
                       <td className="py-4 px-4 text-right font-black text-slate-900 dark:text-white whitespace-nowrap">
                         <div>${itemSubtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                        <div className="text-[9px] text-slate-400 dark:text-neutral-500 font-medium mt-0.5">MXN</div>
+                        <div className="text-[9px] text-slate-400 dark:text-neutral-500 font-medium mt-0.5">USD</div>
                       </td>
                       <td className="py-4 px-4 min-w-[80px]">
                         <div className="flex items-center justify-end gap-1">
@@ -260,7 +343,7 @@ export const ClienteCarritoPage = () => {
                             }`}
                             aria-label="Añadir a deseos"
                           >
-                            <Heart className={`h-4 w-4 ${wishlistedIds[product.id] ? 'fill-current' : ''}`} />
+                            
                           </button>
                           <button
                             type="button"
@@ -298,6 +381,37 @@ export const ClienteCarritoPage = () => {
           </div>
         </div>
         <div className="lg:col-span-4 space-y-6">
+          <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-neutral-900 dark:bg-neutral-950/20">
+            <h3 className="font-black text-slate-900 dark:text-white text-xs uppercase tracking-wider border-b border-slate-100 dark:border-neutral-900 pb-3">
+              Resumen antes de confirmar compra
+            </h3>
+            <div className="mt-4 space-y-3">
+              {cartItems.map(({ product, quantity }) => (
+                <div key={product.id} className="flex items-center justify-between gap-3 text-xs">
+                  <div
+                    className="flex items-center gap-2.5 min-w-0 cursor-pointer hover:text-teal-500 transition group"
+                    onClick={() => handleOpenDetail(product)}
+                    title="Ver detalles"
+                  >
+                    <div className="h-8 w-8 shrink-0 flex items-center justify-center rounded border border-slate-100 bg-slate-50 dark:border-neutral-900 p-0.5 group-hover:opacity-85 transition">
+                      <img
+                        src={product.imageUrl || ''}
+                        alt={product.name}
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
+                    <span className="font-bold text-slate-700 dark:text-neutral-300 truncate max-w-[180px] group-hover:underline">
+                      {product.name}
+                    </span>
+                  </div>
+                  <span className="font-extrabold text-slate-400 dark:text-neutral-500 shrink-0">
+                    x{quantity}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="rounded-xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-neutral-900 dark:bg-neutral-950/20">
             <h3 className="flex items-center justify-between font-black text-slate-900 dark:text-white border-b border-slate-100 dark:border-neutral-900 pb-4">
               <span>Resumen del pedido</span>
@@ -322,7 +436,7 @@ export const ClienteCarritoPage = () => {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Impuestos (IVA 16%)</span>
+                <span>Impuestos (IVA 12%)</span>
                 <span className="text-slate-900 dark:text-neutral-200">
                   ${taxes.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
@@ -335,7 +449,7 @@ export const ClienteCarritoPage = () => {
                   ${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
                 <span className="text-[10px] font-bold text-slate-400 dark:text-neutral-500 mt-1 inline-block">
-                  MXN
+                  USD
                 </span>
               </div>
             </div>
@@ -353,68 +467,7 @@ export const ClienteCarritoPage = () => {
               <span>Pago 100% seguro y cifrado</span>
             </div>
           </div>
-          <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-neutral-900 dark:bg-neutral-950/20 text-xs font-semibold text-slate-500 dark:text-neutral-400 flex items-start gap-3">
-            <ShieldCheck className="h-5 w-5 text-teal-500 shrink-0 mt-0.5" />
-            <div>
-              <h4 className="font-extrabold text-slate-900 dark:text-white mb-1">
-                Validación de stock
-              </h4>
-              <p className="text-[11px] leading-relaxed">
-                Antes de confirmar tu compra, validaremos la disponibilidad actual de todos los productos en tu carrito.
-              </p>
-            </div>
-          </div>
-          <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-neutral-900 dark:bg-neutral-950/20">
-            <button
-              type="button"
-              onClick={() => setShowSummaryDetails((prev) => !prev)}
-              className="flex w-full items-center justify-between font-bold text-slate-900 dark:text-white text-xs outline-none"
-            >
-              <span className="uppercase tracking-wider">Resumen antes de confirmar compra</span>
-              {showSummaryDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </button>
-            {(!showSummaryDetails || true) && (
-              <div className="mt-4 space-y-3 pt-3 border-t border-slate-100 dark:border-neutral-900">
-                {cartItems.slice(0, showSummaryDetails ? undefined : 5).map(({ product, quantity }) => (
-                  <div key={product.id} className="flex items-center justify-between gap-3 text-xs">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="h-8 w-8 shrink-0 flex items-center justify-center rounded border border-slate-100 bg-slate-50 dark:border-neutral-900 p-0.5">
-                        <img
-                          src={product.imageUrl || ''}
-                          alt={product.name}
-                          className="max-h-full max-w-full object-contain"
-                        />
-                      </div>
-                      <span className="font-bold text-slate-700 dark:text-neutral-300 truncate max-w-[150px]">
-                        {product.name}
-                      </span>
-                    </div>
-                    <span className="font-extrabold text-slate-400 dark:text-neutral-500 shrink-0">
-                      x{quantity}
-                    </span>
-                  </div>
-                ))}
-                {cartItems.length > 5 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowSummaryDetails((prev) => !prev)}
-                    className="flex items-center gap-1 text-[11px] font-bold text-teal-500 hover:text-teal-600 dark:text-teal-400 dark:hover:text-teal-500 mt-2 hover:underline transition"
-                  >
-                    <span>
-                      {showSummaryDetails
-                        ? 'Ver menos detalles'
-                        : `Ver todos los detalles (${cartItems.length})`}
-                    </span>
-                    {showSummaryDetails ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
         </div>
-      </div>
-      <div className="mt-8 text-center text-[10px] font-semibold text-slate-400 dark:text-neutral-600 uppercase tracking-wider">
-        © Los precios son en MXN e incluyen IVA cuando aplica.
       </div>
       <Modal
         open={isCheckoutOpen}
@@ -422,7 +475,7 @@ export const ClienteCarritoPage = () => {
         onClose={() => {
           setIsCheckoutOpen(false);
           if (orderSuccess) {
-            navigate('/cliente/catalogo');
+            navigate('/cliente/pedidos');
           }
         }}
       >
@@ -445,7 +498,7 @@ export const ClienteCarritoPage = () => {
               <div className="flex justify-between">
                 <span>Total a Pagar:</span>
                 <span className="font-extrabold text-teal-600 dark:text-teal-400">
-                  ${orderSuccess.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} MXN
+                  ${orderSuccess.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD
                 </span>
               </div>
               <div className="flex justify-between">
@@ -455,16 +508,34 @@ export const ClienteCarritoPage = () => {
                 </span>
               </div>
             </div>
-            <div className="mt-8 w-full">
+            <div className="mt-8 w-full space-y-3">
               <Button
                 type="button"
                 fullWidth
+                onClick={() => handlePayWithStripe(orderSuccess.orderId)}
+                disabled={loadingPayment}
+                className="bg-teal-500 hover:bg-teal-600 text-neutral-950 font-extrabold"
+              >
+                {loadingPayment ? (
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-neutral-950 border-t-transparent" />
+                ) : (
+                  <>
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Pagar ahora con Stripe
+                  </>
+                )}
+              </Button>
+              <Button
+                type="button"
+                fullWidth
+                variant="outline"
                 onClick={() => {
                   setIsCheckoutOpen(false);
-                  navigate('/cliente/catalogo');
+                  navigate('/cliente/pedidos');
                 }}
+                disabled={loadingPayment}
               >
-                Volver al catálogo
+                Ver mis pedidos
               </Button>
             </div>
           </div>
@@ -482,8 +553,38 @@ export const ClienteCarritoPage = () => {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <FormInput
+                  label="Nombre Completo del Destinatario"
+                  placeholder="Ej: Francis Guaman"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  disabled={loadingCheckout}
+                  required
+                />
+              </div>
+              <div>
+                <FormInput
+                  label="Correo de Contacto"
+                  placeholder="Ej: correo@ejemplo.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={loadingCheckout}
+                  required
+                />
+              </div>
+              <div>
+                <FormInput
+                  label="Teléfono de Contacto"
+                  placeholder="Ej: 0998877665"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  disabled={loadingCheckout}
+                  required
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <FormInput
                   label="Calle y Número"
-                  placeholder="Ej: Av. de las Américas 123, Apto 4B"
+                  placeholder="Ej: Av. Amazonas N32-12 y Mariana de Jesús, Piso 3"
                   value={street}
                   onChange={(e) => setStreet(e.target.value)}
                   disabled={loadingCheckout}
@@ -493,7 +594,7 @@ export const ClienteCarritoPage = () => {
               <div>
                 <FormInput
                   label="Ciudad"
-                  placeholder="Ej: CDMX / Monterrey"
+                  placeholder="Ej: Quito / Guayaquil / Cuenca"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   disabled={loadingCheckout}
@@ -503,7 +604,7 @@ export const ClienteCarritoPage = () => {
               <div>
                 <FormInput
                   label="Estado / Provincia"
-                  placeholder="Ej: Nuevo León"
+                  placeholder="Ej: Pichincha / Guayas"
                   value={stateName}
                   onChange={(e) => setStateName(e.target.value)}
                   disabled={loadingCheckout}
@@ -513,7 +614,7 @@ export const ClienteCarritoPage = () => {
               <div>
                 <FormInput
                   label="Código Postal"
-                  placeholder="Ej: 64000"
+                  placeholder="Ej: 170504"
                   value={postalCode}
                   onChange={(e) => setPostalCode(e.target.value)}
                   disabled={loadingCheckout}
@@ -555,6 +656,13 @@ export const ClienteCarritoPage = () => {
           </form>
         )}
       </Modal>
+
+      <ComponenteDetalleDrawer
+        componente={selectedProduct}
+        open={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+        showAddToCart={false}
+      />
     </div>
   );
 };

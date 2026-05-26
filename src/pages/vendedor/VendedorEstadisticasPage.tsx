@@ -1,7 +1,9 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BarChart3, CheckCircle2, Clock3, DollarSign, Package, ShoppingCart } from 'lucide-react';
 import { PageCard } from '../../components/ui/PageCard';
-import { sellerOrdersData, type SellerOrderStatus } from './sellerOrdersData';
+import { getOrders, type OrderBackend } from '../../services/ordersService';
+
+export type SellerOrderStatus = 'Pendiente' | 'En proceso' | 'Enviado' | 'Entregado' | 'Cancelado';
 
 const statusOrder: SellerOrderStatus[] = ['Pendiente', 'En proceso', 'Enviado', 'Entregado', 'Cancelado'];
 
@@ -21,33 +23,64 @@ const formatCurrency = (value: number) =>
   }).format(value);
 
 export const VendedorEstadisticasPage = () => {
-  const {
-    totalOrders,
-    totalRevenue,
-    completedOrders,
-    pendingOrders,
-    avgTicket,
-    totalItems,
-    statusStats,
-    monthlySales,
-    maxMonthValue,
-  } = useMemo(() => {
-    const total = sellerOrdersData.length;
-    const revenue = sellerOrdersData.reduce((acc, order) => acc + order.total, 0);
-    const completed = sellerOrdersData.filter((order) => order.status === 'Entregado').length;
-    const pending = sellerOrdersData.filter((order) => order.status === 'Pendiente' || order.status === 'En proceso').length;
-    const items = sellerOrdersData.reduce((acc, order) => acc + order.itemsCount, 0);
+  const [orders, setOrders] = useState<OrderBackend[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-    const byStatus = statusOrder.map((status) => ({
-      status,
-      count: sellerOrdersData.filter((order) => order.status === status).length,
-    }));
+  useEffect(() => {
+    let active = true;
+    const fetchOrders = async () => {
+      try {
+        setIsLoading(true);
+        const res = await getOrders();
+        if (active && res && Array.isArray(res.data)) {
+          setOrders(res.data);
+        }
+      } catch (e) {
+        console.error('Error al cargar pedidos para estadísticas:', e);
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    };
+    void fetchOrders();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const stats = useMemo(() => {
+    const total = orders.length;
+    const revenue = orders.reduce((acc: number, order) => acc + Number(order.totalAmount || 0), 0);
+    const completed = orders.filter((order) => order.status === 'DELIVERED').length;
+    const pending = orders.filter((order) => order.status === 'PENDING_PAYMENT' || order.status === 'PROCESSING').length;
+    const items = orders.reduce((acc: number, order) => {
+      const itemsCount = Array.isArray(order.items)
+        ? order.items.reduce((sum: number, item) => sum + Number(item.quantity || 0), 0)
+        : 0;
+      return acc + itemsCount;
+    }, 0);
+
+    const byStatus = statusOrder.map((status) => {
+      const uiToBackend: Record<SellerOrderStatus, string> = {
+        Pendiente: 'PENDING_PAYMENT',
+        'En proceso': 'PROCESSING',
+        Enviado: 'SHIPPED',
+        Entregado: 'DELIVERED',
+        Cancelado: 'CANCELLED',
+      };
+      const backendStatus = uiToBackend[status];
+      return {
+        status,
+        count: orders.filter((order) => order.status === backendStatus).length,
+      };
+    });
 
     const monthBucket = new Map<string, number>();
-    for (const order of sellerOrdersData) {
+    for (const order of orders) {
       const date = new Date(order.createdAt);
-      const key = new Intl.DateTimeFormat('es-EC', { month: 'short', year: '2-digit' }).format(date);
-      monthBucket.set(key, (monthBucket.get(key) ?? 0) + order.total);
+      if (!Number.isNaN(date.getTime())) {
+        const key = new Intl.DateTimeFormat('es-EC', { month: 'short', year: '2-digit' }).format(date);
+        monthBucket.set(key, (monthBucket.get(key) ?? 0) + Number(order.totalAmount || 0));
+      }
     }
 
     const monthly = Array.from(monthBucket.entries()).map(([month, amount]) => ({ month, amount }));
@@ -64,30 +97,46 @@ export const VendedorEstadisticasPage = () => {
       monthlySales: monthly,
       maxMonthValue: maxMonth || 1,
     };
-  }, []);
+  }, [orders]);
+
+  if (isLoading) {
+    return (
+      <PageCard
+        title="Estadisticas de ventas"
+        text="Cargando resumen de pedidos, facturacion y rendimiento..."
+        icon={<BarChart3 className="h-6 w-6" />}
+      >
+        <div className="flex h-64 items-center justify-center">
+          <div className="text-sm font-semibold text-slate-500 dark:text-neutral-400">
+            Cargando estadísticas en tiempo real...
+          </div>
+        </div>
+      </PageCard>
+    );
+  }
 
   return (
     <PageCard
       title="Estadisticas de ventas"
-      text="Resumen de pedidos, facturacion y rendimiento del vendedor."
+      text="Resumen de pedidos, facturacion y rendimiento del vendedor en tiempo real."
       icon={<BarChart3 className="h-6 w-6" />}
     >
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
           <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-neutral-400">Ventas totales</p>
-          <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(totalRevenue)}</p>
+          <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(stats.totalRevenue)}</p>
           <p className="mt-2 text-sm text-slate-500 dark:text-neutral-400">Ingresos acumulados de pedidos registrados.</p>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
           <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-neutral-400">Pedidos totales</p>
-          <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{totalOrders}</p>
+          <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{stats.totalOrders}</p>
           <p className="mt-2 text-sm text-slate-500 dark:text-neutral-400">Pedidos procesados en la vista comercial.</p>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
           <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-neutral-400">Ticket promedio</p>
-          <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(avgTicket)}</p>
+          <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(stats.avgTicket)}</p>
           <p className="mt-2 text-sm text-slate-500 dark:text-neutral-400">Promedio por pedido.</p>
         </div>
       </div>
@@ -95,28 +144,34 @@ export const VendedorEstadisticasPage = () => {
       <div className="mt-5 grid gap-4 lg:grid-cols-[1.3fr_1fr]">
         <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
           <h2 className="text-lg font-bold text-slate-950 dark:text-white">Ventas por mes</h2>
-          <div className="mt-4 space-y-3">
-            {monthlySales.map((month) => (
-              <div key={month.month}>
-                <div className="mb-1 flex items-center justify-between text-sm">
-                  <span className="font-medium text-slate-700 dark:text-neutral-300">{month.month}</span>
-                  <span className="font-semibold text-teal-700 dark:text-teal-300">{formatCurrency(month.amount)}</span>
+          {stats.monthlySales.length === 0 ? (
+            <p className="mt-4 text-xs font-semibold text-slate-400 dark:text-neutral-500">
+              No hay ventas registradas por mes aún.
+            </p>
+          ) : (
+            <div className="mt-4 space-y-3">
+              {stats.monthlySales.map((month) => (
+                <div key={month.month}>
+                  <div className="mb-1 flex items-center justify-between text-sm">
+                    <span className="font-medium text-slate-700 dark:text-neutral-300">{month.month}</span>
+                    <span className="font-semibold text-teal-700 dark:text-teal-300">{formatCurrency(month.amount)}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-100 dark:bg-neutral-800">
+                    <div
+                      className="h-2 rounded-full bg-teal-500"
+                      style={{ width: `${Math.max(8, (month.amount / stats.maxMonthValue) * 100)}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="h-2 rounded-full bg-slate-100 dark:bg-neutral-800">
-                  <div
-                    className="h-2 rounded-full bg-teal-500"
-                    style={{ width: `${Math.max(8, (month.amount / maxMonthValue) * 100)}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
           <h2 className="text-lg font-bold text-slate-950 dark:text-white">Estado de pedidos</h2>
           <div className="mt-4 space-y-3">
-            {statusStats.map((item) => (
+            {stats.statusStats.map((item) => (
               <div key={item.status} className="flex items-center justify-between">
                 <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${statusLabelStyle[item.status]}`}>
                   {item.status}
@@ -134,7 +189,7 @@ export const VendedorEstadisticasPage = () => {
             <ShoppingCart className="h-4 w-4" />
             <p className="text-sm font-semibold">Pedidos completados</p>
           </div>
-          <p className="mt-2 text-xl font-bold text-slate-950 dark:text-white">{completedOrders}</p>
+          <p className="mt-2 text-xl font-bold text-slate-950 dark:text-white">{stats.completedOrders}</p>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
@@ -142,7 +197,7 @@ export const VendedorEstadisticasPage = () => {
             <Clock3 className="h-4 w-4" />
             <p className="text-sm font-semibold">Pendientes y en proceso</p>
           </div>
-          <p className="mt-2 text-xl font-bold text-slate-950 dark:text-white">{pendingOrders}</p>
+          <p className="mt-2 text-xl font-bold text-slate-950 dark:text-white">{stats.pendingOrders}</p>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
@@ -150,7 +205,7 @@ export const VendedorEstadisticasPage = () => {
             <Package className="h-4 w-4" />
             <p className="text-sm font-semibold">Productos vendidos</p>
           </div>
-          <p className="mt-2 text-xl font-bold text-slate-950 dark:text-white">{totalItems}</p>
+          <p className="mt-2 text-xl font-bold text-slate-950 dark:text-white">{stats.totalItems}</p>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
@@ -158,7 +213,7 @@ export const VendedorEstadisticasPage = () => {
             <CheckCircle2 className="h-4 w-4" />
             <p className="text-sm font-semibold">Ingreso promedio</p>
           </div>
-          <p className="mt-2 text-xl font-bold text-slate-950 dark:text-white">{formatCurrency(avgTicket)}</p>
+          <p className="mt-2 text-xl font-bold text-slate-950 dark:text-white">{formatCurrency(stats.avgTicket)}</p>
           <div className="mt-1 flex items-center gap-1 text-xs text-slate-500 dark:text-neutral-400">
             <DollarSign className="h-3.5 w-3.5" />
             <span>por pedido</span>

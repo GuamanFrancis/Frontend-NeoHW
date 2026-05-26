@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router';
 import {
   Box,
@@ -35,7 +35,7 @@ export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayo
   const [showMenu, setShowMenu] = useState(false);
   const navigate = useNavigate();
 
-  const session = useMemo(() => getStoredSession(), []);
+  const session = getStoredSession();
 
   const currentUserName = session?.user?.nickname ?? userName;
   const currentRoleName = session?.user?.role ? (ROLE_MAP[session.user.role] || roleName) : roleName;
