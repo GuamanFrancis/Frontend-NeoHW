@@ -40,6 +40,15 @@ export const CheckoutStatusPage = ({ type }: CheckoutStatusProps) => {
           setTotalAmount(foundOrderAmount);
           localStorage.setItem(ordersKey, JSON.stringify(updatedOrders));
         }
+
+        if (type === 'success') {
+          const paidKey = 'neohw_paid_order_ids';
+          const paidOrders = JSON.parse(localStorage.getItem(paidKey) || '[]');
+          if (!paidOrders.includes(orderId)) {
+            paidOrders.push(orderId);
+            localStorage.setItem(paidKey, JSON.stringify(paidOrders));
+          }
+        }
       } catch (e) {
         console.error('Error updating order status locally:', e);
       }
@@ -89,7 +98,7 @@ export const CheckoutStatusPage = ({ type }: CheckoutStatusProps) => {
                 <span className={`font-black px-2 py-0.5 rounded text-[10px] uppercase ${
                   isSuccess ? 'bg-teal-500/10 text-teal-400' : 'bg-amber-500/10 text-amber-500'
                 }`}>
-                  {isSuccess ? 'Procesando Pago' : 'Pendiente de Pago'}
+                  {isSuccess ? 'Pagado' : 'Pendiente de Pago'}
                 </span>
               </div>
             </div>

@@ -110,6 +110,20 @@ export const VendedorPedidosPage = () => {
       setIsLoading(true);
 
       const res = await getOrders();
+      const paidOrders = JSON.parse(localStorage.getItem('neohw_paid_order_ids') || '[]');
+
+      for (const order of res.data) {
+        if (order.status === 'PENDING_PAYMENT' && paidOrders.includes(order.id)) {
+          try {
+            await updateOrderStatus(order.id, 'PROCESSING');
+            updateLocalOrder(order.id, 'PROCESSING');
+            order.status = 'PROCESSING';
+          } catch (err) {
+            console.error(err);
+          }
+        }
+      }
+
       const mapped = res.data.map((order): MappedSellerOrder => {
         let itemsCount = 0;
         if (order.items && Array.isArray(order.items)) {
@@ -153,6 +167,9 @@ export const VendedorPedidosPage = () => {
           }
         }
 
+        const isPaidLocal = order.status === 'PENDING_PAYMENT' && paidOrders.includes(order.id);
+        const currentOrderStatus = isPaidLocal ? 'PROCESSING' : order.status;
+
         return {
           id: order.id,
           itemsCount,
@@ -161,7 +178,7 @@ export const VendedorPedidosPage = () => {
           clientPhone,
           createdAt: order.createdAt,
           total: Number(order.totalAmount),
-          status: backendStatusToUi[order.status] || 'Pendiente',
+          status: backendStatusToUi[currentOrderStatus] || 'Pendiente',
           addressStr,
           items: order.items || [],
         };
@@ -737,11 +754,19 @@ export const VendedorPedidosPage = () => {
                 value={editStatus}
                 onChange={(event) => setEditStatus(event.target.value as SellerOrderStatus)}
               >
-                <option value="Pendiente">Pendiente (Sin pagar)</option>
-                <option value="En proceso">En proceso (Pagado)</option>
-                <option value="Enviado">Enviado (Despachado)</option>
-                <option value="Entregado">Entregado</option>
-                <option value="Cancelado">Cancelado</option>
+                {selectedOrder.status === 'Pendiente' ? (
+                  <>
+                    <option value="Pendiente">Pendiente (Esperando pago)</option>
+                    <option value="Cancelado">Cancelado</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="En proceso">En proceso (Pagado)</option>
+                    <option value="Enviado">Enviado (Despachado)</option>
+                    <option value="Entregado">Entregado</option>
+                    <option value="Cancelado">Cancelado</option>
+                  </>
+                )}
               </select>
             </label>
           </div>

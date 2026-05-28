@@ -224,7 +224,7 @@ export const ClientePedidosPage = () => {
       case 'PROCESSING':
         return (
           <span className="bg-teal-500/10 text-teal-400 border border-teal-500/25 px-2.5 py-1 rounded-full text-[10px] uppercase font-black tracking-wide">
-            Procesando
+            Pagado
           </span>
         );
       case 'SHIPPED':
