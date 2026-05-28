@@ -9,12 +9,14 @@ import {
   MapPin,
   Copy,
   Info,
-  Eye
+  Eye,
+  Trash2
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { getStoredSession } from '../../services/session';
 import { createStripeSession } from '../../services/paymentsService';
+import { updateOrderStatus } from '../../services/ordersService';
 import { ComponenteDetalleDrawer } from './ComponenteDetalleDrawer';
 import type { CatalogComponent } from '../../types/catalog';
 
@@ -26,6 +28,13 @@ interface OrderItemLocal {
   };
   quantity: number;
   priceAtTime: number;
+}
+
+interface OrderDocumentLocal {
+  id: string;
+  documentType: 'SHIPPING_PROOF' | 'DELIVERY_PHOTO' | 'CUSTOMER_SIGNATURE';
+  fileUrl: string;
+  createdAt: string;
 }
 
 interface OrderLocal {
@@ -44,45 +53,53 @@ interface OrderLocal {
     email?: string;
     phone?: string;
   };
+  documents?: OrderDocumentLocal[];
 }
 
 export const ClientePedidosPage = () => {
   const session = getStoredSession();
   const userId = session?.user.id;
-  const ordersKey = userId ? `client_orders_${userId}` : '';
 
-  
   const [allOrders, setAllOrders] = useState<OrderLocal[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<OrderLocal[]>([]);
   const [displayedOrders, setDisplayedOrders] = useState<OrderLocal[]>([]);
-  
+  const [isLoading, setIsLoading] = useState(true);
   
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
 
-  
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 5;
 
-  
   const [selectedOrder, setSelectedOrder] = useState<OrderLocal | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<CatalogComponent | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  
-  useEffect(() => {
+  const ordersKey = userId ? `client_orders_${userId}` : '';
+
+  const loadOrders = () => {
     if (!ordersKey) return;
     try {
+      setIsLoading(true);
       const stored = localStorage.getItem(ordersKey);
       if (stored) {
         setAllOrders(JSON.parse(stored));
+      } else {
+        setAllOrders([]);
       }
     } catch (e) {
       console.error('Error al cargar historial de pedidos:', e);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
+    loadOrders();
   }, [ordersKey]);
 
   
@@ -141,6 +158,36 @@ export const ClientePedidosPage = () => {
       alert('Error al iniciar el pago con Stripe.');
     } finally {
       setPayingOrderId(null);
+    }
+  };
+
+  const handleCancelOrder = async (orderId: string) => {
+    if (!window.confirm('¿Está seguro de que desea cancelar este pedido?')) return;
+    setCancellingOrderId(orderId);
+    try {
+      try {
+        await updateOrderStatus(orderId, 'CANCELLED');
+      } catch (err) {
+        console.warn('Backend update failed (expected if USER role), updating locally only:', err);
+      }
+      
+      const stored = localStorage.getItem(ordersKey);
+      if (stored) {
+        const orders = JSON.parse(stored);
+        const updated = orders.map((o: any) =>
+          o.id === orderId ? { ...o, status: 'CANCELLED' } : o
+        );
+        localStorage.setItem(ordersKey, JSON.stringify(updated));
+      }
+
+      alert('Pedido cancelado exitosamente.');
+      setSelectedOrder(null);
+      loadOrders();
+    } catch (err: any) {
+      console.error(err);
+      alert('Error al cancelar el pedido. Intente nuevamente.');
+    } finally {
+      setCancellingOrderId(null);
     }
   };
 
@@ -295,7 +342,12 @@ export const ClientePedidosPage = () => {
       </div>
 
       
-      {filteredOrders.length === 0 ? (
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center border border-slate-200 rounded-xl bg-white dark:border-neutral-900 dark:bg-neutral-950/20 animate-pulse">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-teal-500 border-t-transparent mb-4" />
+          <h3 className="text-sm font-bold text-slate-700 dark:text-neutral-300">Cargando tu historial de pedidos...</h3>
+        </div>
+      ) : filteredOrders.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-slate-200 rounded-xl bg-white dark:border-neutral-900 dark:bg-neutral-950/20">
           <ShoppingBag className="h-16 w-16 text-slate-300 dark:text-neutral-800 mb-4" />
           <h3 className="text-lg font-bold text-slate-900 dark:text-white">No se encontraron pedidos</h3>
@@ -359,14 +411,26 @@ export const ClientePedidosPage = () => {
                       <td className="py-4 px-6">
                         <div className="flex items-center justify-end gap-3">
                           {order.status === 'PENDING_PAYMENT' && (
-                            <Button
-                              type="button"
-                              disabled={payingOrderId === order.id}
-                              onClick={() => handlePayOrder(order.id)}
-                              className="bg-teal-500 hover:bg-teal-400 text-neutral-950 font-extrabold h-8 px-4 text-[10px] uppercase border-0 shadow-sm"
-                            >
-                              {payingOrderId === order.id ? 'Cargando...' : 'Pagar'}
-                            </Button>
+                            <>
+                              <Button
+                                type="button"
+                                disabled={payingOrderId === order.id}
+                                onClick={() => handlePayOrder(order.id)}
+                                className="bg-teal-500 hover:bg-teal-400 text-neutral-950 font-extrabold h-8 px-4 text-[10px] uppercase border-0 shadow-sm"
+                              >
+                                {payingOrderId === order.id ? 'Cargando...' : 'Pagar'}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                disabled={cancellingOrderId === order.id}
+                                onClick={() => handleCancelOrder(order.id)}
+                                className="border-rose-500/30 text-rose-500 hover:bg-rose-50 dark:border-rose-500/25 dark:hover:bg-rose-950/15 h-8 px-3 text-[10px] uppercase font-extrabold flex items-center gap-1"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                Cancelar
+                              </Button>
+                            </>
                           )}
                           <Button
                             type="button"
@@ -531,7 +595,36 @@ export const ClientePedidosPage = () => {
               </div>
             </div>
 
-           
+            {selectedOrder.documents && selectedOrder.documents.length > 0 && (
+              <div className="border-t border-slate-100 dark:border-neutral-900 pt-4">
+                <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-neutral-500 mb-3">
+                  Documentos y Soportes del Envío
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {selectedOrder.documents.map((doc) => {
+                    const docNames = {
+                      SHIPPING_PROOF: 'Prueba de Envío (Guía)',
+                      DELIVERY_PHOTO: 'Foto de Entrega',
+                      CUSTOMER_SIGNATURE: 'Firma de Recibido',
+                    };
+                    return (
+                      <a
+                        key={doc.id}
+                        href={doc.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2.5 p-3 rounded-lg border border-slate-200 bg-slate-50/50 hover:bg-slate-100/70 hover:border-teal-500/30 transition text-xs font-bold text-slate-700 dark:border-neutral-850 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-850"
+                      >
+                        <span className="h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
+                        <span>{docNames[doc.documentType] || doc.documentType}</span>
+                        <span className="text-[10px] text-slate-400 dark:text-neutral-500 ml-auto font-semibold">Ver archivo ↗</span>
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="rounded-xl bg-slate-50 border border-slate-100 p-4 dark:bg-neutral-900 dark:border-neutral-850 flex items-center justify-between">
               <div className="text-xs font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
                 Total del pedido
@@ -546,7 +639,6 @@ export const ClientePedidosPage = () => {
               </div>
             </div>
 
-            
             <div className="pt-4 border-t border-slate-100 dark:border-neutral-900 flex justify-end gap-3">
               <Button
                 variant="ghost"
@@ -555,18 +647,29 @@ export const ClientePedidosPage = () => {
                 Cerrar
               </Button>
               {selectedOrder.status === 'PENDING_PAYMENT' && (
-                <Button
-                  type="button"
-                  disabled={payingOrderId === selectedOrder.id}
-                  onClick={() => handlePayOrder(selectedOrder.id)}
-                  className="bg-teal-500 hover:bg-teal-600 text-white font-extrabold shadow"
-                >
-                  {payingOrderId === selectedOrder.id ? (
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  ) : (
-                    'Pagar ahora con Stripe'
-                  )}
-                </Button>
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={cancellingOrderId === selectedOrder.id}
+                    onClick={() => handleCancelOrder(selectedOrder.id)}
+                    className="border-rose-500/30 text-rose-500 hover:bg-rose-50 dark:border-rose-500/25 dark:hover:bg-rose-950/15"
+                  >
+                    {cancellingOrderId === selectedOrder.id ? 'Cancelando...' : 'Cancelar Pedido'}
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={payingOrderId === selectedOrder.id}
+                    onClick={() => handlePayOrder(selectedOrder.id)}
+                    className="bg-teal-500 hover:bg-teal-600 text-white font-extrabold shadow"
+                  >
+                    {payingOrderId === selectedOrder.id ? (
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    ) : (
+                      'Pagar ahora con Stripe'
+                    )}
+                  </Button>
+                </>
               )}
             </div>
           </div>

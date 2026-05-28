@@ -42,7 +42,7 @@ export const MiCuentaPage = () => {
   })();
 
   const [firstName, setFirstName] = useState(session?.user.firstName ?? '');
-  const [activeTab, setActiveTab] = useState<'profile' | 'orders'>(() => {
+  const [activeTab] = useState<'profile' | 'orders'>(() => {
     const params = new URLSearchParams(window.location.search);
     return (params.get('tab') as 'profile' | 'orders') || 'profile';
   });

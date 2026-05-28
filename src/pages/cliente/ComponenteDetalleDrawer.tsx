@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ShoppingCart, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShoppingCart, X, ChevronLeft, ChevronRight, Box } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import type { CatalogComponent } from '../../types/catalog';
 import { getCatalogComponentById, getCatalogComponents } from '../../services/catalogService';
@@ -72,7 +72,6 @@ export const ComponenteDetalleDrawer = ({
 
   const displayComponent = detailedComponent || componente;
   const images = [displayComponent.imageUrl || ''].filter(Boolean);
-  if (images.length === 0) images.push('');
   const handlePrevImage = () => {
     setActiveImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
   };
@@ -182,11 +181,17 @@ export const ComponenteDetalleDrawer = ({
         </div>
         <div className="relative mb-5 rounded-xl border border-neutral-900 bg-neutral-900/40 p-4 group">
           <div className="flex h-48 items-center justify-center overflow-hidden rounded-lg">
-            <img
-              src={images[activeImageIndex]}
-              alt={displayComponent.name}
-              className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
-            />
+            {images.length > 0 && images[activeImageIndex] ? (
+              <img
+                src={images[activeImageIndex]}
+                alt={displayComponent.name}
+                className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
+              />
+            ) : (
+              <div className="flex items-center justify-center text-neutral-600">
+                <Box className="h-16 w-16" />
+              </div>
+            )}
           </div>
           {images.length > 1 && (
             <>

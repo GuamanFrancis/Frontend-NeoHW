@@ -20,6 +20,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react(), tailwindcss()],
     server: {
+      port: 3000,
       proxy: {
         ...Object.fromEntries(
           apiProxyPaths.map((path) => [

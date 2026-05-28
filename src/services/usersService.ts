@@ -36,3 +36,9 @@ export const deactivateUser = async (id: string) => {
   const { data } = await api.delete<{ message: string; user: BackendUser }>(`/users/${id}`);
   return data.user;
 };
+
+export const getUserById = async (id: string) => {
+  const { data } = await api.get<{ user: BackendUser }>(`/users/${id}`);
+  return data.user;
+};
+

@@ -13,7 +13,7 @@ import { FormSelect } from '../../components/ui/FormSelect';
 import { Modal } from '../../components/ui/Modal';
 import { PageCard } from '../../components/ui/PageCard';
 import type { BackendRole, BackendUser } from '../../types/auth';
-import { changeUserRole, deactivateUser, getUsers } from '../../services/usersService';
+import { changeUserRole, deactivateUser, getUsers, getUserById } from '../../services/usersService';
 
 type UserRole = 'Super administrador' | 'Administrador' | 'Vendedor' | 'Cliente';
 type UserStatus = 'Activo' | 'Inactivo';
@@ -210,9 +210,15 @@ export const AdminUsuariosPage = () => {
     setModalMode('edit');
   };
 
-  const openViewModal = (user: AdminUser) => {
+  const openViewModal = async (user: AdminUser) => {
     setSelectedUser(user);
     setModalMode('view');
+    try {
+      const freshUser = await getUserById(user.id);
+      setSelectedUser(mapBackendUser(freshUser));
+    } catch (e) {
+      console.error('Error fetching user by ID:', e);
+    }
   };
 
   const closeModal = () => {

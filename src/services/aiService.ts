@@ -22,23 +22,43 @@ export const streamAiChat = async (
       headers,
       body: JSON.stringify({ messages }),
     });
+
     if (!response.ok) {
-      throw new Error(`Error en el servidor de IA: ${response.statusText}`);
+      let errorMessage = 'No se pudo conectar con el servidor de IA.';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch {
+        errorMessage = `Error ${response.status}: ${response.statusText || errorMessage}`;
+      }
+
+      if (response.status === 429) {
+        errorMessage = 'Límite de solicitudes de IA excedido. Por favor, intenta de nuevo en unos minutos.';
+      }
+
+      throw new Error(errorMessage);
     }
-    if (!response.body) {
-      throw new Error('El cuerpo de la respuesta no es legible por el lector de streams.');
-    }
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder('utf-8');
-    let fullText = '';
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      const chunk = decoder.decode(value, { stream: true });
-      fullText += chunk;
-      onChunk(chunk);
-    }
-    onComplete(fullText);
+
+    const data: { role: string; content: string } = await response.json();
+    const fullText = data.content || '';
+
+    // Simulate word-by-word streaming locally to maintain the premium live typing aesthetic in the UI
+    const words = fullText.split(/(\s+)/);
+    let currentIndex = 0;
+
+    const streamInterval = setInterval(() => {
+      if (currentIndex < words.length) {
+        const wordChunk = words[currentIndex];
+        if (wordChunk) {
+          onChunk(wordChunk);
+        }
+        currentIndex++;
+      } else {
+        clearInterval(streamInterval);
+        onComplete(fullText);
+      }
+    }, 15); // 15ms interval for a fast and natural typing animation
+
   } catch (error) {
     onError(error);
   }

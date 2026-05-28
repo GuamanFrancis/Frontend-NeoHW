@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Eye, Filter, Pencil, Search, Truck, AlertTriangle } from 'lucide-react';
+import { Eye, Filter, Pencil, Search, Truck, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { PageCard } from '../../components/ui/PageCard';
 import { Modal } from '../../components/ui/Modal';
-import { getOrders, updateOrderStatus, uploadOrderDocument, type OrderItemBackend } from '../../services/ordersService';
-import { getUsers } from '../../services/usersService';
-import type { BackendUser } from '../../types/auth';
+import { getOrders, updateOrderStatus, uploadOrderDocument, updateLocalOrder, type OrderItemBackend } from '../../services/ordersService';
 
 export type SellerOrderStatus = 'Pendiente' | 'En proceso' | 'Enviado' | 'Entregado' | 'Cancelado';
 
@@ -101,21 +99,15 @@ export const VendedorPedidosPage = () => {
   const [isDispatching, setIsDispatching] = useState(false);
   const [dispatchError, setDispatchError] = useState<string | null>(null);
 
+  const [orderToDeliver, setOrderToDeliver] = useState<MappedSellerOrder | null>(null);
+  const [deliveryPhotoFile, setDeliveryPhotoFile] = useState<File | null>(null);
+  const [customerSignatureFile, setCustomerSignatureFile] = useState<File | null>(null);
+  const [isDelivering, setIsDelivering] = useState(false);
+  const [deliveryError, setDeliveryError] = useState<string | null>(null);
+
   const loadOrders = async () => {
     try {
       setIsLoading(true);
-
-      let usersMap: Record<string, BackendUser> = {};
-      try {
-        const usersRes = await getUsers(1, 500);
-        if (usersRes && Array.isArray(usersRes.users)) {
-          usersRes.users.forEach((u) => {
-            usersMap[u.id] = u;
-          });
-        }
-      } catch (e) {
-        console.error('Error al cargar la lista de usuarios para mapeo:', e);
-      }
 
       const res = await getOrders();
       const mapped = res.data.map((order): MappedSellerOrder => {
@@ -129,17 +121,7 @@ export const VendedorPedidosPage = () => {
         let clientPhone = 'Sin teléfono';
         let addressStr = 'No especificada';
 
-        
-        const dbUser = usersMap[order.userId];
-        if (dbUser) {
-          const fn = dbUser.firstName || '';
-          const ln = dbUser.lastName || '';
-          const fullName = [fn, ln].filter(Boolean).join(' ');
-          if (fullName) clientName = fullName;
-          if (dbUser.email) clientEmail = dbUser.email;
-          if (dbUser.phone) clientPhone = dbUser.phone;
-        } else if (order.user) {
-          
+        if (order.user) {
           const fn = order.user.firstName || '';
           const ln = order.user.lastName || '';
           const fullName = [fn, ln].filter(Boolean).join(' ');
@@ -160,8 +142,7 @@ export const VendedorPedidosPage = () => {
               const country = addr.country || addr.pais || '';
               addressStr = [street, city, state, country].filter(Boolean).join(', ') || 'No especificada';
               
-              
-              if (!dbUser && !order.user) {
+              if (!order.user) {
                 if (addr.email) clientEmail = addr.email;
                 if (addr.fullName || addr.name) clientName = addr.fullName || addr.name;
                 if (addr.phone || addr.telefono) clientPhone = addr.phone || addr.telefono;
@@ -236,11 +217,12 @@ export const VendedorPedidosPage = () => {
         throw new Error('Es obligatorio subir una Prueba de Envío (SHIPPING_PROOF) en formato PDF o Imagen para despachar este pedido.');
       }
 
-      
-      await uploadOrderDocument(orderToDispatch.id, dispatchFile, 'SHIPPING_PROOF');
-
-      
+      const docRes = await uploadOrderDocument(orderToDispatch.id, dispatchFile, 'SHIPPING_PROOF');
       await updateOrderStatus(orderToDispatch.id, 'SHIPPED');
+      updateLocalOrder(orderToDispatch.id, 'SHIPPED', {
+        documentType: 'SHIPPING_PROOF',
+        fileUrl: docRes.document?.fileUrl || docRes.fileUrl || ''
+      });
 
       await loadOrders();
       setOrderToDispatch(null);
@@ -254,6 +236,67 @@ export const VendedorPedidosPage = () => {
     }
   };
 
+  const handleOpenDeliverModal = (order: MappedSellerOrder) => {
+    setOrderToDeliver(order);
+    setDeliveryPhotoFile(null);
+    setCustomerSignatureFile(null);
+    setDeliveryError(null);
+    setIsDelivering(false);
+  };
+
+  const handleConfirmDelivery = async () => {
+    if (!orderToDeliver) return;
+    setDeliveryError(null);
+    setIsDelivering(true);
+
+    const isMock = orderToDeliver.id.startsWith('#NHW-');
+    if (isMock) {
+      setOrders((current) =>
+        current.map((o) => (o.id === orderToDeliver.id ? { ...o, status: 'Entregado' } : o))
+      );
+      setOrderToDeliver(null);
+      setIsDelivering(false);
+      return;
+    }
+
+    try {
+      if (orderToDeliver.status !== 'Enviado') {
+        throw new Error('Solo se pueden entregar pedidos que están en estado "Enviado".');
+      }
+
+      if (!deliveryPhotoFile) {
+        throw new Error('Debe subir la Foto de Entrega (DELIVERY_PHOTO) para entregar el pedido.');
+      }
+
+      if (!customerSignatureFile) {
+        throw new Error('Debe subir la Firma del Cliente (CUSTOMER_SIGNATURE) para entregar el pedido.');
+      }
+
+      const docPhotoRes = await uploadOrderDocument(orderToDeliver.id, deliveryPhotoFile, 'DELIVERY_PHOTO');
+      const docSigRes = await uploadOrderDocument(orderToDeliver.id, customerSignatureFile, 'CUSTOMER_SIGNATURE');
+      await updateOrderStatus(orderToDeliver.id, 'DELIVERED');
+
+      updateLocalOrder(orderToDeliver.id, 'DELIVERED', {
+        documentType: 'DELIVERY_PHOTO',
+        fileUrl: docPhotoRes.document?.fileUrl || docPhotoRes.fileUrl || ''
+      });
+      updateLocalOrder(orderToDeliver.id, 'DELIVERED', {
+        documentType: 'CUSTOMER_SIGNATURE',
+        fileUrl: docSigRes.document?.fileUrl || docSigRes.fileUrl || ''
+      });
+
+      await loadOrders();
+      setOrderToDeliver(null);
+    } catch (err) {
+      console.error(err);
+      const errorMsg = err as { response?: { data?: { message?: string | string[] } }; message: string };
+      const backendMsg = errorMsg.response?.data?.message || errorMsg.message;
+      setDeliveryError(Array.isArray(backendMsg) ? backendMsg.join(', ') : backendMsg);
+    } finally {
+      setIsDelivering(false);
+    }
+  };
+
   const handleUpdateStatus = async (orderId: string, newStatus: SellerOrderStatus) => {
     try {
       const isMock = orderId.startsWith('#NHW-');
@@ -264,6 +307,7 @@ export const VendedorPedidosPage = () => {
       } else {
         const backendStatus = uiStatusToBackend[newStatus];
         await updateOrderStatus(orderId, backendStatus);
+        updateLocalOrder(orderId, backendStatus);
         await loadOrders();
       }
       setModalMode(null);
@@ -466,10 +510,21 @@ export const VendedorPedidosPage = () => {
                             type="button"
                             className={actionButtonClass}
                             onClick={() => handleOpenDispatchModal(order)}
-                            disabled={order.status === 'Enviado' || order.status === 'Entregado' || order.status === 'Cancelado'}
+                            disabled={order.status !== 'En proceso'}
+                            title="Preparar Envío"
                             aria-label={`Despachar ${order.id}`}
                           >
                             <Truck className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            className={actionButtonClass}
+                            onClick={() => handleOpenDeliverModal(order)}
+                            disabled={order.status !== 'Enviado'}
+                            title="Registrar Entrega"
+                            aria-label={`Entregar ${order.id}`}
+                          >
+                            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                           </button>
                         </div>
                       </td>
@@ -682,20 +737,11 @@ export const VendedorPedidosPage = () => {
                 value={editStatus}
                 onChange={(event) => setEditStatus(event.target.value as SellerOrderStatus)}
               >
-                {selectedOrder.status === 'Pendiente' ? (
-                  <>
-                    <option value="Pendiente">Pendiente</option>
-                    <option value="Cancelado">Cancelado</option>
-                  </>
-                ) : (
-                  <>
-                    <option value="Pendiente">Pendiente</option>
-                    <option value="En proceso">En proceso</option>
-                    <option value="Enviado">Enviado</option>
-                    <option value="Entregado">Entregado</option>
-                    <option value="Cancelado">Cancelado</option>
-                  </>
-                )}
+                <option value="Pendiente">Pendiente (Sin pagar)</option>
+                <option value="En proceso">En proceso (Pagado)</option>
+                <option value="Enviado">Enviado (Despachado)</option>
+                <option value="Entregado">Entregado</option>
+                <option value="Cancelado">Cancelado</option>
               </select>
             </label>
           </div>
@@ -788,6 +834,117 @@ export const VendedorPedidosPage = () => {
                 className="bg-teal-500 hover:bg-teal-600 text-white font-extrabold"
               >
                 {isDispatching ? 'Despachando...' : 'Confirmar Envío'}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal Premium para Confirmación de Entrega (DELIVERED) */}
+      <Modal
+        open={!!orderToDeliver}
+        title="Registrar Entrega del Pedido"
+        onClose={() => setOrderToDeliver(null)}
+      >
+        {orderToDeliver && (
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 shrink-0">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">
+                  ¿Registrar entrega para el pedido {orderToDeliver.id}?
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">
+                  Para actualizar el estado a <span className="font-bold text-emerald-500">Entregado (DELIVERED)</span>, debes subir los soportes correspondientes:
+                </p>
+              </div>
+            </div>
+
+            {/* Checklist de requisitos de entrega */}
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-neutral-800 dark:bg-neutral-900/40 text-xs font-semibold space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Estado del Pedido</span>
+                {orderToDeliver.status === 'Enviado' ? (
+                  <span className="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✓ Listo (Enviado)</span>
+                ) : (
+                  <span className="bg-rose-500/10 text-rose-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✗ Requerido ({orderToDeliver.status})</span>
+                )}
+              </div>
+
+              {/* Documento 1: Foto de Entrega */}
+              <div className="border-t border-slate-200/40 dark:border-neutral-800 pt-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-slate-500">1. Foto de la Entrega (DELIVERY_PHOTO)</span>
+                  {deliveryPhotoFile ? (
+                    <span className="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✓ Cargado</span>
+                  ) : (
+                    <span className="bg-rose-500/10 text-rose-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✗ Requerido</span>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(e) => {
+                    const files = e.target.files;
+                    if (files && files.length > 0) {
+                      setDeliveryPhotoFile(files[0]);
+                    }
+                  }}
+                  className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-[10px] file:font-bold file:bg-teal-500/10 file:text-teal-600 hover:file:bg-teal-500/20 file:cursor-pointer cursor-pointer border border-dashed border-slate-300 dark:border-neutral-700 rounded-lg p-2 bg-white dark:bg-neutral-950"
+                  disabled={orderToDeliver.status !== 'Enviado'}
+                />
+              </div>
+
+              {/* Documento 2: Firma del Cliente */}
+              <div className="border-t border-slate-200/40 dark:border-neutral-800 pt-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-slate-500">2. Firma del Cliente (CUSTOMER_SIGNATURE)</span>
+                  {customerSignatureFile ? (
+                    <span className="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✓ Cargado</span>
+                  ) : (
+                    <span className="bg-rose-500/10 text-rose-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✗ Requerido</span>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  onChange={(e) => {
+                    const files = e.target.files;
+                    if (files && files.length > 0) {
+                      setCustomerSignatureFile(files[0]);
+                    }
+                  }}
+                  className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-[10px] file:font-bold file:bg-teal-500/10 file:text-teal-600 hover:file:bg-teal-500/20 file:cursor-pointer cursor-pointer border border-dashed border-slate-300 dark:border-neutral-700 rounded-lg p-2 bg-white dark:bg-neutral-950"
+                  disabled={orderToDeliver.status !== 'Enviado'}
+                />
+              </div>
+            </div>
+
+            {deliveryError && (
+              <div className="flex items-start gap-2.5 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-red-600 dark:text-red-300 text-xs font-semibold">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-red-500 mt-0.5" />
+                <span>{deliveryError}</span>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-neutral-900">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setOrderToDeliver(null)}
+                disabled={isDelivering}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void handleConfirmDelivery()}
+                disabled={isDelivering || orderToDeliver.status !== 'Enviado' || !deliveryPhotoFile || !customerSignatureFile}
+                className="bg-teal-500 hover:bg-teal-600 text-white font-extrabold"
+              >
+                {isDelivering ? 'Procesando...' : 'Confirmar Entrega'}
               </Button>
             </div>
           </div>

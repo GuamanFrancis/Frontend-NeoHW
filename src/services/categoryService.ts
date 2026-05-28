@@ -34,3 +34,37 @@ export const getLeafCategories = (categories: BackendCategory[]): BackendCategor
   const all = flattenCategories(categories);
   return all.filter((cat) => !cat.children || cat.children.length === 0);
 };
+
+export const getCategoryById = async (id: string): Promise<BackendCategory> => {
+  const { data } = await api.get<{ category: BackendCategory }>(`/categories/${id}`);
+  return data.category;
+};
+
+export const createCategory = async (payload: {
+  name: string;
+  slug?: string;
+  description?: string;
+  parentId?: string | null;
+}): Promise<BackendCategory> => {
+  const { data } = await api.post<{ message: string; category: BackendCategory }>('/categories', payload);
+  return data.category;
+};
+
+export const updateCategory = async (
+  id: string,
+  payload: Partial<{
+    name: string;
+    slug: string;
+    description: string;
+    parentId: string | null;
+    isActive: boolean;
+  }>,
+): Promise<BackendCategory> => {
+  const { data } = await api.patch<{ message: string; category: BackendCategory }>(`/categories/${id}`, payload);
+  return data.category;
+};
+
+export const deleteCategory = async (id: string): Promise<void> => {
+  await api.delete(`/categories/${id}`);
+};
+

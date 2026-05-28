@@ -11,7 +11,7 @@ import {
   getCatalogComponents,
   updateCatalogComponent,
 } from '../../services/catalogService';
-import { getCategories, getLeafCategories } from '../../services/categoryService';
+import { getCategories, getLeafCategories, createCategory, deleteCategory } from '../../services/categoryService';
 import type { BackendCategory, CatalogComponent, CatalogSavePayload, CatalogStockStatus } from '../../types/catalog';
 import {
   getAttributes,
@@ -26,6 +26,12 @@ import {
   type BackendAttribute,
   type AttributeDataType,
 } from '../../services/attributesService';
+import {
+  getCompatibilityRules,
+  createCompatibilityRule,
+  deleteCompatibilityRule,
+  type CompatibilityRule,
+} from '../../services/compatibilityService';
 
 type ModalMode = 'create' | 'edit' | 'view' | 'delete' | null;
 
@@ -123,7 +129,29 @@ export const AdminCatalogoPage = () => {
   const [loadError, setLoadError] = useState('');
 
  
-  const [activeTab, setActiveTab] = useState<'componentes' | 'atributos'>('componentes');
+  const [activeTab, setActiveTab] = useState<'componentes' | 'atributos' | 'categorias' | 'reglas'>('componentes');
+  const [catModalMode, setCatModalMode] = useState<'create' | null>(null);
+  const [isSavingCat, setIsSavingCat] = useState(false);
+  const [catModalError, setCatModalError] = useState('');
+  const [catToDelete, setCatToDelete] = useState<BackendCategory | null>(null);
+  const [catForm, setCatForm] = useState({
+    name: '',
+    description: '',
+    parentId: '',
+  });
+  const [compatibilityRulesList, setCompatibilityRulesList] = useState<CompatibilityRule[]>([]);
+  const [ruleModalMode, setRuleModalMode] = useState<'create' | null>(null);
+  const [isSavingRule, setIsSavingRule] = useState(false);
+  const [ruleModalError, setRuleModalError] = useState('');
+  const [ruleToDelete, setRuleToDelete] = useState<CompatibilityRule | null>(null);
+  const [ruleForm, setRuleForm] = useState({
+    name: '',
+    description: '',
+    sourceAttributeId: '',
+    targetAttributeId: '',
+    ruleType: 'MUST_MATCH' as 'MUST_MATCH' | 'RANGE_CHECK' | 'POWER_SUFFICIENT' | 'CUSTOM',
+    operator: 'EQUALS',
+  });
   const [globalAttributes, setGlobalAttributes] = useState<BackendAttribute[]>([]);
   const [selectedCategoryIdForAttr, setSelectedCategoryIdForAttr] = useState<string>('');
   const [categoryAttrs, setCategoryAttrs] = useState<BackendAttribute[]>([]);
@@ -188,6 +216,38 @@ export const AdminCatalogoPage = () => {
         }
       };
       void loadAttributesData();
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'reglas') {
+      const loadRulesData = async () => {
+        try {
+          const [rulesRes, attrs] = await Promise.all([
+            getCompatibilityRules(),
+            getAttributes(),
+          ]);
+          setCompatibilityRulesList(rulesRes.data);
+          setGlobalAttributes(attrs);
+        } catch (err) {
+          console.error('Error loading compatibility rules:', err);
+        }
+      };
+      void loadRulesData();
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'categorias') {
+      const loadCategoriesData = async () => {
+        try {
+          const cats = await getCategories();
+          setCategories(cats);
+        } catch (err) {
+          console.error('Error loading categories:', err);
+        }
+      };
+      void loadCategoriesData();
     }
   }, [activeTab]);
 
@@ -561,6 +621,114 @@ export const AdminCatalogoPage = () => {
     }
   };
 
+  const openCreateCatModal = () => {
+    setCatForm({ name: '', description: '', parentId: '' });
+    setCatModalError('');
+    setCatModalMode('create');
+  };
+
+  const saveCategoryAction = async () => {
+    if (!catForm.name.trim()) {
+      setCatModalError('El nombre es obligatorio.');
+      return;
+    }
+    const payload = {
+      name: catForm.name.trim(),
+      description: catForm.description.trim() || undefined,
+      parentId: catForm.parentId || null,
+    };
+    try {
+      setIsSavingCat(true);
+      setCatModalError('');
+      const created = await createCategory(payload);
+      setCategories(current => [created, ...current]);
+      setCatModalMode(null);
+    } catch (err: any) {
+      const errMsg = err.response?.data?.message || 'Error al guardar la categoría.';
+      setCatModalError(Array.isArray(errMsg) ? errMsg.join(', ') : errMsg);
+    } finally {
+      setIsSavingCat(false);
+    }
+  };
+
+  const deleteCategoryAction = (cat: BackendCategory) => {
+    setCatToDelete(cat);
+  };
+
+  const handleConfirmDeleteCategory = async () => {
+    if (!catToDelete) return;
+    try {
+      await deleteCategory(catToDelete.id);
+      setCategories(current => current.filter(c => c.id !== catToDelete.id));
+      setCatToDelete(null);
+    } catch (err: any) {
+      alert('Error al desactivar la categoría: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const openCreateRuleModal = () => {
+    setRuleForm({
+      name: '',
+      description: '',
+      sourceAttributeId: '',
+      targetAttributeId: '',
+      ruleType: 'MUST_MATCH',
+      operator: 'EQUALS',
+    });
+    setRuleModalError('');
+    setRuleModalMode('create');
+  };
+
+  const saveCompatibilityRuleAction = async () => {
+    if (
+      !ruleForm.name.trim() ||
+      !ruleForm.sourceAttributeId ||
+      !ruleForm.targetAttributeId
+    ) {
+      setRuleModalError('Por favor completa los campos obligatorios.');
+      return;
+    }
+
+    const payload = {
+      name: ruleForm.name.trim(),
+      description: ruleForm.description.trim() || undefined,
+      sourceAttributeId: ruleForm.sourceAttributeId,
+      targetAttributeId: ruleForm.targetAttributeId,
+      ruleType: ruleForm.ruleType,
+      condition: {
+        operator: ruleForm.operator,
+      },
+    };
+
+    try {
+      setIsSavingRule(true);
+      setRuleModalError('');
+      const createdRule = await createCompatibilityRule(payload);
+      setCompatibilityRulesList((current) => [createdRule, ...current]);
+      setRuleModalMode(null);
+    } catch (err: any) {
+      const errMsg = err.response?.data?.message || 'Error al guardar la regla de compatibilidad.';
+      setRuleModalError(Array.isArray(errMsg) ? errMsg.join(', ') : errMsg);
+    } finally {
+      setIsSavingRule(false);
+    }
+  };
+
+  const deleteCompatibilityRuleAction = (rule: CompatibilityRule) => {
+    setRuleToDelete(rule);
+  };
+
+  const handleConfirmDeleteRule = async () => {
+    if (!ruleToDelete) return;
+    try {
+      await deleteCompatibilityRule(ruleToDelete.id);
+      setCompatibilityRulesList((current) => current.filter((r) => r.id !== ruleToDelete.id));
+      setRuleToDelete(null);
+    } catch (err: any) {
+      alert('Error al desactivar la regla: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
   return (
     <PageCard
       title="Gestionar catalogo de componentes"
@@ -583,11 +751,37 @@ export const AdminCatalogoPage = () => {
             >
               Atributos Técnicos
             </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('categorias')}
+              className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${activeTab === 'categorias' ? 'bg-teal-500 text-white shadow-sm' : 'text-slate-600 dark:text-neutral-300'}`}
+            >
+              Categorías
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('reglas')}
+              className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${activeTab === 'reglas' ? 'bg-teal-500 text-white shadow-sm' : 'text-slate-600 dark:text-neutral-300'}`}
+            >
+              Reglas Lógicas
+            </button>
           </div>
           {activeTab === 'componentes' && (
             <Button type="button" className="h-10 px-4 text-sm" onClick={openCreateModal}>
               <Plus className="h-4 w-4" />
               Nuevo componente
+            </Button>
+          )}
+          {activeTab === 'categorias' && (
+            <Button type="button" className="h-10 px-4 text-sm" onClick={openCreateCatModal}>
+              <Plus className="h-4 w-4" />
+              Nueva Categoría
+            </Button>
+          )}
+          {activeTab === 'reglas' && (
+            <Button type="button" className="h-10 px-4 text-sm" onClick={openCreateRuleModal}>
+              <Plus className="h-4 w-4" />
+              Nueva Regla
             </Button>
           )}
         </div>
@@ -599,7 +793,7 @@ export const AdminCatalogoPage = () => {
         </div>
       )}
 
-      {activeTab === 'componentes' ? (
+      {activeTab === 'componentes' && (
         <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
           <div className="grid gap-3 lg:grid-cols-[1fr_220px_180px_auto]">
             <label className="relative">
@@ -806,9 +1000,10 @@ export const AdminCatalogoPage = () => {
             </div>
           </div>
         </div>
-      ) : (
+      )}
+
+      {activeTab === 'atributos' && (
         <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-          
           <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-slate-950 dark:text-white">Atributos Globales</h3>
@@ -831,32 +1026,36 @@ export const AdminCatalogoPage = () => {
                 <tbody className="divide-y divide-slate-100 dark:divide-neutral-800">
                   {globalAttributes.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-3 py-4 text-center text-slate-400 italic">No hay atributos globales creados.</td>
+                      <td colSpan={5} className="px-3 py-4 text-center text-slate-500">
+                        No hay atributos globales registrados.
+                      </td>
                     </tr>
                   ) : (
-                    globalAttributes.map(attr => (
-                      <tr key={attr.id} className="transition hover:bg-slate-50 dark:hover:bg-white/[0.01]">
+                    globalAttributes.map((attr) => (
+                      <tr key={attr.id} className="transition hover:bg-slate-50 dark:hover:bg-white/[0.02]">
                         <td className="px-3 py-2 font-semibold text-slate-950 dark:text-white">{attr.name}</td>
-                        <td className="px-3 py-2 text-slate-500">{attr.slug}</td>
+                        <td className="px-3 py-2 text-slate-650 dark:text-neutral-450">{attr.slug}</td>
                         <td className="px-3 py-2">
-                          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-700 dark:bg-neutral-800 dark:text-neutral-300">
+                          <span className="inline-flex rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700 dark:bg-neutral-850 dark:text-neutral-300">
                             {attr.dataType}
                           </span>
                         </td>
-                        <td className="px-3 py-2 text-slate-500">{attr.unit || '-'}</td>
+                        <td className="px-3 py-2 font-medium text-slate-600 dark:text-neutral-400">{attr.unit ?? '-'}</td>
                         <td className="px-3 py-2">
                           <div className="flex justify-end gap-1.5">
                             <button
                               type="button"
                               onClick={() => openEditAttrModal(attr)}
-                              className="flex h-6 w-6 items-center justify-center rounded border border-slate-200 text-slate-500 hover:text-teal-500 dark:border-neutral-800"
+                              className="flex h-6 w-6 items-center justify-center rounded text-slate-600 hover:bg-slate-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                              title="Editar"
                             >
                               <Pencil className="h-3 w-3" />
                             </button>
                             <button
                               type="button"
                               onClick={() => removeAttribute(attr)}
-                              className="flex h-6 w-6 items-center justify-center rounded border border-red-200 text-red-500 hover:text-red-700 dark:border-red-950"
+                              className="flex h-6 w-6 items-center justify-center rounded text-red-500 hover:bg-red-500/10"
+                              title="Eliminar"
                             >
                               <Trash2 className="h-3 w-3" />
                             </button>
@@ -870,36 +1069,37 @@ export const AdminCatalogoPage = () => {
             </div>
           </div>
 
-         
-          <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950 space-y-4">
-            <h3 className="text-lg font-bold text-slate-950 dark:text-white">Asociación por Categoría</h3>
-            
-            <FormSelect
-              label="Seleccionar Categoría"
-              value={selectedCategoryIdForAttr}
-              onChange={(e) => setSelectedCategoryIdForAttr(e.target.value)}
-              options={[
-                { label: 'Selecciona una categoría para gestionar', value: '' },
-                ...leafCategories.map(cat => ({ label: cat.name, value: cat.id }))
-              ]}
-            />
+          <div className="space-y-6">
+            <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950">
+              <h3 className="text-sm font-extrabold text-slate-900 dark:text-white mb-4">Paso 1: Selecciona una Categoría</h3>
+              <FormSelect
+                label="Categoría"
+                value={selectedCategoryIdForAttr}
+                onChange={(e) => setSelectedCategoryIdForAttr(e.target.value)}
+                options={categorySelectOptions}
+              />
+            </div>
 
             {selectedCategoryIdForAttr && (
-              <div className="space-y-4">
-                <div className="border-t border-slate-100 dark:border-neutral-900 pt-3">
-                  <h4 className="text-xs font-bold text-slate-400 uppercase mb-2">Atributos Asociados</h4>
-                  <div className="space-y-1.5">
+              <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950">
+                <div className="mb-4">
+                  <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">Paso 2: Especificaciones de Categoría</h3>
+                  <p className="text-xs text-slate-500 mt-1">Vincula o remueve atributos de esta categoría de hardware.</p>
+                </div>
+
+                <div className="border-t border-slate-100 dark:border-neutral-900 pt-3 mb-4">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase mb-2">Atributos Vinculados</h4>
+                  <div className="grid gap-2">
                     {categoryAttrs.length === 0 ? (
-                      <p className="text-xs text-slate-400 italic">No hay atributos asociados a esta categoría.</p>
+                      <p className="text-xs text-slate-500 text-center py-2">Ningún atributo vinculado a esta categoría.</p>
                     ) : (
                       categoryAttrs.map(attr => (
-                        <div key={attr.id} className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 dark:border-neutral-800 bg-slate-50/50 dark:bg-neutral-900/20">
+                        <div key={attr.id} className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-1.5 dark:border-neutral-800">
                           <span className="text-xs font-bold text-slate-950 dark:text-white">{attr.name} <span className="text-[10px] text-slate-450">({attr.dataType})</span></span>
                           <button
                             type="button"
                             onClick={() => disassociateAttr(attr)}
                             className="flex h-6 w-6 items-center justify-center rounded text-red-500 hover:bg-red-500/10"
-                            title="Desasociar atributo"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
@@ -929,6 +1129,141 @@ export const AdminCatalogoPage = () => {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'categorias' && (
+        <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
+          <div className="mb-4">
+            <h3 className="text-lg font-bold text-slate-950 dark:text-white leading-none">Categorías de Hardware</h3>
+            <p className="text-xs text-slate-500 mt-1 font-medium">Gestiona la clasificación del hardware en la tienda (Procesadores, Memorias RAM, etc.).</p>
+          </div>
+
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-neutral-800 dark:bg-neutral-950 mt-4">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[700px] text-left text-sm">
+                <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:bg-white/[0.03] dark:text-neutral-400">
+                  <tr>
+                    <th className="px-4 py-3 font-bold">Categoría</th>
+                    <th className="px-4 py-3 font-bold">Slug</th>
+                    <th className="px-4 py-3 font-bold">Descripción</th>
+                    <th className="px-4 py-3 font-bold">Categoría Padre</th>
+                    <th className="px-4 py-3 text-right font-bold">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-neutral-800">
+                  {categories.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-slate-500 dark:text-neutral-400">
+                        No hay categorías registradas en la base de datos.
+                      </td>
+                    </tr>
+                  ) : (
+                    categories.map((cat) => (
+                      <tr key={cat.id} className="transition hover:bg-slate-50 dark:hover:bg-white/[0.03]">
+                        <td className="px-4 py-3 font-semibold text-slate-950 dark:text-white">
+                          {cat.name}
+                        </td>
+                        <td className="px-4 py-3 text-slate-500 dark:text-neutral-400">
+                          {cat.slug}
+                        </td>
+                        <td className="px-4 py-3 text-slate-650 dark:text-neutral-350">
+                          {cat.description || 'Sin descripción'}
+                        </td>
+                        <td className="px-4 py-3 text-slate-650 dark:text-neutral-450 font-medium">
+                          {cat.parentId ? categories.find(c => c.id === cat.parentId)?.name || 'Categoría superior' : 'Ninguna'}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-end">
+                            <button
+                              type="button"
+                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-300 text-red-600 transition hover:border-red-500 hover:bg-red-50 hover:text-red-700 dark:border-red-500/35 dark:text-red-300 dark:hover:border-red-400 dark:hover:bg-red-500/10 dark:hover:text-red-200"
+                              onClick={() => deleteCategoryAction(cat)}
+                              aria-label="Desactivar categoría"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'reglas' && (
+        <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
+          <div className="mb-4">
+            <h3 className="text-lg font-bold text-slate-950 dark:text-white leading-none">Reglas de Compatibilidad</h3>
+            <p className="text-xs text-slate-500 mt-1 font-medium">Gestiona las reglas de hardware que usa el Simulador 3D para evitar ensambles incompatibles.</p>
+          </div>
+
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-neutral-800 dark:bg-neutral-950 mt-4">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[800px] text-left text-sm">
+                <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:bg-white/[0.03] dark:text-neutral-400">
+                  <tr>
+                    <th className="px-4 py-3 font-bold">Regla</th>
+                    <th className="px-4 py-3 font-bold">Tipo</th>
+                    <th className="px-4 py-3 font-bold">Atributo Origen</th>
+                    <th className="px-4 py-3 font-bold">Atributo Destino</th>
+                    <th className="px-4 py-3 font-bold">Operador</th>
+                    <th className="px-4 py-3 text-right font-bold">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-neutral-800">
+                  {compatibilityRulesList.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-slate-500 dark:text-neutral-400">
+                        No hay reglas de compatibilidad registradas en la base de datos.
+                      </td>
+                    </tr>
+                  ) : (
+                    compatibilityRulesList.map((rule) => (
+                      <tr key={rule.id} className="transition hover:bg-slate-50 dark:hover:bg-white/[0.03]">
+                        <td className="px-4 py-3">
+                          <p className="font-semibold text-slate-950 dark:text-white">{rule.name}</p>
+                          {rule.description && (
+                            <p className="mt-0.5 text-xs text-slate-500 dark:text-neutral-400">{rule.description}</p>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="inline-flex rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 dark:bg-blue-400/10 dark:text-blue-300">
+                            {rule.ruleType}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-slate-650 dark:text-neutral-350">
+                          {rule.sourceAttributeName || 'Atributo origen'}
+                        </td>
+                        <td className="px-4 py-3 text-slate-650 dark:text-neutral-350">
+                          {rule.targetAttributeName || 'Atributo destino'}
+                        </td>
+                        <td className="px-4 py-3 font-medium text-slate-600 dark:text-neutral-400">
+                          {rule.comparisonOperator || 'Igualdad'}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-end">
+                            <button
+                              type="button"
+                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-300 text-red-600 transition hover:border-red-500 hover:bg-red-50 hover:text-red-700 dark:border-red-500/35 dark:text-red-300 dark:hover:border-red-400 dark:hover:bg-red-500/10 dark:hover:text-red-200"
+                              onClick={() => deleteCompatibilityRuleAction(rule)}
+                              aria-label="Desactivar regla"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -1282,6 +1617,214 @@ export const AdminCatalogoPage = () => {
               className="rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2 transition text-xs shadow-sm"
             >
               Sí, desasociar
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        open={catModalMode === 'create'}
+        title="Nueva Categoría de Hardware"
+        text="Define las propiedades de la nueva categoría para clasificar el hardware de la tienda."
+        onClose={() => setCatModalMode(null)}
+        footer={
+          <>
+            <Button type="button" variant="ghost" onClick={() => setCatModalMode(null)}>
+              Cancelar
+            </Button>
+            <Button type="button" onClick={() => void saveCategoryAction()} disabled={isSavingCat}>
+              {isSavingCat ? 'Guardando...' : 'Guardar'}
+            </Button>
+          </>
+        }
+      >
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <FormInput
+              label="Nombre de la categoría"
+              value={catForm.name}
+              onChange={(e) => setCatForm(curr => ({ ...curr, name: e.target.value }))}
+              placeholder="Ej: Tarjetas de Video, Procesadores"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <FormInput
+              label="Descripción (opcional)"
+              value={catForm.description}
+              onChange={(e) => setCatForm(curr => ({ ...curr, description: e.target.value }))}
+              placeholder="Ej: Unidades de procesamiento gráfico de alto rendimiento."
+            />
+          </div>
+          <div className="md:col-span-2">
+            <FormSelect
+              label="Categoría Padre (opcional para subcategorías)"
+              value={catForm.parentId}
+              onChange={(e) => setCatForm(curr => ({ ...curr, parentId: e.target.value }))}
+              options={[
+                { label: 'Ninguna (Categoría principal)', value: '' },
+                ...categories.map(cat => ({ label: cat.name, value: cat.id }))
+              ]}
+            />
+          </div>
+        </div>
+        {catModalError && (
+          <div className="mt-4 rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-200">
+            {catModalError}
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={!!catToDelete}
+        title="¿Desactivar Categoría?"
+        onClose={() => setCatToDelete(null)}
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-red-500/10 text-red-500 shrink-0">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-extrabold text-slate-900 dark:text-white">
+                ¿Estás seguro de que deseas desactivar esta categoría?
+              </p>
+              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">
+                Esta acción ocultará la categoría del catálogo. Los productos asociados seguirán existiendo pero no se listarán bajo esta categoría. La categoría "{catToDelete?.name}" se desactivará temporalmente.
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-neutral-900">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setCatToDelete(null)}
+            >
+              Cancelar
+            </Button>
+            <button
+              type="button"
+              onClick={() => void handleConfirmDeleteCategory()}
+              className="rounded-lg bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 transition text-xs shadow-sm"
+            >
+              Sí, desactivar
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        open={ruleModalMode === 'create'}
+        title="Nueva Regla de Compatibilidad"
+        text="Crea una regla lógica de compatibilidad de hardware para el simulador."
+        onClose={() => setRuleModalMode(null)}
+        footer={
+          <>
+            <Button type="button" variant="ghost" onClick={() => setRuleModalMode(null)}>
+              Cancelar
+            </Button>
+            <Button type="button" onClick={() => void saveCompatibilityRuleAction()} disabled={isSavingRule}>
+              {isSavingRule ? 'Creando...' : 'Crear Regla'}
+            </Button>
+          </>
+        }
+      >
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <FormInput
+              label="Nombre de la regla"
+              value={ruleForm.name}
+              onChange={(e) => setRuleForm(curr => ({ ...curr, name: e.target.value }))}
+              placeholder="Ej: Compatibilidad de Socket AM5"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <FormInput
+              label="Descripción (opcional)"
+              value={ruleForm.description}
+              onChange={(e) => setRuleForm(curr => ({ ...curr, description: e.target.value }))}
+              placeholder="Ej: Asegura que el procesador y la placa madre tengan el mismo tipo de socket."
+            />
+          </div>
+          <FormSelect
+            label="Atributo Origen (Ej: Placa Madre Socket)"
+            value={ruleForm.sourceAttributeId}
+            onChange={(e) => setRuleForm(curr => ({ ...curr, sourceAttributeId: e.target.value }))}
+            options={[
+              { label: 'Seleccionar atributo', value: '' },
+              ...globalAttributes.map(attr => ({ label: attr.name, value: attr.id }))
+            ]}
+          />
+          <FormSelect
+            label="Atributo Destino (Ej: CPU Socket)"
+            value={ruleForm.targetAttributeId}
+            onChange={(e) => setRuleForm(curr => ({ ...curr, targetAttributeId: e.target.value }))}
+            options={[
+              { label: 'Seleccionar atributo', value: '' },
+              ...globalAttributes.map(attr => ({ label: attr.name, value: attr.id }))
+            ]}
+          />
+          <FormSelect
+            label="Tipo de Regla"
+            value={ruleForm.ruleType}
+            onChange={(e) => setRuleForm(curr => ({ ...curr, ruleType: e.target.value as any }))}
+            options={[
+              { label: 'Coincidir exactamente (MUST_MATCH)', value: 'MUST_MATCH' },
+              { label: 'Verificar rango (RANGE_CHECK)', value: 'RANGE_CHECK' },
+              { label: 'Energía suficiente (POWER_SUFFICIENT)', value: 'POWER_SUFFICIENT' },
+              { label: 'Lógica personalizada (CUSTOM)', value: 'CUSTOM' },
+            ]}
+          />
+          <FormSelect
+            label="Operador de comparación"
+            value={ruleForm.operator}
+            onChange={(e) => setRuleForm(curr => ({ ...curr, operator: e.target.value }))}
+            options={[
+              { label: 'Igual (=)', value: 'EQUALS' },
+              { label: 'Mayor o igual (>=)', value: 'GREATER_THAN_OR_EQUAL' },
+              { label: 'Menor o igual (<=)', value: 'LESS_THAN_OR_EQUAL' },
+            ]}
+          />
+        </div>
+        {ruleModalError && (
+          <div className="mt-4 rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-200">
+            {ruleModalError}
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={!!ruleToDelete}
+        title="¿Desactivar Regla de Compatibilidad?"
+        onClose={() => setRuleToDelete(null)}
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-red-500/10 text-red-500 shrink-0">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-extrabold text-slate-900 dark:text-white">
+                ¿Estás seguro de que deseas desactivar esta regla?
+              </p>
+              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">
+                Esta acción evitará que el Simulador 3D valide esta restricción de hardware en tiempo real. La regla "{ruleToDelete?.name}" se removerá del motor de validaciones.
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-neutral-900">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setRuleToDelete(null)}
+            >
+              Cancelar
+            </Button>
+            <button
+              type="button"
+              onClick={() => void handleConfirmDeleteRule()}
+              className="rounded-lg bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 transition text-xs shadow-sm"
+            >
+              Sí, desactivar
             </button>
           </div>
         </div>

@@ -34,3 +34,20 @@ export const getCompatibilityRules = async (): Promise<{ data: CompatibilityRule
   const { data } = await api.get<{ data: CompatibilityRule[]; total: number }>('/compatibility/rules');
   return data;
 };
+
+export const createCompatibilityRule = async (payload: {
+  name: string;
+  description?: string;
+  sourceAttributeId: string;
+  targetAttributeId: string;
+  ruleType: 'MUST_MATCH' | 'RANGE_CHECK' | 'POWER_SUFFICIENT' | 'CUSTOM';
+  condition: Record<string, any>;
+}): Promise<any> => {
+  const { data } = await api.post<{ message: string; rule: any }>('/compatibility/rules', payload);
+  return data.rule;
+};
+
+export const deleteCompatibilityRule = async (id: string): Promise<void> => {
+  await api.delete(`/compatibility/rules/${id}`);
+};
+

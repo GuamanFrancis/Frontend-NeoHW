@@ -28,6 +28,7 @@ export type OrderItemBackend = {
   product: {
     name: string;
     sku: string | null;
+    imageUrl?: string | null;
   };
 };
 
@@ -40,6 +41,12 @@ export type OrderBackend = {
   createdAt: string;
   updatedAt: string;
   items: OrderItemBackend[];
+  documents?: {
+    id: string;
+    documentType: 'SHIPPING_PROOF' | 'DELIVERY_PHOTO' | 'CUSTOMER_SIGNATURE';
+    fileUrl: string;
+    createdAt: string;
+  }[];
   user?: {
     firstName?: string | null;
     lastName?: string | null;
@@ -101,6 +108,48 @@ export const uploadOrderDocument = async (
     },
   });
   return data;
+};
+
+export const updateLocalOrder = (
+  orderId: string,
+  status: string,
+  doc?: { documentType: string; fileUrl: string }
+) => {
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('client_orders_')) {
+      try {
+        const orders = JSON.parse(localStorage.getItem(key) || '[]');
+        let updated = false;
+        const newOrders = orders.map((o: any) => {
+          if (o.id === orderId) {
+            updated = true;
+            const updatedOrder = { ...o, status };
+            if (doc) {
+              const docs = o.documents || [];
+              if (!docs.some((d: any) => d.documentType === doc.documentType)) {
+                docs.push({
+                  id: Math.random().toString(),
+                  documentType: doc.documentType,
+                  fileUrl: doc.fileUrl,
+                  createdAt: new Date().toISOString()
+                });
+              }
+              updatedOrder.documents = docs;
+            }
+            return updatedOrder;
+          }
+          return o;
+        });
+        if (updated) {
+          localStorage.setItem(key, JSON.stringify(newOrders));
+          break;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }
 };
 
 

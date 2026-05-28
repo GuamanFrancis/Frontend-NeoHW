@@ -376,11 +376,17 @@ export const HomePage = () => {
                         className="mb-4 flex h-36 items-center justify-center overflow-hidden rounded-lg bg-slate-50 dark:bg-neutral-900/50 p-2 cursor-pointer"
                         onClick={() => handleOpenDrawer(item)}
                       >
-                        <img
-                          src={item.imageUrl || ''}
-                          alt={item.name}
-                          className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
-                        />
+                        {item.imageUrl ? (
+                          <img
+                            src={item.imageUrl}
+                            alt={item.name}
+                            className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center text-slate-350 dark:text-neutral-600">
+                            <Box className="h-12 w-12" />
+                          </div>
+                        )}
                       </div>
                       <h3
                         className="mb-1 text-sm font-extrabold text-slate-900 dark:text-white group-hover:text-teal-650 dark:group-hover:text-teal-400 transition cursor-pointer line-clamp-1"

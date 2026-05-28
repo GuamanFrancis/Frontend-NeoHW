@@ -33,6 +33,12 @@ export const getAttributes = async (): Promise<BackendAttribute[]> => {
   return data.data;
 };
 
+export const getAttributeById = async (id: string): Promise<BackendAttribute> => {
+  const { data } = await api.get<{ attribute: BackendAttribute }>(`/attributes/${id}`);
+  return data.attribute;
+};
+
+
 export const createAttribute = async (payload: {
   name: string;
   slug?: string;
