@@ -1,4 +1,3 @@
-import { useEffect, useMemo, useState } from 'react';
 import {
   Eye,
   Filter,
@@ -12,64 +11,8 @@ import { FormInput } from '../../components/ui/FormInput';
 import { FormSelect } from '../../components/ui/FormSelect';
 import { Modal } from '../../components/ui/Modal';
 import { PageCard } from '../../components/ui/PageCard';
-import type { BackendRole, BackendUser } from '../../types/auth';
-import { changeUserRole, deactivateUser, getUsers, getUserById } from '../../services/usersService';
-
-type UserRole = 'Super administrador' | 'Administrador' | 'Vendedor' | 'Cliente';
-type UserStatus = 'Activo' | 'Inactivo';
-
-type AdminUser = {
-  id: string;
-  name: string;
-  phone: string;
-  email: string;
-  role: UserRole;
-  backendRole: BackendRole;
-  status: UserStatus;
-  lastAccess: string;
-};
-
-type UserFormValues = {
-  name: string;
-  phone: string;
-  email: string;
-  role: UserRole;
-  status: UserStatus;
-};
-
-const roleOptions = [
-  { label: 'Super administrador', value: 'Super administrador' },
-  { label: 'Administrador', value: 'Administrador' },
-  { label: 'Vendedor', value: 'Vendedor' },
-  { label: 'Cliente', value: 'Cliente' },
-];
-
-const statusOptions = [
-  { label: 'Activo', value: 'Activo' },
-  { label: 'Inactivo', value: 'Inactivo' },
-];
-
-const emptyForm: UserFormValues = {
-  name: '',
-  phone: '',
-  email: '',
-  role: 'Cliente',
-  status: 'Activo',
-};
-
-const roleLabels: Record<BackendRole, UserRole> = {
-  SUPER_ADMIN: 'Super administrador',
-  ADMIN: 'Administrador',
-  SELLER: 'Vendedor',
-  USER: 'Cliente',
-};
-
-const backendRolesByLabel: Record<UserRole, BackendRole> = {
-  'Super administrador': 'SUPER_ADMIN',
-  Administrador: 'ADMIN',
-  Vendedor: 'SELLER',
-  Cliente: 'USER',
-};
+import { useAdminUsers, roleOptions, statusOptions } from './hooks/useAdminUsers';
+import type { UserRole, UserStatus } from './hooks/useAdminUsers';
 
 const roleStyles: Record<UserRole, string> = {
   'Super administrador': 'bg-cyan-50 text-cyan-700 ring-cyan-500/20 dark:bg-cyan-400/10 dark:text-cyan-200 dark:ring-cyan-300/25',
@@ -98,177 +41,42 @@ const getInitials = (name: string) =>
     .join('')
     .toUpperCase();
 
-const getFullName = (user: BackendUser) => {
-  const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
-  return fullName || user.email;
-};
-
-const mapBackendUser = (user: BackendUser): AdminUser => ({
-  id: user.id,
-  name: getFullName(user),
-  phone: user.phone ?? 'Sin telefono',
-  email: user.email,
-  role: roleLabels[user.role],
-  backendRole: user.role,
-  status: user.isActive ? 'Activo' : 'Inactivo',
-  lastAccess: 'Registrado',
-});
-
 export const AdminUsuariosPage = () => {
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState('todos');
-  const [statusFilter, setStatusFilter] = useState('todos');
-  const [pageSize, setPageSize] = useState(5);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
-  const [modalMode, setModalMode] = useState<'edit' | 'view' | null>(null);
-  const [formValues, setFormValues] = useState<UserFormValues>(emptyForm);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [pageError, setPageError] = useState('');
-  const [modalError, setModalError] = useState('');
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadUsers = async () => {
-      try {
-        const response = await getUsers(1, 100);
-        if (!isMounted) return;
-        setUsers(response.users.map(mapBackendUser));
-      } catch {
-        if (!isMounted) return;
-        setPageError('No se pudo cargar usuarios. Verifica tu sesion y permisos de administrador.');
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-
-    void loadUsers();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const filteredUsers = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-
-    return users.filter((user) => {
-      const matchesSearch =
-        !normalizedSearch ||
-        user.name.toLowerCase().includes(normalizedSearch) ||
-        user.email.toLowerCase().includes(normalizedSearch) ||
-        user.role.toLowerCase().includes(normalizedSearch);
-
-      const matchesRole = roleFilter === 'todos' || user.role === roleFilter;
-      const matchesStatus = statusFilter === 'todos' || user.status === statusFilter;
-
-      return matchesSearch && matchesRole && matchesStatus;
-    });
-  }, [roleFilter, search, statusFilter, users]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / pageSize));
-  const pageUsers = filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  const firstResult = filteredUsers.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-  const lastResult = Math.min(currentPage * pageSize, filteredUsers.length);
-  const canSaveUser = formValues.name.trim() !== '' && formValues.email.trim() !== '' && !isSaving;
-
-  const changeSearch = (value: string) => {
-    setSearch(value);
-    setCurrentPage(1);
-  };
-
-  const changeRoleFilter = (value: string) => {
-    setRoleFilter(value);
-    setCurrentPage(1);
-  };
-
-  const changeStatusFilter = (value: string) => {
-    setStatusFilter(value);
-    setCurrentPage(1);
-  };
-
-  const cleanFilters = () => {
-    setSearch('');
-    setRoleFilter('todos');
-    setStatusFilter('todos');
-    setCurrentPage(1);
-  };
-
-  const openEditModal = (user: AdminUser) => {
-    setModalError('');
-    setSelectedUser(user);
-    setFormValues({
-      name: user.name,
-      phone: user.phone === 'Sin telefono' ? '' : user.phone,
-      email: user.email,
-      role: user.role,
-      status: user.status,
-    });
-    setModalMode('edit');
-  };
-
-  const openViewModal = async (user: AdminUser) => {
-    setSelectedUser(user);
-    setModalMode('view');
-    try {
-      const freshUser = await getUserById(user.id);
-      setSelectedUser(mapBackendUser(freshUser));
-    } catch (e) {
-      console.error('Error fetching user by ID:', e);
-    }
-  };
-
-  const closeModal = () => {
-    setSelectedUser(null);
-    setModalMode(null);
-    setModalError('');
-  };
-
-  const saveUser = async () => {
-    if (!selectedUser) return;
-
-    try {
-      setIsSaving(true);
-      setModalError('');
-
-      const requestedRole = backendRolesByLabel[formValues.role];
-      let updatedUser = null;
-
-      if (requestedRole !== selectedUser.backendRole) {
-        updatedUser = await changeUserRole(selectedUser.id, requestedRole);
-      }
-
-      if (updatedUser) {
-        setUsers((currentUsers) =>
-          currentUsers.map((user) => (user.id === selectedUser.id ? mapBackendUser(updatedUser) : user)),
-        );
-      }
-      closeModal();
-    } catch {
-      setModalError('No se pudo guardar el usuario. Revisa permisos y datos ingresados.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const toggleUserStatus = async (user: AdminUser) => {
-    if (user.status === 'Inactivo') return;
-
-    try {
-      setPageError('');
-      const updatedUser = await deactivateUser(user.id);
-      setUsers((currentUsers) =>
-        currentUsers.map((currentUser) => (
-          currentUser.id === user.id ? mapBackendUser(updatedUser) : currentUser
-        )),
-      );
-    } catch {
-      setPageError('No se pudo desactivar el usuario seleccionado.');
-    }
-  };
+  const {
+    search,
+    roleFilter,
+    statusFilter,
+    pageSize,
+    currentPage,
+    selectedUser,
+    modalMode,
+    formValues,
+    isLoading,
+    isSaving,
+    pageError,
+    modalError,
+    filteredUsers,
+    totalPages,
+    pageUsers,
+    firstResult,
+    lastResult,
+    canSaveUser,
+    changeSearch,
+    changeRoleFilter,
+    changeStatusFilter,
+    cleanFilters,
+    openEditModal,
+    openViewModal,
+    closeModal,
+    saveUser,
+    cancelDeactivateUser,
+    confirmDeactivateUser,
+    requestDeactivateUser,
+    userToDeactivate,
+    setCurrentPage,
+    setPageSize,
+    setFormValues,
+  } = useAdminUsers();
 
   return (
     <PageCard
@@ -378,7 +186,7 @@ export const AdminUsuariosPage = () => {
                         <button
                           type="button"
                           className={actionButtonClass}
-                          onClick={() => openViewModal(user)}
+                          onClick={() => void openViewModal(user)}
                           aria-label="Ver usuario"
                         >
                           <Eye className="h-4 w-4" />
@@ -387,6 +195,8 @@ export const AdminUsuariosPage = () => {
                           type="button"
                           className={actionButtonClass}
                           onClick={() => openEditModal(user)}
+                          disabled={user.status === 'Inactivo'}
+                          title={user.status === 'Inactivo' ? 'No se puede editar un usuario inactivo' : 'Editar usuario'}
                           aria-label="Editar usuario"
                         >
                           <Pencil className="h-4 w-4" />
@@ -394,8 +204,9 @@ export const AdminUsuariosPage = () => {
                         <button
                           type="button"
                           className={actionButtonClass}
-                          onClick={() => void toggleUserStatus(user)}
+                          onClick={() => requestDeactivateUser(user)}
                           disabled={user.status === 'Inactivo'}
+                          title={user.status === 'Inactivo' ? 'El usuario ya se encuentra inactivo' : 'Desactivar usuario'}
                           aria-label="Desactivar usuario"
                         >
                           <Power className="h-4 w-4" />
@@ -577,6 +388,41 @@ export const AdminUsuariosPage = () => {
                 <p className="text-slate-500 dark:text-neutral-400">Ultimo acceso</p>
                 <p className="mt-1 font-bold text-slate-950 dark:text-white">{selectedUser.lastAccess}</p>
               </div>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={Boolean(userToDeactivate)}
+        title="Confirmar desactivación"
+        text="¿Estás seguro de que deseas desactivar a este usuario? Esta acción suspenderá su acceso al sistema de forma inmediata."
+        onClose={cancelDeactivateUser}
+        footer={
+          <>
+            <Button type="button" variant="ghost" onClick={cancelDeactivateUser}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              className="bg-red-500 hover:bg-red-400 text-white font-extrabold border-0 px-5"
+              onClick={() => void confirmDeactivateUser()}
+            >
+              Desactivar cuenta
+            </Button>
+          </>
+        }
+      >
+        {userToDeactivate && (
+          <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-650 dark:text-red-200">
+            <p className="font-bold mb-2">Información de la cuenta a suspender:</p>
+            <div className="space-y-1">
+              <p className="font-mono text-xs">
+                <span className="font-sans font-bold">Usuario:</span> {userToDeactivate.name}
+              </p>
+              <p className="font-mono text-xs">
+                <span className="font-sans font-bold">Correo:</span> {userToDeactivate.email}
+              </p>
             </div>
           </div>
         )}

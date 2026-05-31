@@ -41,6 +41,7 @@ export type BackendUser = {
   phone: string | null;
   role: BackendRole;
   isActive: boolean;
+  createdAt?: string;
 };
 
 export type BackendAuthResponse = {
