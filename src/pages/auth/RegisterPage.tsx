@@ -32,6 +32,7 @@ export const RegisterPage = () => {
     getValues,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormValues>({
+    mode: 'onChange',
     defaultValues: {
       email: '',
       password: '',
@@ -73,7 +74,6 @@ export const RegisterPage = () => {
             },
           });
 
-          // Render the overlay button
           const overlayDiv = document.getElementById('google-signup-btn-overlay');
           if (overlayDiv) {
             window.google.accounts.id.renderButton(overlayDiv, {
@@ -127,8 +127,11 @@ export const RegisterPage = () => {
 
       const redirect = searchParams.get('redirect');
       navigate(redirect || roleHomeRoutes[session.user.role]);
-    } catch {
-      setFormError('No se pudo crear la cuenta. Revisa que el correo no exista y que la contrasena cumpla los requisitos.');
+    } catch (err: any) {
+      setFormError(
+        err.response?.data?.message ||
+        'No se pudo crear la cuenta. Revisa que el correo no exista y que la contrasena cumpla los requisitos.'
+      );
     }
   };
 

@@ -16,7 +16,7 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { getStoredSession } from '../../services/session';
 import { createStripeSession } from '../../services/paymentsService';
-import { updateOrderStatus } from '../../services/ordersService';
+import { getOrders, updateOrderStatus } from '../../services/ordersService';
 import { ComponenteDetalleDrawer } from './ComponenteDetalleDrawer';
 import type { CatalogComponent } from '../../types/catalog';
 
@@ -81,18 +81,58 @@ export const ClientePedidosPage = () => {
 
   const ordersKey = userId ? `client_orders_${userId}` : '';
 
-  const loadOrders = () => {
-    if (!ordersKey) return;
+  const loadOrders = async () => {
+    if (!userId) return;
     try {
       setIsLoading(true);
+      const res = await getOrders();
+      const mappedOrders: OrderLocal[] = res.data.map((order) => {
+        let addressParsed = undefined;
+        if (order.shippingAddress) {
+          if (typeof order.shippingAddress === 'string') {
+            try {
+              addressParsed = JSON.parse(order.shippingAddress);
+            } catch {}
+          } else {
+            addressParsed = order.shippingAddress;
+          }
+        }
+        return {
+          id: order.id,
+          totalAmount: typeof order.totalAmount === 'string' ? parseFloat(order.totalAmount) : order.totalAmount,
+          status: order.status,
+          createdAt: order.createdAt,
+          items: order.items.map((item) => ({
+            product: {
+              id: item.productId,
+              name: item.product.name,
+              imageUrl: item.product.imageUrl || undefined,
+            },
+            quantity: item.quantity,
+            priceAtTime: typeof item.priceAtTime === 'string' ? parseFloat(item.priceAtTime) : item.priceAtTime,
+          })),
+          shippingAddress: addressParsed ? {
+            street: addressParsed.street || '',
+            city: addressParsed.city || '',
+            state: addressParsed.state || '',
+            postalCode: addressParsed.postalCode || '',
+            country: addressParsed.country || '',
+            fullName: addressParsed.fullName || (order.user ? `${order.user.firstName || ''} ${order.user.lastName || ''}`.trim() : undefined),
+            email: addressParsed.email || order.user?.email || undefined,
+            phone: addressParsed.phone || order.user?.phone || undefined,
+          } : undefined,
+          documents: order.documents,
+        };
+      });
+      setAllOrders(mappedOrders);
+    } catch (e) {
+      console.error('Error al cargar historial de pedidos:', e);
       const stored = localStorage.getItem(ordersKey);
       if (stored) {
         setAllOrders(JSON.parse(stored));
       } else {
         setAllOrders([]);
       }
-    } catch (e) {
-      console.error('Error al cargar historial de pedidos:', e);
     } finally {
       setIsLoading(false);
     }
@@ -489,7 +529,6 @@ export const ClientePedidosPage = () => {
       >
         {selectedOrder && (
           <div className="space-y-6 max-h-[75vh] overflow-y-auto pr-1">
-            {/* Header info */}
             <div className="border-b border-slate-100 dark:border-neutral-900 pb-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>

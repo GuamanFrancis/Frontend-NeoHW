@@ -28,6 +28,7 @@ export const LoginPage = () => {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
+    mode: 'onChange',
     defaultValues: {
       email: '',
       password: '',
@@ -66,7 +67,6 @@ export const LoginPage = () => {
             },
           });
 
-          // Render the overlay button
           const overlayDiv = document.getElementById('google-signin-btn-overlay');
           if (overlayDiv) {
             window.google.accounts.id.renderButton(overlayDiv, {
@@ -101,8 +101,11 @@ export const LoginPage = () => {
       saveSession(session, values.remember);
       const redirect = searchParams.get('redirect');
       navigate(redirect || roleHomeRoutes[session.user.role]);
-    } catch {
-      setFormError('No se pudo iniciar sesion. Revisa tus credenciales o el rol asignado en el sistema.');
+    } catch (err: any) {
+      setFormError(
+        err.response?.data?.message ||
+        'No se pudo iniciar sesion. Revisa tus credenciales o el rol asignado en el sistema.'
+      );
     }
   };
 
