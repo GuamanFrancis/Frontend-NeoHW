@@ -122,7 +122,12 @@ export const ClienteCarritoPage = () => {
         localStorage.setItem(`shipping_address_${userId}`, JSON.stringify(payload.shippingAddress));
       }
 
-      navigate(`/success?order_id=${response.orderId}`);
+      const stripeRes = await createStripeSession(response.orderId);
+      if (stripeRes && stripeRes.url) {
+        window.location.href = stripeRes.url;
+      } else {
+        setCheckoutError('Error al iniciar la pasarela de Stripe.');
+      }
     } catch (err: any) {
       console.error(err);
       const errMsg = err.response?.data?.message || 'Error al procesar el pedido. Intente nuevamente.';
@@ -410,7 +415,7 @@ export const ClienteCarritoPage = () => {
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-500 hover:bg-teal-600 text-white font-extrabold px-6 py-3.5 shadow transition mt-2 text-sm"
             >
               <Lock className="h-4 w-4" />
-              Proceder al checkout
+              Completar Datos de Envío y Pagar
               <span className="font-light ml-1">→</span>
             </button>
             <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-400 dark:text-neutral-500 font-bold mt-4">
@@ -422,12 +427,12 @@ export const ClienteCarritoPage = () => {
       </div>
       <Modal
         open={isCheckoutOpen}
-        title="Confirmación de Pedido"
+        title="Datos de Envío y Pago"
         onClose={() => setIsCheckoutOpen(false)}
       >
         <form onSubmit={handleCheckoutSubmit} className="space-y-4">
           <p className="text-xs text-slate-500 dark:text-neutral-400">
-            Ingresa la dirección de envío para crear tu orden de compra en el sistema.
+            Ingresa la dirección de envío para completar tu pedido y proceder a la pasarela de pago seguro con Stripe.
           </p>
           {checkoutError && (
             <div className="flex items-start gap-2.5 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-red-500 text-xs font-semibold">
@@ -534,7 +539,7 @@ export const ClienteCarritoPage = () => {
               {loadingCheckout ? (
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
               ) : (
-                "Confirmar Pedido"
+                "Proceder al Pago con Stripe"
               )}
             </Button>
           </div>

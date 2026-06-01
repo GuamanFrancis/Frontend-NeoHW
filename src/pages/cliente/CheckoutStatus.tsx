@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router';
+import { useSearchParams } from 'react-router';
 import { CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { useCart } from '../../context/CartContext';
@@ -10,7 +10,6 @@ type CheckoutStatusProps = {
 
 export const CheckoutStatusPage = ({ type }: CheckoutStatusProps) => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const { clearCart } = useCart();
   const orderId = searchParams.get('order_id') || '';
   const isSuccess = type === 'success';
@@ -75,15 +74,16 @@ export const CheckoutStatusPage = ({ type }: CheckoutStatusProps) => {
           )}
 
           <div className="mt-8 w-full">
-            <Link to="/cliente/catalogo" className="w-full block">
-              <Button
-                type="button"
-                fullWidth
-                className="bg-teal-500 hover:bg-teal-400 text-neutral-950 font-extrabold"
-              >
-                Volver al catálogo
-              </Button>
-            </Link>
+            <Button
+              type="button"
+              fullWidth
+              className="bg-teal-500 hover:bg-teal-400 text-neutral-950 font-extrabold"
+              onClick={() => {
+                window.location.href = '/cliente/catalogo';
+              }}
+            >
+              Volver al catálogo
+            </Button>
           </div>
         </div>
       </div>
