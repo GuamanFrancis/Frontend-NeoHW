@@ -24,10 +24,14 @@ export const isFormFactorCompatible = (moboForm: string | null, caseForm: string
   return true;
 };
 
-export const getFriendlyCompatibilityDetail = (ruleName: string, detail: string): string => {
+export const getFriendlyCompatibilityDetail = (ruleName: string, detail: string, status?: string): string => {
   const cleanDetail = detail.toLowerCase();
+  const isPass = status === 'PASS';
   
   if (ruleName === 'Socket CPU-Mobo Match') {
+    if (isPass) {
+      return 'El procesador y la placa madre tienen el mismo zócalo compatible.';
+    }
     const matches = detail.match(/No coinciden:\s*([\w\-]+)\s*vs\s*([\w\-]+)/i);
     if (matches) {
       return `El procesador (${matches[1].toUpperCase()}) no es compatible físicamente con el zócalo (socket) de la placa madre (${matches[2].toUpperCase()}).`;
@@ -35,6 +39,9 @@ export const getFriendlyCompatibilityDetail = (ruleName: string, detail: string)
   }
   
   if (ruleName === 'RAM Type Match') {
+    if (isPass) {
+      return 'La memoria RAM coincide con el tipo de ranura DDR de la placa madre.';
+    }
     const matches = detail.match(/No coinciden:\s*([\w\-]+)\s*vs\s*([\w\-]+)/i);
     if (matches) {
       return `La memoria RAM (${matches[1].toUpperCase()}) no coincide con el tipo de ranura DDR de la placa madre (${matches[2].toUpperCase()}).`;
@@ -42,15 +49,23 @@ export const getFriendlyCompatibilityDetail = (ruleName: string, detail: string)
   }
   
   if (ruleName === 'Form Factor Mobo-Case Match' || cleanDetail.includes('formato') || cleanDetail.includes('factor')) {
+    if (isPass) {
+      return 'El formato de la placa madre es compatible con el gabinete.';
+    }
     return `Las dimensiones de la placa madre superan el espacio disponible en el gabinete seleccionado.`;
   }
   
   if (ruleName === 'PSU-GPU Watts Match' || cleanDetail.includes('potencia') || cleanDetail.includes('watts')) {
     const matches = detail.match(/(\d+)W\s*disponible,\s*(\d+)W\s*requerido/i);
     if (matches) {
+      if (isPass) {
+        return `La fuente de poder ofrece potencia suficiente: ofrece ${matches[1]}W y tu configuración requiere ${matches[2]}W.`;
+      }
       return `La fuente de poder es insuficiente: ofrece ${matches[1]}W pero tu configuración requiere al menos ${matches[2]}W.`;
     }
-    return `La fuente de poder no tiene suficiente potencia para alimentar la tarjeta gráfica seleccionada.`;
+    return isPass
+      ? 'La fuente de poder tiene suficiente potencia.'
+      : 'La fuente de poder no tiene suficiente potencia para alimentar la tarjeta gráfica seleccionada.';
   }
 
   return detail

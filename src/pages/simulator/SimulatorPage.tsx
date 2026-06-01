@@ -76,6 +76,7 @@ export const SimulatorPage = () => {
     setSelectedRamProduct,
     setSelectedRamSlotId,
     compatibilityStatus,
+    maxRamSlots,
     chatInput,
     setChatInput,
     aiLoading,
@@ -181,7 +182,9 @@ export const SimulatorPage = () => {
                 </div>
   
                 <div className="flex-1 min-h-0 bg-neutral-950">
-                  <Scene key={sceneKey} states={assemblyStates} onInstallComplete={completeInstall} cameraAction={cameraAction} autoRotate={autoRotate} />
+                  {isCaseSelected && (
+                    <Scene key={sceneKey} states={assemblyStates} onInstallComplete={completeInstall} cameraAction={cameraAction} autoRotate={autoRotate} />
+                  )}
                 </div>
   
                 {!isCaseSelected && (
@@ -231,8 +234,8 @@ export const SimulatorPage = () => {
                           <div key={`${r.ruleId}-${r.sourceProduct.id}-${r.targetProduct.id}`} className="rounded-xl bg-white dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800/40 p-2.5 flex items-start justify-between gap-2 shadow-sm">
                             <div className="min-w-0 flex-1">
                               <span className="text-[10px] font-medium text-slate-750 dark:text-neutral-350 block truncate">{r.ruleName}</span>
-                              <span className={`text-[9px] font-normal leading-snug block mt-0.5 ${r.status === 'PASS' ? 'text-teal-600 dark:text-teal-400' : r.status === 'WARN' ? 'text-amber-650 dark:text-amber-400' : 'text-rose-650 dark:text-rose-450'}`}>
-                                {getFriendlyCompatibilityDetail(r.ruleName, r.detail)}
+                              <span className={`text-[9px] font-normal leading-snug block mt-0.5 ${r.status === 'PASS' ? 'text-teal-650 dark:text-teal-400' : r.status === 'WARN' ? 'text-amber-650 dark:text-amber-400' : 'text-rose-650 dark:text-rose-450'}`}>
+                                {getFriendlyCompatibilityDetail(r.ruleName, r.detail, r.status)}
                               </span>
                             </div>
                             {r.status === 'PASS' ? (
@@ -316,7 +319,7 @@ export const SimulatorPage = () => {
           <div className="space-y-4 text-slate-900 dark:text-neutral-100">
             <p className="text-xs text-slate-500 dark:text-neutral-400 font-medium leading-relaxed font-sans">¿Cuántos módulos de memoria RAM del modelo <strong>{selectedRamProduct?.name}</strong> deseas instalar en la placa madre?</p>
             <div className="grid grid-cols-4 gap-3 py-2">
-              {[1, 2, 3, 4].map((qty) => (
+              {Array.from({ length: maxRamSlots }, (_, i) => i + 1).map((qty) => (
                 <button key={qty} type="button" onClick={() => handleConfirmRamQuantity(qty)} className="h-14 rounded-xl border border-slate-200 dark:border-neutral-800 hover:border-teal-500 bg-slate-50 dark:bg-neutral-900/60 dark:hover:bg-neutral-900 text-sm font-black flex items-center justify-center transition cursor-pointer hover:scale-105">{qty}x</button>
               ))}
             </div>
@@ -340,7 +343,7 @@ export const SimulatorPage = () => {
             setIsDetailDrawerOpen(false);
             setSelectedDetailProduct(null);
           }}
-          onAddToCart={() => {}} 
+          showAddToCart={false}
           triggerType="click"
         />
       </div>

@@ -188,10 +188,6 @@ export const ClienteCarritoPage = () => {
       </div>
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
         <div className="lg:col-span-8 space-y-6">
-          <div className="flex items-center gap-3 rounded-lg border border-teal-500/20 bg-teal-500/5 p-4 text-teal-700 dark:text-teal-400 text-xs font-semibold">
-            <Info className="h-5 w-5 shrink-0 text-teal-500" />
-            <span>Tu carrito se guarda automáticamente en tu navegador para que no pierdas tus componentes.</span>
-          </div>
           <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white dark:border-neutral-900 dark:bg-neutral-950/20 shadow-sm">
             <table className="w-full border-collapse text-left text-xs">
               <thead>

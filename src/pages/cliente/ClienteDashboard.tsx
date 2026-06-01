@@ -6,6 +6,7 @@ const clienteMenu = [
   { label: 'Explorar catálogo', path: '/cliente/catalogo' },
   { label: 'Simulador IA', path: '/cliente/simulador' },
   { label: 'Mis proyectos', path: '/cliente/proyectos' },
+  { label: 'Historial de compras', path: '/cliente/pedidos' },
   { label: 'Carrito de compras', path: '/cliente/carrito' },
 ];
 

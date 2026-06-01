@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { useLocation } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import {
   LayoutGrid,
   Cpu,
@@ -24,7 +24,6 @@ export const CATEGORY_ICONS: Record<string, LucideIcon> = {
   'tarjetas-graficas': Tv,
   almacenamiento: HardDrive,
   'fuentes-de-poder': Zap,
-  refrigeracion: Snowflake,
   gabinetes: BoxIcon,
 };
 
@@ -36,7 +35,6 @@ export const CATEGORIES = [
   { id: '4', name: 'Tarjetas gráficas', slug: 'tarjetas-graficas' },
   { id: '5', name: 'Almacenamiento', slug: 'almacenamiento' },
   { id: '6', name: 'Fuentes de poder', slug: 'fuentes-de-poder' },
-  { id: '7', name: 'Refrigeración', slug: 'refrigeracion' },
   { id: '8', name: 'Gabinetes', slug: 'gabinetes' },
 ];
 
@@ -56,6 +54,7 @@ export const statusLabels = {
 
 export const useClienteCatalog = () => {
   const { addToCart } = useCart();
+  const navigate = useNavigate();
   const [components, setComponents] = useState<CatalogComponent[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
@@ -260,8 +259,7 @@ export const useClienteCatalog = () => {
 
   const handleAddToCart = (componente: CatalogComponent) => {
     addToCart(componente);
-    setCartSuccessMessage(`¡${componente.name} añadido al carrito!`);
-    setTimeout(() => setCartSuccessMessage(null), 3000);
+    navigate('/cliente/carrito');
   };
 
   const handleOpenDrawer = (componente: CatalogComponent) => {

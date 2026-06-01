@@ -238,6 +238,13 @@ export const ComponenteDetalleDrawer = ({
             {statusLabels[displayComponent.status]}
           </span>
         </div>
+        {displayComponent.description && (
+          <div className="mb-5">
+            <p className="text-xs text-neutral-450 leading-relaxed font-medium">
+              {displayComponent.description}
+            </p>
+          </div>
+        )}
         <div className="mb-6">
           <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2.5">
             Especificaciones principales

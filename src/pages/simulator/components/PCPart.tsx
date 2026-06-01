@@ -133,7 +133,7 @@ const PCPart: React.FC<PCPartProps> = ({ component, state, onInstallComplete }) 
   });
 
   return (
-    <group ref={groupRef}>
+    <group ref={groupRef} visible={state === 'installed' || state === 'installing'}>
       <primitive object={clonedScene} />
     </group>
   );

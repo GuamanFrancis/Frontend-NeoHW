@@ -9,6 +9,7 @@ export type CartItem = {
 type CartContextType = {
   cartItems: CartItem[];
   addToCart: (product: CatalogComponent) => void;
+  addMultipleToCart: (products: CatalogComponent[]) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
@@ -69,6 +70,28 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  const addMultipleToCart = (products: CatalogComponent[]) => {
+    setCartItems((prevItems) => {
+      let currentItems = [...prevItems];
+      products.forEach((product) => {
+        const existingItemIndex = currentItems.findIndex((item) => item.product.id === product.id);
+        if (existingItemIndex > -1) {
+          const existingItem = currentItems[existingItemIndex];
+          const currentQty = Number(existingItem.quantity);
+          if (currentQty < product.stock) {
+            currentItems[existingItemIndex] = {
+              ...existingItem,
+              quantity: currentQty + 1,
+            };
+          }
+        } else if (product.stock > 0) {
+          currentItems.push({ product, quantity: 1 });
+        }
+      });
+      return currentItems;
+    });
+  };
+
   const removeFromCart = (productId: string) => {
     setCartItems((prevItems) => prevItems.filter((item) => item.product.id !== productId));
   };
@@ -101,6 +124,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         cartItems,
         addToCart,
+        addMultipleToCart,
         removeFromCart,
         updateQuantity,
         clearCart,

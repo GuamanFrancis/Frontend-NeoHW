@@ -46,17 +46,57 @@ function recalcStates(currentStates: Record<string, ComponentState>, allComps: P
   return out;
 }
 
-const getInitialStates = () => recalcStates({}, PC_COMPONENTS);
+const getStoredComponents = (): PCComponent[] => {
+  try {
+    const stored = localStorage.getItem('neohw_live_assembly');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed.components && Array.isArray(parsed.components)) {
+        const validIds = new Set(PC_COMPONENTS.map(c => c.id));
+        const filtered = parsed.components.filter((c: any) => validIds.has(c.id));
+        return PC_COMPONENTS.map(pc => {
+          const storedComp = filtered.find((c: any) => c.id === pc.id);
+          return storedComp ? { ...pc, dbProduct: storedComp.dbProduct, selectedName: storedComp.selectedName, quantity: storedComp.quantity } : pc;
+        });
+      }
+    }
+  } catch (e) {
+    console.error(e);
+  }
+  return PC_COMPONENTS;
+};
+
+const getStoredAssemblyStates = (): Record<string, ComponentState> => {
+  try {
+    const stored = localStorage.getItem('neohw_live_assembly');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed.assemblyStates) {
+        const validIds = new Set(PC_COMPONENTS.map(c => c.id));
+        const filteredStates: Record<string, ComponentState> = {};
+        Object.entries(parsed.assemblyStates).forEach(([k, v]) => {
+          if (validIds.has(k)) {
+            filteredStates[k] = v as ComponentState;
+          }
+        });
+        return recalcStates(filteredStates, PC_COMPONENTS);
+      }
+    }
+  } catch (e) {
+    console.error(e);
+  }
+  return recalcStates({}, PC_COMPONENTS);
+};
 
 export const useSimulator = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { addToCart } = useCart();
+  const { addToCart, addMultipleToCart } = useCart();
   const session = getStoredSession();
   const userId = session?.user.id;
 
-  const [components, setComponents] = useState<PCComponent[]>(PC_COMPONENTS);
-  const [assemblyStates, setAssemblyStates] = useState<Record<string, ComponentState>>(getInitialStates);
+  const [components, setComponents] = useState<PCComponent[]>(getStoredComponents);
+  const [assemblyStates, setAssemblyStates] = useState<Record<string, ComponentState>>(getStoredAssemblyStates);
   const [isAnimating, setIsAnimating] = useState(false);
   
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
@@ -115,6 +155,16 @@ export const useSimulator = () => {
     return prod?.attributes?.find((a) => a.name.toLowerCase().includes(name.toLowerCase()))?.value || null;
   }, []);
 
+  const isMoboMiniItx = useMemo(() => {
+    const moboProd = components.find((c) => c.id === 'motherboard')?.dbProduct;
+    if (!moboProd) return false;
+    const name = moboProd.name.toLowerCase();
+    const form = (getAttr(moboProd, 'formato') || '').toLowerCase();
+    return name.includes('itx') || form.includes('itx');
+  }, [components, getAttr]);
+
+  const maxRamSlots = isMoboMiniItx ? 2 : 4;
+
   const hardwareStats = useMemo(() => {
     const cpuProd = components.find((c) => c.id === 'cpu')?.dbProduct;
     const moboProd = components.find((c) => c.id === 'motherboard')?.dbProduct;
@@ -151,22 +201,6 @@ export const useSimulator = () => {
     fetchRules();
   }, []);
 
-  useEffect(() => {
-    const checkOptionalCategories = async () => {
-      try {
-        const coolerRes = await getCatalogComponents({ category: 'refrigeracion', limit: 1 });
-        const fansRes = await getCatalogComponents({ category: 'ventiladores', limit: 1 });
-        setComponents(prev => prev.map(c => {
-          if (c.id === 'cooler' && !coolerRes.items.some(p => p.stock > 0)) return { ...c, hidden: true };
-          if (c.id === 'fans' && !fansRes.items.some(p => p.stock > 0)) return { ...c, hidden: true };
-          return c;
-        }));
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    checkOptionalCategories();
-  }, []);
 
   useEffect(() => {
     const run = async () => {
@@ -202,21 +236,11 @@ export const useSimulator = () => {
   
   useEffect(() => {
     try {
-      const temp = localStorage.getItem('neohw_temp_assembly');
-      if (temp) {
-        const parsed = JSON.parse(temp);
-        if (parsed.components && parsed.assemblyStates) {
-          setTimeout(() => {
-            setComponents(parsed.components);
-            setAssemblyStates(parsed.assemblyStates);
-          }, 0);
-        }
-        localStorage.removeItem('neohw_temp_assembly');
-      }
+      localStorage.setItem('neohw_live_assembly', JSON.stringify({ components, assemblyStates }));
     } catch (e) {
-      console.error('Error al restaurar el ensamble temporal:', e);
+      console.error(e);
     }
-  }, []);
+  }, [components, assemblyStates]);
 
   useEffect(() => {
     const loadProjectId = location.state?.loadProjectId;
@@ -302,40 +326,61 @@ export const useSimulator = () => {
       setTimeout(() => setToastMessage(null), 3000);
       return;
     }
-    selectedProds.forEach((prod) => addToCart(prod));
+    addMultipleToCart(selectedProds);
     setToastMessage("¡Añadidos al carrito!");
     setTimeout(() => setToastMessage(null), 3000);
-  }, [userId, components, addToCart]);
+    navigate('/cliente/carrito');
+  }, [userId, components, addMultipleToCart, navigate]);
 
   const handleReset = useCallback(() => {
     setComponents(PC_COMPONENTS.map((c) => ({ ...c, dbProduct: null })));
-    setAssemblyStates(getInitialStates());
+    setAssemblyStates(recalcStates({}, PC_COMPONENTS));
     setIsAnimating(false);
     setAutoRotate(false);
     setCameraAction({ type: 'reset', ts: Date.now() });
     setSceneKey(prev => prev + 1);
+    try {
+      localStorage.removeItem('neohw_live_assembly');
+    } catch (e) {
+      console.error(e);
+    }
   }, []);
 
   const handleRemoveComponent = useCallback((id: string) => {
+    const idsToRemove = new Set<string>([id]);
+    if (id === 'ram_1') {
+      idsToRemove.add('ram_2');
+      idsToRemove.add('ram_3');
+      idsToRemove.add('ram_4');
+    }
+
+    let added = true;
+    while (added) {
+      added = false;
+      PC_COMPONENTS.forEach((c) => {
+        if (c.requiredAfter && idsToRemove.has(c.requiredAfter) && !idsToRemove.has(c.id)) {
+          idsToRemove.add(c.id);
+          added = true;
+        }
+      });
+    }
+
     setComponents((prev) => prev.map((c) => {
-      if (c.id === id) {
-        return { ...c, dbProduct: null, selectedName: 'Sin seleccionar' };
-      }
-      if (id === 'ram_1' && c.id.startsWith('ram_')) {
-        return { ...c, dbProduct: null, selectedName: c.id === 'ram_1' ? 'Sin seleccionar' : `Memoria RAM DDR4/DDR5 Slot ${c.id.replace('ram_', '')}` };
+      if (idsToRemove.has(c.id)) {
+        let defaultName = 'Sin seleccionar';
+        if (c.id.startsWith('ram_') && c.id !== 'ram_1') {
+          defaultName = `Memoria RAM DDR4/DDR5 Slot ${c.id.replace('ram_', '')}`;
+        }
+        return { ...c, dbProduct: null, selectedName: defaultName };
       }
       return c;
     }));
 
     setAssemblyStates((prev) => {
       const next = { ...prev };
-      delete next[id];
-      if (id === 'ram_1') {
-        delete next['ram_1'];
-        delete next['ram_2'];
-        delete next['ram_3'];
-        delete next['ram_4'];
-      }
+      idsToRemove.forEach((x) => {
+        delete next[x];
+      });
       return recalcStates(next, PC_COMPONENTS);
     });
   }, []);
@@ -495,6 +540,7 @@ export const useSimulator = () => {
     selectedRamSlotId,
     setSelectedRamSlotId,
     compatibilityStatus,
+    maxRamSlots,
     chatInput,
     setChatInput,
     aiLoading,

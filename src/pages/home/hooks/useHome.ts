@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router';
 import { getCatalogComponents } from '../../../services/catalogService';
 import type { CatalogComponent } from '../../../types/catalog';
 import { useCart } from '../../../context/CartContext';
@@ -17,6 +18,7 @@ const categories = [
 export const useHome = () => {
   const { addToCart } = useCart();
   const session = getStoredSession();
+  const navigate = useNavigate();
 
   const [categoryProducts, setCategoryProducts] = useState<Record<string, CatalogComponent[]>>({});
   const [loading, setLoading] = useState(true);
@@ -128,11 +130,8 @@ export const useHome = () => {
 
   const handleAddToCart = useCallback((product: CatalogComponent) => {
     addToCart(product);
-    setCartSuccessMessage(`¡${product.name} añadido al carrito!`);
-    setTimeout(() => {
-      setCartSuccessMessage(null);
-    }, 3000);
-  }, [addToCart]);
+    navigate('/cliente/carrito');
+  }, [addToCart, navigate]);
 
   const handleOpenDrawer = useCallback((product: CatalogComponent) => {
     if (hoverTimerRef.current) {
