@@ -7,7 +7,6 @@ const clienteMenu = [
   { label: 'Simulador IA', path: '/cliente/simulador' },
   { label: 'Mis proyectos', path: '/cliente/proyectos' },
   { label: 'Carrito de compras', path: '/cliente/carrito' },
-  { label: 'Historial de compras', path: '/cliente/pedidos' },
 ];
 
 export const ClienteDashboard = () => {

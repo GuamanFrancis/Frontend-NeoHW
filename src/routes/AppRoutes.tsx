@@ -85,10 +85,10 @@ export default function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<PublicOnlyRoute><HomePage /></PublicOnlyRoute>} />
         <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
         <Route path="/registro" element={<PublicOnlyRoute><RegisterPage /></PublicOnlyRoute>} />
-        <Route path="/simulador" element={<SimulatorPage />} />
+        <Route path="/simulador" element={<PublicOnlyRoute><SimulatorPage /></PublicOnlyRoute>} />
         <Route path="/success" element={<CheckoutStatusPage type="success" />} />
         <Route path="/cancel" element={<CheckoutStatusPage type="cancel" />} />
         <Route path="/cliente" element={<RequireAuth allowedRoles={['cliente']}><ClienteDashboard /></RequireAuth>}>

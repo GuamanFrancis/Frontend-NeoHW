@@ -13,6 +13,7 @@ import {
 import { Button } from '../ui/Button';
 import { logoutUser } from '../../services/authService';
 import { getStoredSession } from '../../services/session';
+import { useCart } from '../../context/CartContext';
 
 type MenuItem = {
   label: string;
@@ -32,6 +33,7 @@ const ROLE_MAP: Record<string, string> = {
 };
 
 export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayoutProps) => {
+  const { clearCart } = useCart();
   const [showMenu, setShowMenu] = useState(false);
   const navigate = useNavigate();
 
@@ -66,9 +68,10 @@ export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayo
   }, []);
 
   const handleLogout = useCallback(async () => {
+    clearCart();
     await logoutUser();
     navigate('/login');
-  }, [navigate]);
+  }, [clearCart, navigate]);
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950 dark:bg-neutral-950 dark:text-white">

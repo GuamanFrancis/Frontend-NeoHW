@@ -1,4 +1,3 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   ArrowRight,
@@ -20,13 +19,10 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router';
 import heroBackgroundImage from '../../assets/images/imagen estatica login.jpg';
-import { getCatalogComponents } from '../../services/catalogService';
 import type { CatalogComponent } from '../../types/catalog';
-import { useCart } from '../../context/CartContext';
 import { ComponenteDetalleDrawer } from '../cliente/ComponenteDetalleDrawer';
-import { getStoredSession } from '../../services/session';
-import { roleHomeRoutes } from '../../services/authService';
 import { PublicHeader } from '../../components/layout/PublicHeader';
+import { useHome } from './hooks/useHome';
 
 const categories = [
   { name: 'Procesadores', icon: Cpu, slug: 'procesadores' },
@@ -49,139 +45,130 @@ const statusLabels = {
   agotado: 'Agotado',
 };
 
+interface HomeProductCardProps {
+  item: CatalogComponent;
+  onMouseEnter: (item: CatalogComponent, event: React.MouseEvent) => void;
+  onMouseLeave: () => void;
+  onOpenDrawer: (item: CatalogComponent) => void;
+  onAddToCart: (item: CatalogComponent) => void;
+}
+
+const HomeProductCard = ({
+  item,
+  onMouseEnter,
+  onMouseLeave,
+  onOpenDrawer,
+  onAddToCart,
+}: HomeProductCardProps) => {
+  return (
+    <div
+      onMouseEnter={(e) => onMouseEnter(item, e)}
+      onMouseLeave={onMouseLeave}
+      className="group relative flex flex-col rounded-xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/30 p-4 transition-all duration-300 hover:border-teal-500/50 hover:shadow-[0_0_15px_rgba(20,184,166,0.15)] overflow-hidden shadow-sm dark:shadow-none"
+    >
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[10px] font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-widest">
+          {item.brand}
+        </span>
+        <div className="text-xs text-neutral-600 hover:text-rose-500 transition cursor-pointer">
+          ♥
+        </div>
+      </div>
+      <div
+        className="mb-4 flex h-36 items-center justify-center overflow-hidden rounded-lg bg-slate-50 dark:bg-neutral-900/50 p-2 cursor-pointer"
+        onClick={() => onOpenDrawer(item)}
+      >
+        {item.imageUrl ? (
+          <img
+            src={item.imageUrl}
+            alt={item.name}
+            className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex items-center justify-center text-slate-350 dark:text-neutral-600">
+            <Box className="h-12 w-12" />
+          </div>
+        )}
+      </div>
+      <h3
+        className="mb-1 text-sm font-extrabold text-slate-900 dark:text-white group-hover:text-teal-650 dark:group-hover:text-teal-400 transition cursor-pointer line-clamp-1"
+        onClick={() => onOpenDrawer(item)}
+      >
+        {item.name}
+      </h3>
+      <span className="text-[11px] font-bold text-slate-400 dark:text-neutral-500 mb-3 block">
+        {item.category}
+      </span>
+      <div className="mb-4 space-y-1.5 border-t border-slate-100 dark:border-neutral-800/50 pt-3 text-[11px] font-semibold text-slate-550 dark:text-neutral-400 flex-1">
+        {item.attributes && item.attributes.length > 0 ? (
+          item.attributes.slice(0, 3).map((attr, idx) => (
+            <div key={idx} className="flex justify-between">
+              <span className="text-slate-400 dark:text-neutral-500">{attr.name}</span>
+              <span className="text-slate-800 dark:text-neutral-200 font-bold">
+                {attr.value} {attr.unit || ''}
+              </span>
+            </div>
+          ))
+        ) : (
+          <div className="text-[10px] text-slate-400 dark:text-neutral-600 italic">
+            Ver detalles para especificaciones
+          </div>
+        )}
+      </div>
+      <div className="mb-4 flex items-center justify-between border-t border-slate-100 dark:border-neutral-800/50 pt-3">
+        <span className="text-lg font-black text-slate-900 dark:text-white">
+          ${item.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </span>
+        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${statusBadges[item.status as keyof typeof statusBadges]}`}>
+          {statusLabels[item.status as keyof typeof statusLabels]}
+        </span>
+      </div>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => onOpenDrawer(item)}
+          className="flex-1 rounded-lg border border-slate-200 dark:border-neutral-800 px-2 py-2 text-center text-xs font-bold hover:bg-slate-50 dark:hover:bg-neutral-900 transition text-slate-700 dark:text-neutral-200"
+        >
+          Ver detalles
+        </button>
+        <button
+          type="button"
+          onClick={() => onAddToCart(item)}
+          disabled={item.status === 'agotado'}
+          className={`flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-bold text-white transition ${
+            item.status === 'agotado'
+              ? 'bg-neutral-800 text-neutral-600 cursor-not-allowed border border-neutral-700'
+              : 'bg-teal-500 hover:bg-teal-650'
+          }`}
+        >
+          <ShoppingCart className="h-3.5 w-3.5" />
+          <span>Añadir</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export const HomePage = () => {
-  const { addToCart } = useCart();
-  const session = getStoredSession();
-
-  const [categoryProducts, setCategoryProducts] = useState<Record<string, CatalogComponent[]>>({});
-  const [loading, setLoading] = useState(true);
-  const [cartSuccessMessage, setCartSuccessMessage] = useState<string | null>(null);
-
-  const [selectedComponent, setSelectedComponent] = useState<CatalogComponent | null>(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [triggerType, setTriggerType] = useState<'click' | 'hover'>('click');
-  const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
-
-  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
-    };
-  }, []);
-
-  const handleMouseEnterCard = useCallback((item: CatalogComponent, event: React.MouseEvent) => {
-    if (closeTimerRef.current) {
-      clearTimeout(closeTimerRef.current);
-      closeTimerRef.current = null;
-    }
-    if (hoverTimerRef.current) {
-      clearTimeout(hoverTimerRef.current);
-    }
-    const rect = event.currentTarget.getBoundingClientRect();
-    hoverTimerRef.current = setTimeout(() => {
-      setTriggerType('hover');
-      setAnchorRect(rect);
-      setSelectedComponent(item);
-      setIsDrawerOpen(true);
-    }, 2000);
-  }, []);
-
-  const handleMouseLeaveCard = useCallback(() => {
-    if (hoverTimerRef.current) {
-      clearTimeout(hoverTimerRef.current);
-      hoverTimerRef.current = null;
-    }
-    setTriggerType((prevTrigger) => {
-      setIsDrawerOpen((prevIsOpen) => {
-        if (prevIsOpen && prevTrigger === 'hover') {
-          closeTimerRef.current = setTimeout(() => {
-            setIsDrawerOpen(false);
-            setSelectedComponent(null);
-          }, 300);
-        }
-        return prevIsOpen;
-      });
-      return prevTrigger;
-    });
-  }, []);
-
-  const handleMouseEnterPopup = useCallback(() => {
-    if (closeTimerRef.current) {
-      clearTimeout(closeTimerRef.current);
-      closeTimerRef.current = null;
-    }
-  }, []);
-
-  const handleMouseLeavePopup = useCallback(() => {
-    if (triggerType === 'hover') {
-      closeTimerRef.current = setTimeout(() => {
-        setIsDrawerOpen(false);
-        setSelectedComponent(null);
-      }, 300);
-    }
-  }, [triggerType]);
-
-  useEffect(() => {
-    const fetchAllCategoriesProducts = async () => {
-      setLoading(true);
-      const tempProducts: Record<string, CatalogComponent[]> = {};
-      
-      for (const cat of categories) {
-        try {
-          const response = await getCatalogComponents({ category: cat.slug, limit: 4 });
-          if (response.items && response.items.length > 0) {
-            tempProducts[cat.slug] = response.items;
-          } 
-        } catch (error) {
-          console.error(error);
-        }
-      }
-      setCategoryProducts(tempProducts);
-      setLoading(false);
-    };
-    fetchAllCategoriesProducts();
-  }, []);
-
-  useEffect(() => {
-    const scrollToSection = sessionStorage.getItem('scroll-to-section');
-    if (scrollToSection) {
-      sessionStorage.removeItem('scroll-to-section');
-      setTimeout(() => {
-        const el = document.getElementById(scrollToSection);
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 150);
-    }
-  }, []);
-
-  const handleAddToCart = useCallback((product: CatalogComponent) => {
-    addToCart(product);
-    setCartSuccessMessage(`¡${product.name} añadido al carrito!`);
-    setTimeout(() => {
-      setCartSuccessMessage(null);
-    }, 3000);
-  }, [addToCart]);
-
-  const handleOpenDrawer = useCallback((product: CatalogComponent) => {
-    if (hoverTimerRef.current) {
-      clearTimeout(hoverTimerRef.current);
-      hoverTimerRef.current = null;
-    }
-    if (closeTimerRef.current) {
-      clearTimeout(closeTimerRef.current);
-      closeTimerRef.current = null;
-    }
-    setTriggerType('click');
-    setAnchorRect(null);
-    setSelectedComponent(product);
-    setIsDrawerOpen(true);
-  }, []);
-
-  const dashboardPath = session ? roleHomeRoutes[session.user.role] : '/login';
+  const {
+    categoryProducts,
+    loading,
+    cartSuccessMessage,
+    selectedComponent,
+    isDrawerOpen,
+    triggerType,
+    anchorRect,
+    handleMouseEnterCard,
+    handleMouseLeaveCard,
+    handleMouseEnterPopup,
+    handleMouseLeavePopup,
+    handleAddToCart,
+    handleOpenDrawer,
+    setIsDrawerOpen,
+    setSelectedComponent,
+    dashboardPath,
+    session,
+  } = useHome();
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 dark:bg-neutral-950 dark:text-neutral-50 selection:bg-teal-500/30 selection:text-teal-200">
@@ -317,7 +304,7 @@ export const HomePage = () => {
                 className="group rounded-xl border border-slate-200 dark:border-neutral-900 bg-white dark:bg-neutral-900/30 p-5 transition hover:-translate-y-1 hover:border-teal-500/40 hover:bg-slate-50 dark:hover:bg-neutral-900/60 shadow-sm dark:shadow-none"
               >
                 <Icon className="h-9 w-9 text-teal-400" />
-                <h3 className="mt-4 min-h-10 font-bold text-slate-800 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-300 transition">{category.name}</h3>
+                <h3 className="mt-4 min-h-10 font-bold text-slate-800 dark:text-white group-hover:text-teal-650 dark:group-hover:text-teal-300 transition">{category.name}</h3>
                 <span className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-teal-400">
                   Explorar
                   <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
@@ -338,7 +325,7 @@ export const HomePage = () => {
                   <Flame className="h-7 w-7 text-teal-400" />
                   <div>
                     <p className="text-sm font-bold text-teal-400">Categoría</p>
-                    <h2 className="text-3xl font-extrabold text-slate-950 dark:text-white">{category.name}</h2>
+                    <h2 className="text-3xl font-extrabold text-slate-955 dark:text-white">{category.name}</h2>
                   </div>
                 </div>
                 <Link
@@ -358,92 +345,14 @@ export const HomePage = () => {
               ) : (
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {categoryProductsList.map((item) => (
-                    <div
+                    <HomeProductCard
                       key={item.id}
-                      onMouseEnter={(e) => handleMouseEnterCard(item, e)}
+                      item={item}
+                      onMouseEnter={handleMouseEnterCard}
                       onMouseLeave={handleMouseLeaveCard}
-                      className="group relative flex flex-col rounded-xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/30 p-4 transition-all duration-300 hover:border-teal-500/50 hover:shadow-[0_0_15px_rgba(20,184,166,0.15)] overflow-hidden shadow-sm dark:shadow-none"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-widest">
-                          {item.brand}
-                        </span>
-                        <div className="text-xs text-neutral-600 hover:text-rose-500 transition cursor-pointer">
-                          ♥
-                        </div>
-                      </div>
-                      <div
-                        className="mb-4 flex h-36 items-center justify-center overflow-hidden rounded-lg bg-slate-50 dark:bg-neutral-900/50 p-2 cursor-pointer"
-                        onClick={() => handleOpenDrawer(item)}
-                      >
-                        {item.imageUrl ? (
-                          <img
-                            src={item.imageUrl}
-                            alt={item.name}
-                            className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="flex items-center justify-center text-slate-350 dark:text-neutral-600">
-                            <Box className="h-12 w-12" />
-                          </div>
-                        )}
-                      </div>
-                      <h3
-                        className="mb-1 text-sm font-extrabold text-slate-900 dark:text-white group-hover:text-teal-650 dark:group-hover:text-teal-400 transition cursor-pointer line-clamp-1"
-                        onClick={() => handleOpenDrawer(item)}
-                      >
-                        {item.name}
-                      </h3>
-                      <span className="text-[11px] font-bold text-slate-400 dark:text-neutral-500 mb-3 block">
-                        {item.category}
-                      </span>
-                      <div className="mb-4 space-y-1.5 border-t border-slate-100 dark:border-neutral-800/50 pt-3 text-[11px] font-semibold text-slate-550 dark:text-neutral-400 flex-1">
-                        {item.attributes && item.attributes.length > 0 ? (
-                          item.attributes.slice(0, 3).map((attr, idx) => (
-                            <div key={idx} className="flex justify-between">
-                              <span className="text-slate-400 dark:text-neutral-500">{attr.name}</span>
-                              <span className="text-slate-800 dark:text-neutral-200 font-bold">
-                                {attr.value} {attr.unit || ''}
-                              </span>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="text-[10px] text-slate-400 dark:text-neutral-600 italic">
-                            Ver detalles para especificaciones
-                          </div>
-                        )}
-                      </div>
-                      <div className="mb-4 flex items-center justify-between border-t border-slate-100 dark:border-neutral-800/50 pt-3">
-                        <span className="text-lg font-black text-slate-900 dark:text-white">
-                          ${item.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${statusBadges[item.status as keyof typeof statusBadges]}`}>
-                          {statusLabels[item.status as keyof typeof statusLabels]}
-                        </span>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenDrawer(item)}
-                          className="flex-1 rounded-lg border border-slate-200 dark:border-neutral-800 px-2 py-2 text-center text-xs font-bold hover:bg-slate-50 dark:hover:bg-neutral-900 transition text-slate-700 dark:text-neutral-200"
-                        >
-                          Ver detalles
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleAddToCart(item)}
-                          disabled={item.status === 'agotado'}
-                          className={`flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-bold text-white transition ${
-                            item.status === 'agotado'
-                              ? 'bg-neutral-800 text-neutral-600 cursor-not-allowed border border-neutral-700'
-                              : 'bg-teal-500 hover:bg-teal-650'
-                          }`}
-                        >
-                          <ShoppingCart className="h-3.5 w-3.5" />
-                          <span>Añadir</span>
-                        </button>
-                      </div>
-                    </div>
+                      onOpenDrawer={handleOpenDrawer}
+                      onAddToCart={handleAddToCart}
+                    />
                   ))}
                 </div>
               )}

@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router';
-import { CheckCircle2, AlertTriangle, ArrowRight } from 'lucide-react';
+import { useEffect } from 'react';
+import { useSearchParams, useNavigate, Link } from 'react-router';
+import { CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
-import { getStoredSession } from '../../services/session';
+import { useCart } from '../../context/CartContext';
 
 type CheckoutStatusProps = {
   type: 'success' | 'cancel';
@@ -11,51 +11,27 @@ type CheckoutStatusProps = {
 export const CheckoutStatusPage = ({ type }: CheckoutStatusProps) => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { clearCart } = useCart();
   const orderId = searchParams.get('order_id') || '';
-  const [totalAmount, setTotalAmount] = useState<number | null>(null);
+  const isSuccess = type === 'success';
 
   useEffect(() => {
-    if (!orderId) return;
-
-    const session = getStoredSession();
-    const userId = session?.user.id;
-    if (userId) {
-      try {
-        const ordersKey = `client_orders_${userId}`;
-        const currentOrders = JSON.parse(localStorage.getItem(ordersKey) || '[]');
-        
-        let foundOrderAmount = null;
-        const updatedOrders = currentOrders.map((order: any) => {
-          if (order.id === orderId) {
-            foundOrderAmount = Number(order.totalAmount);
-            return {
-              ...order,
-              status: type === 'success' ? 'PROCESSING' : 'PENDING_PAYMENT',
-            };
-          }
-          return order;
-        });
-
-        if (foundOrderAmount !== null) {
-          setTotalAmount(foundOrderAmount);
-          localStorage.setItem(ordersKey, JSON.stringify(updatedOrders));
-        }
-
-        if (type === 'success') {
+    if (isSuccess) {
+      clearCart();
+      if (orderId) {
+        try {
           const paidKey = 'neohw_paid_order_ids';
           const paidOrders = JSON.parse(localStorage.getItem(paidKey) || '[]');
           if (!paidOrders.includes(orderId)) {
             paidOrders.push(orderId);
             localStorage.setItem(paidKey, JSON.stringify(paidOrders));
           }
+        } catch (e) {
+          console.error(e);
         }
-      } catch (e) {
-        console.error('Error updating order status locally:', e);
       }
     }
-  }, [orderId, type]);
-
-  const isSuccess = type === 'success';
+  }, [isSuccess, orderId, clearCart]);
 
   return (
     <div className="flex min-h-[calc(100vh-64px)] w-full items-center justify-center bg-slate-950 px-4 text-white">
@@ -72,13 +48,13 @@ export const CheckoutStatusPage = ({ type }: CheckoutStatusProps) => {
           </div>
 
           <h2 className="text-2xl font-black tracking-tight text-white">
-            {isSuccess ? '¡Pago Confirmado!' : 'Pago Cancelado'}
+            {isSuccess ? '¡Pedido Confirmado!' : 'Pedido Cancelado'}
           </h2>
           
           <p className="text-xs text-neutral-400 mt-2 font-medium max-w-sm leading-relaxed">
             {isSuccess
-              ? 'Tu pago con Stripe ha sido procesado de forma exitosa y el pedido está en marcha.'
-              : 'Has cancelado el proceso de pago. El pedido se mantiene registrado en tu historial para que puedas completarlo cuando desees.'}
+              ? 'Tu pedido ha sido registrado de forma exitosa y está listo para ser atendido.'
+              : 'Has cancelado el proceso de pedido. Si deseas completar la compra, puedes volver a generar tu pedido desde el catálogo.'}
           </p>
 
           {orderId && (
@@ -87,57 +63,27 @@ export const CheckoutStatusPage = ({ type }: CheckoutStatusProps) => {
                 <span>Número de Orden:</span>
                 <span className="font-mono text-white select-all">#{orderId.slice(0, 8)}...</span>
               </div>
-              {totalAmount !== null && (
-                <div className="flex justify-between">
-                  <span>Monto Total:</span>
-                  <span className="font-extrabold text-white">${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD</span>
-                </div>
-              )}
               <div className="flex justify-between">
                 <span>Estado:</span>
                 <span className={`font-black px-2 py-0.5 rounded text-[10px] uppercase ${
                   isSuccess ? 'bg-teal-500/10 text-teal-400' : 'bg-amber-500/10 text-amber-500'
                 }`}>
-                  {isSuccess ? 'Pagado' : 'Pendiente de Pago'}
+                  {isSuccess ? 'Aprobado' : 'Pendiente'}
                 </span>
               </div>
             </div>
           )}
 
-          <div className="mt-8 w-full space-y-3">
-            {isSuccess ? (
+          <div className="mt-8 w-full">
+            <Link to="/cliente/catalogo" className="w-full block">
               <Button
                 type="button"
                 fullWidth
-                onClick={() => navigate('/cliente/pedidos')}
                 className="bg-teal-500 hover:bg-teal-400 text-neutral-950 font-extrabold"
               >
-                Ver mis pedidos
-                <ArrowRight className="ml-2 h-4 w-4" />
+                Volver al catálogo
               </Button>
-            ) : (
-              <>
-                {orderId && (
-                  <Button
-                    type="button"
-                    fullWidth
-                    onClick={() => navigate('/cliente/pedidos')}
-                    className="bg-teal-500 hover:bg-teal-400 text-neutral-950 font-extrabold"
-                  >
-                    Reintentar pago
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                )}
-                <Button
-                  type="button"
-                  fullWidth
-                  variant="outline"
-                  onClick={() => navigate('/cliente/catalogo')}
-                >
-                  Volver al catálogo
-                </Button>
-              </>
-            )}
+            </Link>
           </div>
         </div>
       </div>

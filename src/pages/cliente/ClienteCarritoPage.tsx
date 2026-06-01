@@ -33,7 +33,7 @@ export const ClienteCarritoPage = () => {
     total,
     itemCount,
   } = useCart();
-  
+
   const [wishlistedIds, setWishlistedIds] = useState<Record<string, boolean>>({});
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [street, setStreet] = useState('');
@@ -41,35 +41,15 @@ export const ClienteCarritoPage = () => {
   const [stateName, setStateName] = useState('');
   const [postalCode, setPostalCode] = useState('');
   const [country, setCountry] = useState('Ecuador');
-  
- 
+
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
   const [loadingCheckout, setLoadingCheckout] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
-  const [orderSuccess, setOrderSuccess] = useState<{ orderId: string; totalAmount: number } | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<CatalogComponent | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [loadingPayment, setLoadingPayment] = useState(false);
-
-  const handlePayWithStripe = async (orderId: string) => {
-    setLoadingPayment(true);
-    try {
-      const sessionData = await createStripeSession(orderId);
-      if (sessionData.url) {
-        window.location.href = sessionData.url;
-      } else {
-        alert('No se pudo redirigir a Stripe. Por favor intente desde su panel de pedidos.');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Error al iniciar el pago con Stripe.');
-    } finally {
-      setLoadingPayment(false);
-    }
-  };
 
   const handleOpenDetail = (product: any) => {
     setSelectedProduct(product as CatalogComponent);
@@ -82,7 +62,6 @@ export const ClienteCarritoPage = () => {
 
   const handleOpenCheckout = () => {
     setCheckoutError(null);
-    setOrderSuccess(null);
     const session = getStoredSession();
     const userId = session?.user.id;
     if (session?.user) {
@@ -94,6 +73,9 @@ export const ClienteCarritoPage = () => {
       try {
         const savedAddress = JSON.parse(localStorage.getItem(`shipping_address_${userId}`) || '{}');
         if (savedAddress && typeof savedAddress === 'object') {
+          if (savedAddress.fullName) setFullName(savedAddress.fullName);
+          if (savedAddress.email) setEmail(savedAddress.email);
+          if (savedAddress.phone) setPhone(savedAddress.phone);
           if (savedAddress.street) setStreet(savedAddress.street);
           if (savedAddress.city) setCity(savedAddress.city);
           if (savedAddress.state) setStateName(savedAddress.state);
@@ -133,40 +115,14 @@ export const ClienteCarritoPage = () => {
         },
       };
       const response = await createOrder(payload);
-      
+
       const session = getStoredSession();
       const userId = session?.user.id;
       if (userId) {
-        try {
-          const ordersKey = `client_orders_${userId}`;
-          const currentOrders = JSON.parse(localStorage.getItem(ordersKey) || '[]');
-          const newOrder = {
-            id: response.orderId,
-            totalAmount: response.totalAmount,
-            status: 'PENDING_PAYMENT',
-            createdAt: new Date().toISOString(),
-            items: cartItems.map((item) => ({
-              product: {
-                id: item.product.id,
-                name: item.product.name,
-                imageUrl: item.product.imageUrl,
-              },
-              quantity: item.quantity,
-              priceAtTime: item.product.price,
-            })),
-          };
-          currentOrders.unshift(newOrder);
-          localStorage.setItem(ordersKey, JSON.stringify(currentOrders));
-        } catch (e) {
-          console.error('Error saving client order to history:', e);
-        }
+        localStorage.setItem(`shipping_address_${userId}`, JSON.stringify(payload.shippingAddress));
       }
 
-      setOrderSuccess({
-        orderId: response.orderId,
-        totalAmount: response.totalAmount,
-      });
-      clearCart();
+      navigate(`/success?order_id=${response.orderId}`);
     } catch (err: any) {
       console.error(err);
       const errMsg = err.response?.data?.message || 'Error al procesar el pedido. Intente nuevamente.';
@@ -234,7 +190,7 @@ export const ClienteCarritoPage = () => {
         <div className="lg:col-span-8 space-y-6">
           <div className="flex items-center gap-3 rounded-lg border border-teal-500/20 bg-teal-500/5 p-4 text-teal-700 dark:text-teal-400 text-xs font-semibold">
             <Info className="h-5 w-5 shrink-0 text-teal-500" />
-            <span>Tu carrito permanecerá disponible mientras tu sesión esté activa.</span>
+            <span>Tu carrito se guarda automáticamente en tu navegador para que no pierdas tus componentes.</span>
           </div>
           <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white dark:border-neutral-900 dark:bg-neutral-950/20 shadow-sm">
             <table className="w-full border-collapse text-left text-xs">
@@ -343,7 +299,6 @@ export const ClienteCarritoPage = () => {
                             }`}
                             aria-label="Añadir a deseos"
                           >
-                            
                           </button>
                           <button
                             type="button"
@@ -436,7 +391,7 @@ export const ClienteCarritoPage = () => {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Impuestos (IVA 12%)</span>
+                <span>Impuestos (IVA 15%)</span>
                 <span className="text-slate-900 dark:text-neutral-200">
                   ${taxes.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
@@ -471,190 +426,123 @@ export const ClienteCarritoPage = () => {
       </div>
       <Modal
         open={isCheckoutOpen}
-        title={orderSuccess ? "¡Pedido Realizado!" : "Confirmación de Pedido"}
-        onClose={() => {
-          setIsCheckoutOpen(false);
-          if (orderSuccess) {
-            navigate('/cliente/pedidos');
-          }
-        }}
+        title="Confirmación de Pedido"
+        onClose={() => setIsCheckoutOpen(false)}
       >
-        {orderSuccess ? (
-          <div className="flex flex-col items-center text-center p-4">
-            <CheckCircle2 className="h-16 w-16 text-emerald-500 mb-4 animate-bounce" />
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-              ¡Pedido Creado Exitosamente!
-            </h3>
-            <p className="text-sm text-slate-500 dark:text-neutral-400 mt-2 max-w-sm">
-              Tu pedido ha sido registrado en el sistema. Puedes realizar el pago correspondiente a través de tu panel de órdenes.
-            </p>
-            <div className="mt-6 rounded-xl bg-slate-50 p-4 w-full border border-slate-100 dark:bg-neutral-900 dark:border-neutral-800 text-left text-xs font-semibold text-slate-600 dark:text-neutral-400 space-y-2">
-              <div className="flex justify-between">
-                <span>Número de Orden:</span>
-                <span className="font-extrabold text-slate-900 dark:text-white select-all">
-                  {orderSuccess.orderId}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Total a Pagar:</span>
-                <span className="font-extrabold text-teal-600 dark:text-teal-400">
-                  ${orderSuccess.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Estado:</span>
-                <span className="font-black bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded text-[10px] uppercase">
-                  Pendiente de Pago
-                </span>
-              </div>
+        <form onSubmit={handleCheckoutSubmit} className="space-y-4">
+          <p className="text-xs text-slate-500 dark:text-neutral-400">
+            Ingresa la dirección de envío para crear tu orden de compra en el sistema.
+          </p>
+          {checkoutError && (
+            <div className="flex items-start gap-2.5 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-red-500 text-xs font-semibold">
+              <AlertTriangle className="h-4.5 w-4.5 shrink-0 text-red-500 mt-0.5" />
+              <span>{checkoutError}</span>
             </div>
-            <div className="mt-8 w-full space-y-3">
-              <Button
-                type="button"
-                fullWidth
-                onClick={() => handlePayWithStripe(orderSuccess.orderId)}
-                disabled={loadingPayment}
-                className="bg-teal-500 hover:bg-teal-600 text-neutral-950 font-extrabold"
-              >
-                {loadingPayment ? (
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-neutral-950 border-t-transparent" />
-                ) : (
-                  <>
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    Pagar ahora con Stripe
-                  </>
-                )}
-              </Button>
-              <Button
-                type="button"
-                fullWidth
-                variant="outline"
-                onClick={() => {
-                  setIsCheckoutOpen(false);
-                  navigate('/cliente/pedidos');
-                }}
-                disabled={loadingPayment}
-              >
-                Ver mis pedidos
-              </Button>
+          )}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <FormInput
+                label="Nombre Completo del Destinatario"
+                placeholder="Ej: Francis Guaman"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                disabled={loadingCheckout}
+                required
+              />
+            </div>
+            <div>
+              <FormInput
+                label="Correo de Contacto"
+                placeholder="Ej: correo@ejemplo.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loadingCheckout}
+                required
+              />
+            </div>
+            <div>
+              <FormInput
+                label="Teléfono de Contacto"
+                placeholder="Ej: 0998877665"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                disabled={loadingCheckout}
+                required
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <FormInput
+                label="Calle y Número"
+                placeholder="Ej: Av. Amazonas N32-12 y Mariana de Jesús, Piso 3"
+                value={street}
+                onChange={(e) => setStreet(e.target.value)}
+                disabled={loadingCheckout}
+                required
+              />
+            </div>
+            <div>
+              <FormInput
+                label="Ciudad"
+                placeholder="Ej: Quito / Guayaquil / Cuenca"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                disabled={loadingCheckout}
+                required
+              />
+            </div>
+            <div>
+              <FormInput
+                label="Estado / Provincia"
+                placeholder="Ej: Pichincha / Guayas"
+                value={stateName}
+                onChange={(e) => setStateName(e.target.value)}
+                disabled={loadingCheckout}
+                required
+              />
+            </div>
+            <div>
+              <FormInput
+                label="Código Postal"
+                placeholder="Ej: 170504"
+                value={postalCode}
+                onChange={(e) => setPostalCode(e.target.value)}
+                disabled={loadingCheckout}
+                required
+              />
+            </div>
+            <div>
+              <FormInput
+                label="País"
+                placeholder="Ej: Ecuador"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                disabled={loadingCheckout}
+                required
+              />
             </div>
           </div>
-        ) : (
-          <form onSubmit={handleCheckoutSubmit} className="space-y-4">
-            <p className="text-xs text-slate-500 dark:text-neutral-400">
-              Ingresa la dirección de envío para crear tu orden de compra en el sistema.
-            </p>
-            {checkoutError && (
-              <div className="flex items-start gap-2.5 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-red-500 text-xs font-semibold">
-                <AlertTriangle className="h-4.5 w-4.5 shrink-0 text-red-500 mt-0.5" />
-                <span>{checkoutError}</span>
-              </div>
-            )}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <FormInput
-                  label="Nombre Completo del Destinatario"
-                  placeholder="Ej: Francis Guaman"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  disabled={loadingCheckout}
-                  required
-                />
-              </div>
-              <div>
-                <FormInput
-                  label="Correo de Contacto"
-                  placeholder="Ej: correo@ejemplo.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={loadingCheckout}
-                  required
-                />
-              </div>
-              <div>
-                <FormInput
-                  label="Teléfono de Contacto"
-                  placeholder="Ej: 0998877665"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  disabled={loadingCheckout}
-                  required
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <FormInput
-                  label="Calle y Número"
-                  placeholder="Ej: Av. Amazonas N32-12 y Mariana de Jesús, Piso 3"
-                  value={street}
-                  onChange={(e) => setStreet(e.target.value)}
-                  disabled={loadingCheckout}
-                  required
-                />
-              </div>
-              <div>
-                <FormInput
-                  label="Ciudad"
-                  placeholder="Ej: Quito / Guayaquil / Cuenca"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  disabled={loadingCheckout}
-                  required
-                />
-              </div>
-              <div>
-                <FormInput
-                  label="Estado / Provincia"
-                  placeholder="Ej: Pichincha / Guayas"
-                  value={stateName}
-                  onChange={(e) => setStateName(e.target.value)}
-                  disabled={loadingCheckout}
-                  required
-                />
-              </div>
-              <div>
-                <FormInput
-                  label="Código Postal"
-                  placeholder="Ej: 170504"
-                  value={postalCode}
-                  onChange={(e) => setPostalCode(e.target.value)}
-                  disabled={loadingCheckout}
-                  required
-                />
-              </div>
-              <div>
-                <FormInput
-                  label="País"
-                  placeholder="Ej: Ecuador"
-                  value={country}
-                  onChange={(e) => setCountry(e.target.value)}
-                  disabled={loadingCheckout}
-                  required
-                />
-              </div>
-            </div>
-            <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-neutral-900">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setIsCheckoutOpen(false)}
-                disabled={loadingCheckout}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={loadingCheckout}
-                className="bg-teal-500 hover:bg-teal-600 text-white min-w-[140px]"
-              >
-                {loadingCheckout ? (
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                ) : (
-                  "Confirmar Pedido"
-                )}
-              </Button>
-            </div>
-          </form>
-        )}
+          <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-neutral-900">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setIsCheckoutOpen(false)}
+              disabled={loadingCheckout}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={loadingCheckout}
+              className="bg-teal-500 hover:bg-teal-600 text-white min-w-[140px]"
+            >
+              {loadingCheckout ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : (
+                "Confirmar Pedido"
+              )}
+            </Button>
+          </div>
+        </form>
       </Modal>
 
       <ComponenteDetalleDrawer
