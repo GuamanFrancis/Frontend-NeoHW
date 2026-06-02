@@ -1,6 +1,42 @@
 {
   "rewrites": [
     {
+      "source": "/auth/:path*",
+      "destination": "https://neohw-backend-production.up.railway.app/auth/:path*"
+    },
+    {
+      "source": "/users/:path*",
+      "destination": "https://neohw-backend-production.up.railway.app/users/:path*"
+    },
+    {
+      "source": "/products/:path*",
+      "destination": "https://neohw-backend-production.up.railway.app/products/:path*"
+    },
+    {
+      "source": "/categories/:path*",
+      "destination": "https://neohw-backend-production.up.railway.app/categories/:path*"
+    },
+    {
+      "source": "/attributes/:path*",
+      "destination": "https://neohw-backend-production.up.railway.app/attributes/:path*"
+    },
+    {
+      "source": "/compatibility/:path*",
+      "destination": "https://neohw-backend-production.up.railway.app/compatibility/:path*"
+    },
+    {
+      "source": "/ai/:path*",
+      "destination": "https://neohw-backend-production.up.railway.app/ai/:path*"
+    },
+    {
+      "source": "/orders/:path*",
+      "destination": "https://neohw-backend-production.up.railway.app/orders/:path*"
+    },
+    {
+      "source": "/payments/:path*",
+      "destination": "https://neohw-backend-production.up.railway.app/payments/:path*"
+    },
+    {
       "source": "/((?!assets/|.*\\..*).*)",
       "destination": "/index.html"
     }
