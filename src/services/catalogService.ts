@@ -62,11 +62,15 @@ export const getCatalogComponents = async (
       sellerId: query.sellerId || undefined,
     },
   });
+  const items = data && Array.isArray(data.data) ? data.data.map(normalizeProduct) : [];
+  const total = data && data.meta ? data.meta.total : 0;
+  const page = data && data.meta ? data.meta.page : 1;
+  const limit = data && data.meta ? data.meta.limit : 100;
   return {
-    items: data.data.map(normalizeProduct),
-    total: data.meta.total,
-    page: data.meta.page,
-    limit: data.meta.limit,
+    items,
+    total,
+    page,
+    limit,
   };
 };
 export const createCatalogComponent = async (
