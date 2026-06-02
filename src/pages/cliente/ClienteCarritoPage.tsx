@@ -19,6 +19,32 @@ import type { CatalogComponent } from '../../types/catalog';
 import { ComponenteDetalleDrawer } from './ComponenteDetalleDrawer';
 import { createStripeSession } from '../../services/paymentsService';
 
+const ECUADOR_PROVINCES: Record<string, string[]> = {
+  Pichincha: ['Quito', 'Sangolquí', 'Cayambe', 'Machachi', 'Tabacundo'],
+  Guayas: ['Guayaquil', 'Samborondón', 'Durán', 'Milagro', 'Daule'],
+  Azuay: ['Cuenca', 'Gualaceo', 'Chordeleg', 'Paute', 'Santa Isabel'],
+  Manabí: ['Portoviejo', 'Manta', 'Chone', 'Montecristi', 'Bahía de Caráquez', 'Jipijapa'],
+  Tungurahua: ['Ambato', 'Baños', 'Pelileo', 'Píllaro'],
+  Imbabura: ['Ibarra', 'Otavalo', 'Cotacachi', 'Atuntaqui'],
+  Loja: ['Loja', 'Catamayo', 'Cariamanga', 'Macará'],
+  'El Oro': ['Machala', 'Pasaje', 'Santa Rosa', 'Huaquillas'],
+  'Santa Elena': ['Santa Elena', 'Salinas', 'La Libertad'],
+  'Santo Domingo': ['Santo Domingo'],
+  Esmeraldas: ['Esmeraldas', 'Atacames', 'Quinindé'],
+  Carchi: ['Tulcán', 'San Gabriel'],
+  Cotopaxi: ['Latacunga', 'Salcedo', 'Pujilí'],
+  Chimborazo: ['Riobamba', 'Guano', 'Alausí'],
+  Bolívar: ['Guaranda', 'San Miguel'],
+  Cañar: ['Azogues', 'La Troncal'],
+  Napo: ['Tena'],
+  Pastaza: ['Puyo'],
+  Morona: ['Macas'],
+  Zamora: ['Zamora'],
+  Galápagos: ['Puerto Ayora', 'Puerto Baquerizo Moreno'],
+  Orellana: ['El Coca'],
+  Sucumbíos: ['Nueva Loja'],
+};
+
 export const ClienteCarritoPage = () => {
   const navigate = useNavigate();
   const {
@@ -49,6 +75,16 @@ export const ClienteCarritoPage = () => {
   const [selectedProduct, setSelectedProduct] = useState<CatalogComponent | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
+  const handleProvinceChange = (newProvince: string) => {
+    setStateName(newProvince);
+    const cities = ECUADOR_PROVINCES[newProvince] || [];
+    if (cities.length > 0) {
+      setCity(cities[0]);
+    } else {
+      setCity('');
+    }
+  };
+
   const handleOpenDetail = (product: any) => {
     setSelectedProduct(product as CatalogComponent);
     setIsDetailOpen(true);
@@ -67,6 +103,8 @@ export const ClienteCarritoPage = () => {
       setEmail(session.user.email || '');
       setPhone(session.user.phone || '');
     }
+    let loadedState = 'Pichincha';
+    let loadedCity = 'Quito';
     if (userId) {
       try {
         const savedAddress = JSON.parse(localStorage.getItem(`shipping_address_${userId}`) || '{}');
@@ -75,15 +113,23 @@ export const ClienteCarritoPage = () => {
           if (savedAddress.email) setEmail(savedAddress.email);
           if (savedAddress.phone) setPhone(savedAddress.phone);
           if (savedAddress.street) setStreet(savedAddress.street);
-          if (savedAddress.city) setCity(savedAddress.city);
-          if (savedAddress.state) setStateName(savedAddress.state);
           if (savedAddress.postalCode) setPostalCode(savedAddress.postalCode);
           if (savedAddress.country) setCountry(savedAddress.country);
+          if (savedAddress.state && ECUADOR_PROVINCES[savedAddress.state]) {
+            loadedState = savedAddress.state;
+            if (savedAddress.city && ECUADOR_PROVINCES[loadedState].includes(savedAddress.city)) {
+              loadedCity = savedAddress.city;
+            } else {
+              loadedCity = ECUADOR_PROVINCES[loadedState][0];
+            }
+          }
         }
       } catch (e) {
-        console.error('Error loading shipping address:', e);
+        console.error(e);
       }
     }
+    setStateName(loadedState);
+    setCity(loadedCity);
     setIsCheckoutOpen(true);
   };
 
@@ -514,24 +560,46 @@ export const ClienteCarritoPage = () => {
               />
             </div>
             <div>
-              <FormInput
-                label="Ciudad"
-                placeholder="Ej: Quito / Guayaquil / Cuenca"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                disabled={loadingCheckout}
-                required
-              />
+              <label className="block">
+                <span className="text-sm font-semibold text-slate-950 dark:text-white">
+                  Estado / Provincia
+                </span>
+                <span className="mt-1.5 flex h-12 items-center rounded-lg border bg-white px-3.5 text-slate-500 transition focus-within:ring-2 dark:bg-neutral-950/50 dark:text-neutral-300 border-slate-300 focus-within:border-teal-500 focus-within:ring-teal-400/20 dark:border-neutral-700 dark:focus-within:border-teal-400">
+                  <select
+                    value={stateName}
+                    onChange={(e) => handleProvinceChange(e.target.value)}
+                    disabled={loadingCheckout}
+                    className="h-full w-full border-0 bg-transparent px-4 text-sm font-medium text-slate-900 outline-none dark:text-white dark:bg-neutral-950"
+                  >
+                    {Object.keys(ECUADOR_PROVINCES).map((prov) => (
+                      <option key={prov} value={prov} className="dark:bg-neutral-950 dark:text-white">
+                        {prov}
+                      </option>
+                    ))}
+                  </select>
+                </span>
+              </label>
             </div>
             <div>
-              <FormInput
-                label="Estado / Provincia"
-                placeholder="Ej: Pichincha / Guayas"
-                value={stateName}
-                onChange={(e) => setStateName(e.target.value)}
-                disabled={loadingCheckout}
-                required
-              />
+              <label className="block">
+                <span className="text-sm font-semibold text-slate-950 dark:text-white">
+                  Ciudad
+                </span>
+                <span className="mt-1.5 flex h-12 items-center rounded-lg border bg-white px-3.5 text-slate-500 transition focus-within:ring-2 dark:bg-neutral-950/50 dark:text-neutral-300 border-slate-300 focus-within:border-teal-500 focus-within:ring-teal-400/20 dark:border-neutral-700 dark:focus-within:border-teal-400">
+                  <select
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    disabled={loadingCheckout}
+                    className="h-full w-full border-0 bg-transparent px-4 text-sm font-medium text-slate-900 outline-none dark:text-white dark:bg-neutral-950"
+                  >
+                    {(ECUADOR_PROVINCES[stateName] || []).map((c) => (
+                      <option key={c} value={c} className="dark:bg-neutral-950 dark:text-white">
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </span>
+              </label>
             </div>
             <div>
               <FormInput
@@ -544,14 +612,21 @@ export const ClienteCarritoPage = () => {
               />
             </div>
             <div>
-              <FormInput
-                label="País"
-                placeholder="Ej: Ecuador"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                disabled={loadingCheckout}
-                required
-              />
+              <label className="block">
+                <span className="text-sm font-semibold text-slate-950 dark:text-white">
+                  País
+                </span>
+                <span className="mt-1.5 flex h-12 items-center rounded-lg border bg-white px-3.5 text-slate-500 dark:bg-neutral-950/50 dark:text-neutral-300 border-slate-300 dark:border-neutral-700">
+                  <select
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    disabled
+                    className="h-full w-full border-0 bg-transparent px-4 text-sm font-medium text-slate-900 outline-none dark:text-white dark:bg-neutral-950"
+                  >
+                    <option value="Ecuador" className="dark:bg-neutral-950 dark:text-white">Ecuador</option>
+                  </select>
+                </span>
+              </label>
             </div>
           </div>
           <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-neutral-900">
