@@ -85,54 +85,74 @@ export const ClientePedidosPage = () => {
     if (!userId) return;
     try {
       setIsLoading(true);
-      const res = await getOrders();
-      const mappedOrders: OrderLocal[] = res.data.map((order) => {
-        let addressParsed = undefined;
-        if (order.shippingAddress) {
-          if (typeof order.shippingAddress === 'string') {
-            try {
-              addressParsed = JSON.parse(order.shippingAddress);
-            } catch {}
-          } else {
-            addressParsed = order.shippingAddress;
-          }
-        }
-        return {
-          id: order.id,
-          totalAmount: typeof order.totalAmount === 'string' ? parseFloat(order.totalAmount) : order.totalAmount,
-          status: order.status,
-          createdAt: order.createdAt,
-          items: order.items.map((item) => ({
-            product: {
-              id: item.productId,
-              name: item.product.name,
-              imageUrl: item.product.imageUrl || undefined,
-            },
-            quantity: item.quantity,
-            priceAtTime: typeof item.priceAtTime === 'string' ? parseFloat(item.priceAtTime) : item.priceAtTime,
-          })),
-          shippingAddress: addressParsed ? {
-            street: addressParsed.street || '',
-            city: addressParsed.city || '',
-            state: addressParsed.state || '',
-            postalCode: addressParsed.postalCode || '',
-            country: addressParsed.country || '',
-            fullName: addressParsed.fullName || (order.user ? `${order.user.firstName || ''} ${order.user.lastName || ''}`.trim() : undefined),
-            email: addressParsed.email || order.user?.email || undefined,
-            phone: addressParsed.phone || order.user?.phone || undefined,
-          } : undefined,
-          documents: order.documents,
-        };
-      });
-      setAllOrders(mappedOrders);
-    } catch (e) {
-      console.error('Error al cargar historial de pedidos:', e);
-      const stored = localStorage.getItem(ordersKey);
-      if (stored) {
-        setAllOrders(JSON.parse(stored));
-      } else {
-        setAllOrders([]);
+      const localStored = localStorage.getItem(ordersKey);
+      let localOrders: OrderLocal[] = [];
+      if (localStored) {
+        try {
+          localOrders = JSON.parse(localStored);
+        } catch {}
       }
+      const paidKey = 'neohw_paid_order_ids';
+      const paidOrders: string[] = JSON.parse(localStorage.getItem(paidKey) || '[]');
+      localOrders = localOrders.map((o) => {
+        if (paidOrders.includes(o.id) && o.status === 'PENDING_PAYMENT') {
+          return { ...o, status: 'PROCESSING' };
+        }
+        return o;
+      });
+      try {
+        const res = await getOrders();
+        const apiOrders: OrderLocal[] = res.data.map((order) => {
+          let addressParsed = undefined;
+          if (order.shippingAddress) {
+            if (typeof order.shippingAddress === 'string') {
+              try {
+                addressParsed = JSON.parse(order.shippingAddress);
+              } catch {}
+            } else {
+              addressParsed = order.shippingAddress;
+            }
+          }
+          return {
+            id: order.id,
+            totalAmount: typeof order.totalAmount === 'string' ? parseFloat(order.totalAmount) : order.totalAmount,
+            status: order.status,
+            createdAt: order.createdAt,
+            items: order.items.map((item) => ({
+              product: {
+                id: item.productId,
+                name: item.product.name,
+                imageUrl: item.product.imageUrl || undefined,
+              },
+              quantity: item.quantity,
+              priceAtTime: typeof item.priceAtTime === 'string' ? parseFloat(item.priceAtTime) : item.priceAtTime,
+            })),
+            shippingAddress: addressParsed ? {
+              street: addressParsed.street || '',
+              city: addressParsed.city || '',
+              state: addressParsed.state || '',
+              postalCode: addressParsed.postalCode || '',
+              country: addressParsed.country || '',
+              fullName: addressParsed.fullName || (order.user ? `${order.user.firstName || ''} ${order.user.lastName || ''}`.trim() : undefined),
+              email: addressParsed.email || order.user?.email || undefined,
+              phone: addressParsed.phone || order.user?.phone || undefined,
+            } : undefined,
+            documents: order.documents,
+          };
+        });
+        const mergedOrders = [...apiOrders];
+        localOrders.forEach((lo) => {
+          if (!mergedOrders.some((ao) => ao.id === lo.id)) {
+            mergedOrders.push(lo);
+          }
+        });
+        setAllOrders(mergedOrders);
+      } catch (apiErr) {
+        setAllOrders(localOrders);
+      }
+    } catch (e) {
+      console.error(e);
+      setAllOrders([]);
     } finally {
       setIsLoading(false);
     }
