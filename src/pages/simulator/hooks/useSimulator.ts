@@ -91,7 +91,7 @@ const getStoredAssemblyStates = (): Record<string, ComponentState> => {
 export const useSimulator = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { addToCart, addMultipleToCart } = useCart();
+  const { addMultipleToCart } = useCart();
   const session = getStoredSession();
   const userId = session?.user.id;
 

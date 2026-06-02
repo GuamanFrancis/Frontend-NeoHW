@@ -4,11 +4,9 @@ import {
   ArrowLeft,
   Trash2,
   Lock,
-  Info,
   ShoppingCart,
   Plus,
   Minus,
-  CheckCircle2,
   AlertTriangle
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';

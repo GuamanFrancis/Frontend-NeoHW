@@ -8,7 +8,6 @@ import {
   Tv,
   HardDrive,
   Zap,
-  Snowflake,
   Box as BoxIcon,
   type LucideIcon
 } from 'lucide-react';
@@ -71,7 +70,7 @@ export const useClienteCatalog = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedComponent, setSelectedComponent] = useState<CatalogComponent | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [cartSuccessMessage, setCartSuccessMessage] = useState<string | null>(null);
+  const [cartSuccessMessage] = useState<string | null>(null);
   const [triggerType, setTriggerType] = useState<'click' | 'hover'>('click');
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
 

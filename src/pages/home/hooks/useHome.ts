@@ -22,7 +22,7 @@ export const useHome = () => {
 
   const [categoryProducts, setCategoryProducts] = useState<Record<string, CatalogComponent[]>>({});
   const [loading, setLoading] = useState(true);
-  const [cartSuccessMessage, setCartSuccessMessage] = useState<string | null>(null);
+  const [cartSuccessMessage] = useState<string | null>(null);
 
   const [selectedComponent, setSelectedComponent] = useState<CatalogComponent | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
