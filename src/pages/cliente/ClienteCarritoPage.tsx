@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import {
   ArrowLeft,
@@ -56,7 +56,14 @@ export const ClienteCarritoPage = () => {
     taxes,
     total,
     itemCount,
+    syncCart,
   } = useCart();
+
+  useEffect(() => {
+    if (syncCart) {
+      void syncCart();
+    }
+  }, [syncCart]);
 
   const [wishlistedIds, setWishlistedIds] = useState<Record<string, boolean>>({});
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);

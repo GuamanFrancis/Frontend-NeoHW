@@ -12,7 +12,7 @@ import {
   type LucideIcon
 } from 'lucide-react';
 import { getCatalogComponents } from '../../../services/catalogService';
-import type { CatalogComponent } from '../../../types/catalog';
+import type { CatalogComponent, CatalogQueryParams } from '../../../types/catalog';
 import { useCart } from '../../../context/CartContext';
 
 export const CATEGORY_ICONS: Record<string, LucideIcon> = {
@@ -141,7 +141,16 @@ export const useClienteCatalog = () => {
     const fetchCatalog = async () => {
       setLoading(true);
       try {
-        const response = await getCatalogComponents({ limit: 100 });
+        const params: CatalogQueryParams = {
+          limit: 100,
+        };
+        if (activeCategoryTab !== 'todos') {
+          params.category = activeCategoryTab;
+        }
+        if (searchText.trim()) {
+          params.search = searchText.trim();
+        }
+        const response = await getCatalogComponents(params);
         if (response.items) {
           setComponents(response.items);
         }
@@ -152,8 +161,8 @@ export const useClienteCatalog = () => {
         setLoading(false);
       }
     };
-    fetchCatalog();
-  }, []);
+    void fetchCatalog();
+  }, [activeCategoryTab, searchText]);
 
   const brandsList = useMemo(() => {
     const brands = new Set(components.map((c) => c.brand));

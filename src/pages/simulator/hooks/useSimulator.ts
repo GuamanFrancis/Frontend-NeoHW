@@ -5,6 +5,7 @@ import { checkCompatibility, getCompatibilityRules } from '../../../services/com
 import { streamAiChat } from '../../../services/aiService';
 import { useCart } from '../../../context/CartContext';
 import { getStoredSession } from '../../../services/session';
+import { saveProject } from '../../../services/projectsService';
 import type { PCComponent, ComponentState, CameraAction } from '../types';
 import type { CatalogComponent } from '../../../types/catalog';
 import type { CompatibilityRule, CompatibilityCheckResult } from '../../../services/compatibilityService';
@@ -212,7 +213,31 @@ export const useSimulator = () => {
       setCheckingCompat(true);
       try {
         const res = await checkCompatibility(ids);
-        setCompatibilityStatus({ checked: true, compatible: res.compatible, results: res.results });
+        const filteredResults = res.results.filter((r) => {
+          const sourceSlot = components.find((c) => c.dbProduct?.id === r.sourceProduct.id)?.id;
+          const targetSlot = components.find((c) => c.dbProduct?.id === r.targetProduct.id)?.id;
+          if (r.ruleName.includes('Mobo-Case Form Factor')) {
+            return sourceSlot === 'motherboard' && targetSlot === 'case';
+          }
+          if (r.ruleName.includes('CPU-Mobo Socket')) {
+            return sourceSlot === 'cpu' && targetSlot === 'motherboard';
+          }
+          if (r.ruleName.includes('RAM-Mobo Type')) {
+            return sourceSlot?.startsWith('ram_') && targetSlot === 'motherboard';
+          }
+          if (r.ruleName.includes('Case GPU Clearance')) {
+            return sourceSlot === 'gpu' && targetSlot === 'case';
+          }
+          if (r.ruleName.includes('PSU Wattage Capacity')) {
+            return (sourceSlot === 'cpu' || sourceSlot === 'gpu') && targetSlot === 'psu';
+          }
+          if (r.ruleName.includes('PSU-Case Form Factor')) {
+            return sourceSlot === 'psu' && targetSlot === 'case';
+          }
+          return true;
+        });
+        const compatible = filteredResults.every((r) => r.status !== 'FAIL');
+        setCompatibilityStatus({ checked: true, compatible, results: filteredResults });
       } catch { console.error("Error comprobando compatibilidad:", Error); } finally {
         setCheckingCompat(false);
       }
@@ -243,37 +268,25 @@ export const useSimulator = () => {
   }, [components, assemblyStates]);
 
   useEffect(() => {
-    const loadProjectId = location.state?.loadProjectId;
-    if (userId && loadProjectId) {
-      try {
-        const stored = localStorage.getItem(`neohw_proyectos_${userId}`);
-        if (stored) {
-          const projectsList = JSON.parse(stored);
-          const project = projectsList.find((p: { id: string; name: string; componentsMap: Record<string, CatalogComponent> }) => p.id === loadProjectId);
-          
-          if (project) {
-            const savedMap = project.componentsMap;
-            setTimeout(() => {
-              setComponents((prev) => prev.map((c) => {
-                const savedProd = savedMap[c.id];
-                return savedProd ? { ...c, dbProduct: savedProd, selectedName: savedProd.name } : { ...c, dbProduct: null, selectedName: '' };
-              }));
-              
-              const newStates: Record<string, ComponentState> = { case: 'installed' };
-              PC_COMPONENTS.forEach((c) => { if (savedMap[c.id]) newStates[c.id] = 'installed'; });
-              setAssemblyStates(recalcStates(newStates, PC_COMPONENTS));
-            }, 0);
-            
-            navigate(location.pathname, { replace: true, state: {} });
-            setToastMessage(`Proyecto "${project.name}" cargado en el simulador.`);
-            setTimeout(() => setToastMessage(null), 3000);
-          }
-        }
-      } catch (e) {
-        console.error("Error cargando el proyecto:", e);
-      }
+    const loadProject = location.state?.loadProject;
+    if (loadProject) {
+      const savedMap = loadProject.componentsMap;
+      setTimeout(() => {
+        setComponents((prev) => prev.map((c) => {
+          const savedProd = savedMap[c.id];
+          return savedProd ? { ...c, dbProduct: savedProd, selectedName: savedProd.name } : { ...c, dbProduct: null, selectedName: '' };
+        }));
+        
+        const newStates: Record<string, ComponentState> = { case: 'installed' };
+        PC_COMPONENTS.forEach((c) => { if (savedMap[c.id]) newStates[c.id] = 'installed'; });
+        setAssemblyStates(recalcStates(newStates, PC_COMPONENTS));
+      }, 0);
+      
+      navigate(location.pathname, { replace: true, state: {} });
+      setToastMessage(`Proyecto "${loadProject.name}" cargado en el simulador.`);
+      setTimeout(() => setToastMessage(null), 3000);
     }
-  }, [location.state, userId, navigate, location.pathname]);
+  }, [location.state, navigate, location.pathname]);
 
   const handleSaveTempAssembly = useCallback(() => {
     localStorage.setItem('neohw_temp_assembly', JSON.stringify({ components, assemblyStates }));
@@ -285,36 +298,53 @@ export const useSimulator = () => {
       setIsAuthRequiredModalOpen(true);
       return;
     }
-    setProjectName(`Ensamble NeoHW - ${new Date().toLocaleDateString('es-EC')}`);
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('es-EC');
+    const timeStr = now.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' });
+    setProjectName(`Ensamble NeoHW - ${dateStr} ${timeStr}`);
     setIsSaveModalOpen(true);
   }, [userId]);
 
   const handleSaveProject = useCallback(() => {
     if (!projectName.trim() || !userId) return;
-    const selectedCompsMap: Record<string, CatalogComponent> = {};
-    components.forEach((c) => { if (c.dbProduct) selectedCompsMap[c.id] = c.dbProduct; });
+    
+    const groupedItems: Record<string, number> = {};
+    components.forEach((c) => {
+      if (c.dbProduct) {
+        const pId = c.dbProduct.id;
+        groupedItems[pId] = (groupedItems[pId] || 0) + 1;
+      }
+    });
 
-    const newProject = {
-      id: crypto.randomUUID() || Date.now().toString(),
-      name: projectName.trim(),
-      createdAt: new Date().toISOString(),
-      totalPrice: hardwareStats.totalPrice,
-      componentsMap: selectedCompsMap,
-    };
-    try {
-      const stored = localStorage.getItem(`neohw_proyectos_${userId}`);
-      const projectsList = stored ? JSON.parse(stored) : [];
-      projectsList.unshift(newProject);
-      localStorage.setItem(`neohw_proyectos_${userId}`, JSON.stringify(projectsList));
-      setIsSaveModalOpen(false);
-      setToastMessage(`Proyecto "${projectName}" guardado con éxito.`);
-      setTimeout(() => setToastMessage(null), 3000);
-    } catch (e) {
-      console.error(e);
+    const items = Object.entries(groupedItems).map(([productId, quantity]) => ({
+      productId,
+      quantity,
+    }));
+
+    if (items.length === 0) {
+      alert('El proyecto debe tener al menos un componente seleccionado.');
+      return;
     }
-  }, [projectName, userId, components, hardwareStats.totalPrice]);
 
-  const handleSendToCart = useCallback(() => {
+    const payload = {
+      name: projectName.trim(),
+      description: `Ensamble creado en el simulador 3D el ${new Date().toLocaleDateString('es-EC')}`,
+      items,
+    };
+
+    saveProject(payload)
+      .then(() => {
+        setIsSaveModalOpen(false);
+        setToastMessage(`Proyecto "${projectName}" guardado en tu cuenta.`);
+        setTimeout(() => setToastMessage(null), 3000);
+      })
+      .catch((err) => {
+        console.error(err);
+        alert('Error al guardar el proyecto en el servidor');
+      });
+  }, [projectName, userId, components]);
+
+  const handleSendToCart = useCallback(async () => {
     if (!userId) {
       setAuthModalReason('checkout');
       setIsAuthRequiredModalOpen(true);
@@ -326,7 +356,7 @@ export const useSimulator = () => {
       setTimeout(() => setToastMessage(null), 3000);
       return;
     }
-    addMultipleToCart(selectedProds);
+    await addMultipleToCart(selectedProds);
     setToastMessage("¡Añadidos al carrito!");
     setTimeout(() => setToastMessage(null), 3000);
     navigate('/cliente/carrito');

@@ -16,9 +16,11 @@ import {
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
-import { getStoredSession } from '../../services/session';
 import { useCart } from '../../context/CartContext';
 import type { CatalogComponent } from '../../types/catalog';
+import { getProjects } from '../../services/projectsService';
+import type { BackendProject } from '../../services/projectsService';
+import { getCatalogComponentById } from '../../services/catalogService';
 
 interface SavedProject {
   id: string;
@@ -28,34 +30,121 @@ interface SavedProject {
   componentsMap: Record<string, CatalogComponent>;
 }
 
+const mapBackendProjects = (
+  backendProjects: BackendProject[],
+  catalog: CatalogComponent[]
+): SavedProject[] => {
+  return backendProjects.map((bp) => {
+    const componentsMap: Record<string, CatalogComponent> = {};
+    let ramIndex = 1;
+    let totalPrice = 0;
+    
+    bp.items.forEach((item) => {
+      const catalogComp = catalog.find((c) => c.id === item.productId);
+      if (catalogComp) {
+        const qty = Number(item.quantity) || 1;
+        for (let i = 0; i < qty; i++) {
+          let slotId: string;
+          if (catalogComp.categorySlug === 'memorias-ram') {
+            slotId = `ram_${ramIndex}`;
+            ramIndex++;
+          } else {
+            const standardSlots: Record<string, string> = {
+              'gabinetes': 'case',
+              'fuentes-de-poder': 'psu',
+              'placas-madre': 'motherboard',
+              'procesadores': 'cpu',
+              'tarjetas-graficas': 'gpu',
+              'almacenamiento': 'storage'
+            };
+            slotId = standardSlots[catalogComp.categorySlug] || catalogComp.categorySlug;
+          }
+          
+          if (slotId) {
+            componentsMap[slotId] = catalogComp;
+          }
+        }
+        totalPrice += catalogComp.price * qty;
+      } else {
+        const priceNum = typeof item.product.price === 'string' ? parseFloat(item.product.price) : item.product.price;
+        const fallbackComp: CatalogComponent = {
+          id: item.productId,
+          name: item.product.name,
+          description: '',
+          category: 'Componente',
+          categorySlug: 'componente',
+          categoryId: '',
+          brand: 'Sin marca',
+          price: priceNum || 0,
+          stock: 0,
+          status: 'agotado',
+          imageUrl: item.product.imageUrl || '',
+          model: '',
+          sku: item.product.sku || '',
+          attributes: [],
+          sellerId: ''
+        };
+        componentsMap[item.productId] = fallbackComp;
+        totalPrice += fallbackComp.price * (Number(item.quantity) || 1);
+      }
+    });
+    
+    return {
+      id: bp.id,
+      name: bp.name,
+      createdAt: bp.createdAt,
+      totalPrice: totalPrice,
+      componentsMap
+    };
+  });
+};
+
 export const ClienteProyectosPage = () => {
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const { addMultipleToCart } = useCart();
   
   const [projects, setProjects] = useState<SavedProject[]>([]);
   const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
-  
+  const [loading, setLoading] = useState(true);
   
   const [projectToDelete, setProjectToDelete] = useState<SavedProject | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const session = getStoredSession();
-  const userId = session?.user.id;
-
   
+
   useEffect(() => {
-    if (!userId) return;
-    try {
-      const stored = localStorage.getItem(`neohw_proyectos_${userId}`);
-      if (stored) {
-        setProjects(JSON.parse(stored));
+    const fetchProjectsData = async () => {
+      try {
+        setLoading(true);
+        const backendProjects = await getProjects();
+        let activeProjects = backendProjects;
+        try {
+          const deletedIds = JSON.parse(localStorage.getItem('neohw_deleted_project_ids') || '[]');
+          const deletedSet = new Set<string>(deletedIds);
+          activeProjects = backendProjects.filter((p) => !deletedSet.has(p.id));
+        } catch (e) {
+          console.error(e);
+        }
+        const uniqueProductIds = Array.from(
+          new Set(activeProjects.flatMap((p) => p.items.map((item) => item.productId)))
+        );
+        const catalogItemsResult = await Promise.allSettled(
+          uniqueProductIds.map((id) => getCatalogComponentById(id))
+        );
+        const catalogItems = catalogItemsResult
+          .filter((res): res is PromiseFulfilledResult<CatalogComponent> => res.status === 'fulfilled')
+          .map((res) => res.value);
+        const mapped = mapBackendProjects(activeProjects, catalogItems);
+        setProjects(mapped);
+      } catch (e) {
+        console.error('Error al cargar proyectos guardados:', e);
+      } finally {
+        setLoading(false);
       }
-    } catch (e) {
-      console.error('Error al cargar proyectos guardados:', e);
-    }
-  }, [userId]);
+    };
+    void fetchProjectsData();
+  }, []);
 
-  
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => {
@@ -63,48 +152,40 @@ export const ClienteProyectosPage = () => {
     }, 3000);
   };
 
-  
   const toggleExpand = (id: string) => {
     setExpandedProjectId(expandedProjectId === id ? null : id);
   };
 
-  
   const handleDeleteConfirm = () => {
-    if (!projectToDelete || !userId) return;
-    
+    if (!projectToDelete) return;
+    try {
+      const deletedIds = JSON.parse(localStorage.getItem('neohw_deleted_project_ids') || '[]');
+      deletedIds.push(projectToDelete.id);
+      localStorage.setItem('neohw_deleted_project_ids', JSON.stringify(deletedIds));
+    } catch (e) {
+      console.error(e);
+    }
     const updated = projects.filter((p) => p.id !== projectToDelete.id);
     setProjects(updated);
-    try {
-      localStorage.setItem(`neohw_proyectos_${userId}`, JSON.stringify(updated));
-      showToast(`Proyecto "${projectToDelete.name}" eliminado correctamente.`);
-    } catch (e) {
-      console.error('Error al eliminar proyecto:', e);
-    }
+    showToast(`Proyecto "${projectToDelete.name}" eliminado de tu cuenta.`);
     setProjectToDelete(null);
   };
 
-  
   const handleLoadInSimulator = (project: SavedProject) => {
-    navigate('/cliente/simulador', { state: { loadProjectId: project.id } });
+    navigate('/cliente/simulador', { state: { loadProject: project } });
   };
 
-  
-  const handleBuyProject = (project: SavedProject) => {
+  const handleBuyProject = async (project: SavedProject) => {
     const items = Object.values(project.componentsMap);
     if (items.length === 0) {
       showToast('Este proyecto no tiene componentes seleccionados.');
       return;
     }
 
-    let addedCount = 0;
-    items.forEach((prod) => {
-      if (prod && prod.stock > 0) {
-        addToCart(prod);
-        addedCount++;
-      }
-    });
+    const eligibleItems = items.filter((prod) => prod && prod.stock > 0);
 
-    if (addedCount > 0) {
+    if (eligibleItems.length > 0) {
+      await addMultipleToCart(eligibleItems);
       navigate('/cliente/carrito');
     } else {
       showToast('No se pudieron agregar los componentes al carrito (sin stock disponible).');
@@ -125,6 +206,25 @@ export const ClienteProyectosPage = () => {
       return dateStr;
     }
   };
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-7xl pb-16 text-slate-900 dark:text-neutral-100">
+        <div className="mb-8 border-b border-slate-100 dark:border-neutral-900 pb-6">
+          <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white leading-none">
+            Proyectos de Ensamblaje
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-neutral-400 mt-2 font-medium">
+            Administra tus configuraciones personalizadas de PC y simula o compra en cualquier momento.
+          </p>
+        </div>
+        <div className="flex flex-col items-center justify-center py-20 text-center border border-slate-200 rounded-xl bg-white dark:border-neutral-900 dark:bg-neutral-950/20 animate-pulse">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-teal-500 border-t-transparent mb-4" />
+          <h3 className="text-sm font-bold text-slate-700 dark:text-neutral-300">Cargando tus proyectos...</h3>
+        </div>
+      </div>
+    );
+  }
 
   if (projects.length === 0) {
     return (
@@ -162,7 +262,6 @@ export const ClienteProyectosPage = () => {
 
   return (
     <div className="mx-auto max-w-7xl pb-16 text-slate-900 dark:text-neutral-100">
-      {}
       {toastMessage && (
         <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-xl border border-teal-500/30 bg-neutral-900 px-4 py-3 shadow-2xl animate-fade-in-up">
           <CheckCircle2 className="h-4 w-4 text-teal-400" />
@@ -199,7 +298,6 @@ export const ClienteProyectosPage = () => {
               key={project.id}
               className="rounded-xl border border-slate-200 dark:border-neutral-850 bg-white dark:bg-neutral-950/20 shadow-sm overflow-hidden transition-all duration-300 hover:border-teal-500/40"
             >
-              {}
               <div className="p-5 flex flex-wrap items-center justify-between gap-4">
                 <div className="flex-1 min-w-[250px]">
                   <div className="flex items-center gap-2">
@@ -269,7 +367,6 @@ export const ClienteProyectosPage = () => {
                 </div>
               </div>
 
-              {}
               {isExpanded && (
                 <div className="border-t border-slate-100 dark:border-neutral-900 bg-slate-50/50 dark:bg-neutral-950/40 p-5">
                   <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-neutral-500 mb-3 px-1">
@@ -332,7 +429,6 @@ export const ClienteProyectosPage = () => {
         })}
       </div>
 
-      {}
       <Modal
         open={!!projectToDelete}
         title="¿Eliminar Proyecto?"

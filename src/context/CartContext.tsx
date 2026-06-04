@@ -25,6 +25,7 @@ type CartContextType = {
   taxes: number;
   total: number;
   itemCount: number;
+  syncCart: () => Promise<void>;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -34,6 +35,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [userId, setUserId] = useState<string | undefined>(() => getStoredSession()?.user.id);
 
   const syncBackendCart = async () => {
+    const activeSession = getStoredSession();
+    if (!activeSession) return;
     try {
       const items = await getCart();
       setCartItems(items);
@@ -158,15 +161,26 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const activeSession = getStoredSession();
     if (activeSession) {
       try {
+        const grouped: Record<string, { product: CatalogComponent; quantity: number }> = {};
         for (const product of products) {
-          const existingItem = cartItems.find((item) => item.product.id === product.id);
+          if (!grouped[product.id]) {
+            grouped[product.id] = { product, quantity: 0 };
+          }
+          grouped[product.id].quantity += 1;
+        }
+        for (const [productId, { product, quantity }] of Object.entries(grouped)) {
+          const existingItem = cartItems.find((item) => item.product.id === productId);
           if (existingItem) {
             const currentQty = Number(existingItem.quantity);
             if (currentQty < product.stock) {
-              await addToCartApi(product.id, 1);
+              const allowedAdd = Math.min(quantity, product.stock - currentQty);
+              if (allowedAdd > 0) {
+                await addToCartApi(productId, allowedAdd);
+              }
             }
           } else if (product.stock > 0) {
-            await addToCartApi(product.id, 1);
+            const allowedAdd = Math.min(quantity, product.stock);
+            await addToCartApi(productId, allowedAdd);
           }
         }
         await syncBackendCart();
@@ -276,6 +290,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         taxes,
         total,
         itemCount,
+        syncCart: syncBackendCart,
       }}
     >
       {children}
