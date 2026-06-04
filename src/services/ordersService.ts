@@ -103,6 +103,16 @@ export const getOrders = async (
   return data;
 };
 
+export const getMyOrders = async (
+  page?: number,
+  limit?: number
+): Promise<OrdersResponse> => {
+  const { data } = await api.get<OrdersResponse>('/orders/my-orders', {
+    params: { page, limit },
+  });
+  return data;
+};
+
 export const updateOrderStatus = async (
   id: string,
   status: string
@@ -118,7 +128,7 @@ export const uploadOrderDocument = async (
   id: string,
   file: File,
   documentType: 'SHIPPING_PROOF' | 'DELIVERY_PHOTO' | 'CUSTOMER_SIGNATURE'
-): Promise<any> => {
+): Promise<unknown> => {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('documentType', documentType);
@@ -130,6 +140,20 @@ export const uploadOrderDocument = async (
   return data;
 };
 
+interface LocalOrderDoc {
+  id: string;
+  documentType: string;
+  fileUrl: string;
+  createdAt: string;
+}
+
+interface LocalOrderUpdate {
+  id: string;
+  status: string;
+  documents?: LocalOrderDoc[];
+  [key: string]: unknown;
+}
+
 export const updateLocalOrder = (
   orderId: string,
   status: string,
@@ -139,15 +163,15 @@ export const updateLocalOrder = (
     const key = localStorage.key(i);
     if (key && key.startsWith('client_orders_')) {
       try {
-        const orders = JSON.parse(localStorage.getItem(key) || '[]');
+        const orders = JSON.parse(localStorage.getItem(key) || '[]') as LocalOrderUpdate[];
         let updated = false;
-        const newOrders = orders.map((o: any) => {
+        const newOrders = orders.map((o: LocalOrderUpdate) => {
           if (o.id === orderId) {
             updated = true;
             const updatedOrder = { ...o, status };
             if (doc) {
               const docs = o.documents || [];
-              if (!docs.some((d: any) => d.documentType === doc.documentType)) {
+              if (!docs.some((d: LocalOrderDoc) => d.documentType === doc.documentType)) {
                 docs.push({
                   id: Math.random().toString(),
                   documentType: doc.documentType,

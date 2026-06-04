@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   ShoppingBag,
   Calendar,
@@ -16,7 +16,7 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { getStoredSession } from '../../services/session';
 import { createStripeSession } from '../../services/paymentsService';
-import { getOrders, updateOrderStatus } from '../../services/ordersService';
+import { getMyOrders, updateOrderStatus } from '../../services/ordersService';
 import { ComponenteDetalleDrawer } from './ComponenteDetalleDrawer';
 import type { CatalogComponent } from '../../types/catalog';
 
@@ -61,8 +61,6 @@ export const ClientePedidosPage = () => {
   const userId = session?.user.id;
 
   const [allOrders, setAllOrders] = useState<OrderLocal[]>([]);
-  const [filteredOrders, setFilteredOrders] = useState<OrderLocal[]>([]);
-  const [displayedOrders, setDisplayedOrders] = useState<OrderLocal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
@@ -79,77 +77,50 @@ export const ClientePedidosPage = () => {
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const ordersKey = userId ? `client_orders_${userId}` : '';
-
   const loadOrders = async () => {
     if (!userId) return;
     try {
       setIsLoading(true);
-      const localStored = localStorage.getItem(ordersKey);
-      let localOrders: OrderLocal[] = [];
-      if (localStored) {
-        try {
-          localOrders = JSON.parse(localStored);
-        } catch {}
-      }
-      const paidKey = 'neohw_paid_order_ids';
-      const paidOrders: string[] = JSON.parse(localStorage.getItem(paidKey) || '[]');
-      localOrders = localOrders.map((o) => {
-        if (paidOrders.includes(o.id) && o.status === 'PENDING_PAYMENT') {
-          return { ...o, status: 'PROCESSING' };
+      const res = await getMyOrders();
+      const apiOrders: OrderLocal[] = res.data.map((order) => {
+        let addressParsed = undefined;
+        if (order.shippingAddress) {
+          if (typeof order.shippingAddress === 'string') {
+            try {
+              addressParsed = JSON.parse(order.shippingAddress);
+            } catch {}
+          } else {
+            addressParsed = order.shippingAddress;
+          }
         }
-        return o;
+        return {
+          id: order.id,
+          totalAmount: typeof order.totalAmount === 'string' ? parseFloat(order.totalAmount) : order.totalAmount,
+          status: order.status,
+          createdAt: order.createdAt,
+          items: order.items.map((item) => ({
+            product: {
+              id: item.productId,
+              name: item.product.name,
+              imageUrl: item.product.imageUrl || undefined,
+            },
+            quantity: item.quantity,
+            priceAtTime: typeof item.priceAtTime === 'string' ? parseFloat(item.priceAtTime) : item.priceAtTime,
+          })),
+          shippingAddress: addressParsed ? {
+            street: addressParsed.street || '',
+            city: addressParsed.city || '',
+            state: addressParsed.state || '',
+            postalCode: addressParsed.postalCode || '',
+            country: addressParsed.country || '',
+            fullName: addressParsed.fullName || (order.user ? `${order.user.firstName || ''} ${order.user.lastName || ''}`.trim() : undefined),
+            email: addressParsed.email || order.user?.email || undefined,
+            phone: addressParsed.phone || order.user?.phone || undefined,
+          } : undefined,
+          documents: order.documents,
+        };
       });
-      try {
-        const res = await getOrders();
-        const apiOrders: OrderLocal[] = res.data.map((order) => {
-          let addressParsed = undefined;
-          if (order.shippingAddress) {
-            if (typeof order.shippingAddress === 'string') {
-              try {
-                addressParsed = JSON.parse(order.shippingAddress);
-              } catch {}
-            } else {
-              addressParsed = order.shippingAddress;
-            }
-          }
-          return {
-            id: order.id,
-            totalAmount: typeof order.totalAmount === 'string' ? parseFloat(order.totalAmount) : order.totalAmount,
-            status: order.status,
-            createdAt: order.createdAt,
-            items: order.items.map((item) => ({
-              product: {
-                id: item.productId,
-                name: item.product.name,
-                imageUrl: item.product.imageUrl || undefined,
-              },
-              quantity: item.quantity,
-              priceAtTime: typeof item.priceAtTime === 'string' ? parseFloat(item.priceAtTime) : item.priceAtTime,
-            })),
-            shippingAddress: addressParsed ? {
-              street: addressParsed.street || '',
-              city: addressParsed.city || '',
-              state: addressParsed.state || '',
-              postalCode: addressParsed.postalCode || '',
-              country: addressParsed.country || '',
-              fullName: addressParsed.fullName || (order.user ? `${order.user.firstName || ''} ${order.user.lastName || ''}`.trim() : undefined),
-              email: addressParsed.email || order.user?.email || undefined,
-              phone: addressParsed.phone || order.user?.phone || undefined,
-            } : undefined,
-            documents: order.documents,
-          };
-        });
-        const mergedOrders = [...apiOrders];
-        localOrders.forEach((lo) => {
-          if (!mergedOrders.some((ao) => ao.id === lo.id)) {
-            mergedOrders.push(lo);
-          }
-        });
-        setAllOrders(mergedOrders);
-      } catch (apiErr) {
-        setAllOrders(localOrders);
-      }
+      setAllOrders(apiOrders);
     } catch (e) {
       console.error(e);
       setAllOrders([]);
@@ -160,40 +131,30 @@ export const ClientePedidosPage = () => {
 
   useEffect(() => {
     loadOrders();
-  }, [ordersKey]);
+  }, [userId]);
 
-  
-  useEffect(() => {
+  const filteredOrders = useMemo(() => {
     let result = [...allOrders];
-
-    
     if (statusFilter !== 'ALL') {
       result = result.filter(o => o.status === statusFilter);
     }
-
-    
     if (startDate) {
       const start = new Date(startDate);
       start.setHours(0, 0, 0, 0);
       result = result.filter(o => new Date(o.createdAt) >= start);
     }
-
-    
     if (endDate) {
       const end = new Date(endDate);
       end.setHours(23, 59, 59, 999);
       result = result.filter(o => new Date(o.createdAt) <= end);
     }
-
-    setFilteredOrders(result);
-    setCurrentPage(1); 
+    return result;
   }, [allOrders, statusFilter, startDate, endDate]);
 
-  
-  useEffect(() => {
+  const displayedOrders = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    setDisplayedOrders(filteredOrders.slice(startIndex, endIndex));
+    return filteredOrders.slice(startIndex, endIndex);
   }, [filteredOrders, currentPage]);
 
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
@@ -225,27 +186,13 @@ export const ClientePedidosPage = () => {
     if (!window.confirm('¿Está seguro de que desea cancelar este pedido?')) return;
     setCancellingOrderId(orderId);
     try {
-      try {
-        await updateOrderStatus(orderId, 'CANCELLED');
-      } catch (err) {
-        console.warn('Backend update failed (expected if USER role), updating locally only:', err);
-      }
-      
-      const stored = localStorage.getItem(ordersKey);
-      if (stored) {
-        const orders = JSON.parse(stored);
-        const updated = orders.map((o: any) =>
-          o.id === orderId ? { ...o, status: 'CANCELLED' } : o
-        );
-        localStorage.setItem(ordersKey, JSON.stringify(updated));
-      }
-
+      await updateOrderStatus(orderId, 'CANCELLED');
       alert('Pedido cancelado exitosamente.');
       setSelectedOrder(null);
       loadOrders();
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      alert('Error al cancelar el pedido. Intente nuevamente.');
+      alert('No tienes permisos para cancelar este pedido. Por favor, contacta a un administrador o vendedor.');
     } finally {
       setCancellingOrderId(null);
     }
@@ -351,7 +298,10 @@ export const ClientePedidosPage = () => {
             </label>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full h-11 px-3 rounded-lg border border-slate-200 bg-slate-50 dark:border-neutral-850 dark:bg-neutral-900 text-xs font-bold text-slate-700 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
             >
               <option value="ALL">Todos los estados</option>
@@ -369,7 +319,10 @@ export const ClientePedidosPage = () => {
             <input
               type="date"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full h-11 px-3 rounded-lg border border-slate-200 bg-slate-50 dark:border-neutral-850 dark:bg-neutral-900 text-xs font-bold text-slate-700 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
@@ -380,7 +333,10 @@ export const ClientePedidosPage = () => {
             <input
               type="date"
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full h-11 px-3 rounded-lg border border-slate-200 bg-slate-50 dark:border-neutral-850 dark:bg-neutral-900 text-xs font-bold text-slate-700 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
@@ -392,6 +348,7 @@ export const ClientePedidosPage = () => {
                 setStatusFilter('ALL');
                 setStartDate('');
                 setEndDate('');
+                setCurrentPage(1);
               }}
               className="h-11 font-bold text-xs"
             >

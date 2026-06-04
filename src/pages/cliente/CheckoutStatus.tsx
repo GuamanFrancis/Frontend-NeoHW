@@ -17,20 +17,8 @@ export const CheckoutStatusPage = ({ type }: CheckoutStatusProps) => {
   useEffect(() => {
     if (isSuccess) {
       clearCart(true);
-      if (orderId) {
-        try {
-          const paidKey = 'neohw_paid_order_ids';
-          const paidOrders = JSON.parse(localStorage.getItem(paidKey) || '[]');
-          if (!paidOrders.includes(orderId)) {
-            paidOrders.push(orderId);
-            localStorage.setItem(paidKey, JSON.stringify(paidOrders));
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      }
     }
-  }, [isSuccess, orderId, clearCart]);
+  }, [isSuccess, clearCart]);
 
   return (
     <div className="flex min-h-[calc(100vh-64px)] w-full items-center justify-center bg-slate-950 px-4 text-white">

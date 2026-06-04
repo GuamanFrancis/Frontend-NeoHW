@@ -167,40 +167,6 @@ export const ClienteCarritoPage = () => {
       const userId = session?.user.id;
       if (userId) {
         localStorage.setItem(`shipping_address_${userId}`, JSON.stringify(payload.shippingAddress));
-        try {
-          const ordersKey = `client_orders_${userId}`;
-          const storedOrders = JSON.parse(localStorage.getItem(ordersKey) || '[]');
-          const newOrder = {
-            id: response.orderId,
-            totalAmount: response.totalAmount,
-            status: 'PENDING_PAYMENT',
-            createdAt: new Date().toISOString(),
-            items: cartItems.map((item) => ({
-              product: {
-                id: item.product.id,
-                name: item.product.name,
-                imageUrl: item.product.imageUrl || undefined,
-              },
-              quantity: item.quantity,
-              priceAtTime: item.product.price,
-            })),
-            shippingAddress: {
-              street: payload.shippingAddress.street,
-              city: payload.shippingAddress.city,
-              state: payload.shippingAddress.state,
-              postalCode: payload.shippingAddress.postalCode,
-              country: payload.shippingAddress.country,
-              fullName: payload.shippingAddress.fullName,
-              email: payload.shippingAddress.email,
-              phone: payload.shippingAddress.phone,
-            },
-            documents: [],
-          };
-          storedOrders.unshift(newOrder);
-          localStorage.setItem(ordersKey, JSON.stringify(storedOrders));
-        } catch (e) {
-          console.error(e);
-        }
       }
 
       const stripeRes = await createStripeSession(response.orderId);
