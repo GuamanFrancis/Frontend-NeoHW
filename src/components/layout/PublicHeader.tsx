@@ -14,7 +14,7 @@ import { roleHomeRoutes, logoutUser } from '../../services/authService';
 import { useCart } from '../../context/CartContext';
 
 export const PublicHeader = () => {
-  const { itemCount, clearCart } = useCart();
+  const { itemCount } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
   const session = getStoredSession();
@@ -46,7 +46,6 @@ export const PublicHeader = () => {
   }, []);
 
   const handleLogout = async () => {
-    clearCart();
     await logoutUser();
     navigate('/login');
   };

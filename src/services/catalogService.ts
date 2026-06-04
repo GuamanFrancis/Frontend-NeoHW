@@ -27,7 +27,7 @@ const stockToStatus = (stock: number): CatalogStockStatus => {
   if (stock <= 10) return 'stock-bajo';
   return 'disponible';
 };
-const normalizeProduct = (product: BackendProduct): CatalogComponent => ({
+export const normalizeProduct = (product: BackendProduct): CatalogComponent => ({
   id: product.id,
   name: product.name,
   description: product.description || 'Sin descripcion',

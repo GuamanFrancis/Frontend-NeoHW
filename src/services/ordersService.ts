@@ -72,6 +72,26 @@ export const createOrder = async (payload: CreateOrderPayload): Promise<CreateOr
   return data;
 };
 
+export type CreateOrderFromCartPayload = {
+  shippingAddress: {
+    fullName: string;
+    email: string;
+    phone: string;
+    street: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+  };
+};
+
+export const createOrderFromCart = async (
+  payload: CreateOrderFromCartPayload
+): Promise<CreateOrderResponse> => {
+  const { data } = await api.post<CreateOrderResponse>('/orders/from-cart', payload);
+  return data;
+};
+
 export const getOrders = async (
   status?: string,
   page?: number,

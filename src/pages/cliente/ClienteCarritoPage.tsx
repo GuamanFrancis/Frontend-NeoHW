@@ -10,7 +10,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
-import { createOrder } from '../../services/ordersService';
+import { createOrderFromCart } from '../../services/ordersService';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { FormInput } from '../../components/ui/FormInput';
@@ -143,10 +143,6 @@ export const ClienteCarritoPage = () => {
     setCheckoutError(null);
     try {
       const payload = {
-        items: cartItems.map((item) => ({
-          productId: item.product.id,
-          quantity: item.quantity,
-        })),
         shippingAddress: {
           fullName: fullName.trim(),
           email: email.trim(),
@@ -158,7 +154,7 @@ export const ClienteCarritoPage = () => {
           country: country.trim(),
         },
       };
-      const response = await createOrder(payload);
+      const response = await createOrderFromCart(payload);
 
       const session = getStoredSession();
       const userId = session?.user.id;
@@ -201,6 +197,7 @@ export const ClienteCarritoPage = () => {
       }
 
       const stripeRes = await createStripeSession(response.orderId);
+      await clearCart(true);
       if (stripeRes && stripeRes.url) {
         window.location.href = stripeRes.url;
       } else {

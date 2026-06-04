@@ -7,6 +7,7 @@ export default defineConfig(({ mode }) => {
   const backendTarget = env.VITE_DEV_PROXY_TARGET || env.VITE_API_URL || 'http://localhost:3000';
   const apiProxyPaths = [
     '/auth',
+    '/carts',
     '/users',
     '/products',
     '/categories',

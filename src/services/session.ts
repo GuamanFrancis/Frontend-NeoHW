@@ -38,6 +38,7 @@ export const saveStoredSession = (session: AuthResponse, remember = true) => {
 
   staleStorage.removeItem(SESSION_KEY);
   targetStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  window.dispatchEvent(new Event('neohw-session-change'));
 };
 
 export const updateStoredSession = (session: AuthResponse) => {
@@ -64,9 +65,11 @@ export const updateStoredSession = (session: AuthResponse) => {
   } else {
     storage.setItem(SESSION_KEY, JSON.stringify(session));
   }
+  window.dispatchEvent(new Event('neohw-session-change'));
 };
 
 export const clearStoredSession = () => {
   localStorage.removeItem(SESSION_KEY);
   sessionStorage.removeItem(SESSION_KEY);
+  window.dispatchEvent(new Event('neohw-session-change'));
 };

@@ -16,7 +16,7 @@ export const CheckoutStatusPage = ({ type }: CheckoutStatusProps) => {
 
   useEffect(() => {
     if (isSuccess) {
-      clearCart();
+      clearCart(true);
       if (orderId) {
         try {
           const paidKey = 'neohw_paid_order_ids';
