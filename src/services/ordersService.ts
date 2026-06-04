@@ -124,15 +124,26 @@ export const updateOrderStatus = async (
   return data;
 };
 
+export type UploadDocumentResponse = {
+  message?: string;
+  document?: {
+    id: string;
+    documentType: string;
+    fileUrl: string;
+    createdAt: string;
+  };
+  fileUrl?: string;
+};
+
 export const uploadOrderDocument = async (
   id: string,
   file: File,
   documentType: 'SHIPPING_PROOF' | 'DELIVERY_PHOTO' | 'CUSTOMER_SIGNATURE'
-): Promise<unknown> => {
+): Promise<UploadDocumentResponse> => {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('documentType', documentType);
-  const { data } = await api.post(`/orders/${id}/documents`, formData, {
+  const { data } = await api.post<UploadDocumentResponse>(`/orders/${id}/documents`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
