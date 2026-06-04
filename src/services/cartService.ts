@@ -1,6 +1,6 @@
 import { api } from './api';
 import { normalizeProduct } from './catalogService';
-import type { CatalogComponent } from '../types/catalog';
+import type { CatalogComponent, BackendProduct } from '../types/catalog';
 
 export type BackendCartItem = {
   id: string;
@@ -9,7 +9,7 @@ export type BackendCartItem = {
   quantity: number;
   createdAt: string;
   updatedAt: string;
-  product: any;
+  product: BackendProduct;
 };
 
 export type BackendCart = {

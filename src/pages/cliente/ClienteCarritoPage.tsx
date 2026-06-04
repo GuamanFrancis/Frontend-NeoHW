@@ -85,8 +85,8 @@ export const ClienteCarritoPage = () => {
     }
   };
 
-  const handleOpenDetail = (product: any) => {
-    setSelectedProduct(product as CatalogComponent);
+  const handleOpenDetail = (product: CatalogComponent) => {
+    setSelectedProduct(product);
     setIsDetailOpen(true);
   };
 
@@ -203,9 +203,10 @@ export const ClienteCarritoPage = () => {
       } else {
         setCheckoutError('Error al iniciar la pasarela de Stripe.');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      const errMsg = err.response?.data?.message || 'Error al procesar el pedido. Intente nuevamente.';
+      const errorResponse = err as { response?: { data?: { message?: string | string[] } } };
+      const errMsg = errorResponse.response?.data?.message || 'Error al procesar el pedido. Intente nuevamente.';
       setCheckoutError(Array.isArray(errMsg) ? errMsg.join(', ') : errMsg);
     } finally {
       setLoadingCheckout(false);
@@ -403,7 +404,7 @@ export const ClienteCarritoPage = () => {
             </button>
             <button
               type="button"
-              onClick={clearCart}
+              onClick={() => clearCart()}
               className="flex items-center justify-center gap-2 rounded-lg border border-rose-500/30 text-rose-500 dark:border-rose-500/20 dark:hover:bg-rose-950/10 px-5 py-2.5 text-xs font-bold hover:bg-rose-50 transition"
             >
               <Trash2 className="h-4 w-4" />

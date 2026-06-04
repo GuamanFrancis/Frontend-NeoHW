@@ -87,7 +87,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const parsed = JSON.parse(storedCart);
             if (Array.isArray(parsed)) {
               setCartItems(
-                parsed.map((item: any) => ({
+                parsed.map((item: CartItem) => ({
                   ...item,
                   quantity: Number(item.quantity) || 1,
                 }))
