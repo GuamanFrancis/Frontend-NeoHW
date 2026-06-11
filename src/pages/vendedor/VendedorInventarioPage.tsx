@@ -1,8 +1,9 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Boxes, Search, Filter, Lock } from 'lucide-react';
+import { Boxes, Search, Filter, Lock, Eye, Edit2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { PageCard } from '../../components/ui/PageCard';
-import { getCatalogComponents } from '../../services/catalogService';
+import { Modal } from '../../components/ui/Modal';
+import { getCatalogComponents, updateCatalogComponent } from '../../services/catalogService';
 import type { CatalogComponent, CatalogStockStatus } from '../../types/catalog';
 import { getStoredSession } from '../../services/session';
 
@@ -43,32 +44,30 @@ export const VendedorInventarioPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  const [selectedComponent, setSelectedComponent] = useState<CatalogComponent | null>(null);
+  const [componentToEditStock, setComponentToEditStock] = useState<CatalogComponent | null>(null);
+  const [newStockValue, setNewStockValue] = useState<number>(0);
+  const [isUpdatingStock, setIsUpdatingStock] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+
   const session = getStoredSession();
   const currentUserId = session?.user.id;
 
+  const loadInventory = async () => {
+    try {
+      const response = await getCatalogComponents({ page: 1, limit: 100 });
+      setItems(response.items);
+      setPageError('');
+    } catch (err) {
+      setPageError('No fue posible sincronizar inventario con backend. Verifica la conexion e intenta de nuevo.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    let isMounted = true;
-
-    const loadInventory = async () => {
-      try {
-        const response = await getCatalogComponents({ page: 1, limit: 100 });
-        if (!isMounted) return;
-
-        setItems(response.items);
-        setPageError('');
-      } catch (err) {
-        if (!isMounted) return;
-        setPageError('No fue posible sincronizar inventario con backend. Verifica la conexion e intenta de nuevo.');
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-
     void loadInventory();
-
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   const filteredItems = useMemo(() => {
@@ -119,6 +118,33 @@ export const VendedorInventarioPage = () => {
     setStatusFilter('todos');
     setOwnerFilter('todos');
     setCurrentPage(1);
+  };
+
+  const handleUpdateStock = async () => {
+    if (!componentToEditStock) return;
+    try {
+      setIsUpdatingStock(true);
+      setActionError(null);
+      setActionSuccess(null);
+      await updateCatalogComponent(componentToEditStock.id, { stock: newStockValue });
+      setActionSuccess('Stock actualizado exitosamente.');
+      await loadInventory();
+      setTimeout(() => {
+        setComponentToEditStock(null);
+        setActionSuccess(null);
+      }, 1500);
+    } catch (err: any) {
+      console.error(err);
+      const backendMsg = err.response?.data?.message || err.message || '';
+      const isForbidden = err.response?.status === 403 || backendMsg.includes('permission') || backendMsg.includes('INSUFFICIENT');
+      if (isForbidden) {
+        setActionError('Error de autorización: Tu rol de Vendedor no tiene permisos en el backend para modificar el catálogo.');
+      } else {
+        setActionError(`Error al actualizar el stock: ${Array.isArray(backendMsg) ? backendMsg.join(', ') : backendMsg}`);
+      }
+    } finally {
+      setIsUpdatingStock(false);
+    }
   };
 
   return (
@@ -215,18 +241,19 @@ export const VendedorInventarioPage = () => {
                   <th className="px-4 py-3 font-bold">Stock</th>
                   <th className="px-4 py-3 font-bold">Propiedad</th>
                   <th className="px-4 py-3 font-bold">Estado</th>
+                  <th className="px-4 py-3 font-bold">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-150 dark:divide-neutral-900/50">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-slate-400">
+                    <td colSpan={8} className="py-8 text-center text-slate-400">
                       Cargando catálogo...
                     </td>
                   </tr>
                 ) : pageItems.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-slate-400">
+                    <td colSpan={8} className="py-8 text-center text-slate-400">
                       No se encontraron componentes en inventario.
                     </td>
                   </tr>
@@ -287,6 +314,31 @@ export const VendedorInventarioPage = () => {
                         <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold ${statusStyle[item.status]}`}>
                           {statusLabel[item.status]}
                         </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedComponent(item)}
+                            className={actionButtonClass}
+                            aria-label="Ver detalles"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setComponentToEditStock(item);
+                              setNewStockValue(item.stock);
+                              setActionError(null);
+                              setActionSuccess(null);
+                            }}
+                            className={actionButtonClass}
+                            aria-label="Editar stock"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -354,6 +406,164 @@ export const VendedorInventarioPage = () => {
           </div>
         </div>
       </div>
+
+      {selectedComponent && (
+        <Modal
+          open={!!selectedComponent}
+          onClose={() => setSelectedComponent(null)}
+          title={`Detalles de Componente: ${selectedComponent.name}`}
+        >
+          <div className="space-y-6 text-slate-800 dark:text-neutral-250">
+            <div className="flex flex-col gap-4 sm:flex-row items-center sm:items-start gap-6">
+              <div className="h-28 w-28 shrink-0 flex items-center justify-center rounded-xl border border-slate-100 bg-slate-50 p-2 dark:border-neutral-800 dark:bg-neutral-900/60">
+                {selectedComponent.imageUrl ? (
+                  <img
+                    src={selectedComponent.imageUrl}
+                    alt={selectedComponent.name}
+                    className="max-h-full max-w-full object-contain"
+                  />
+                ) : (
+                  <Boxes className="h-12 w-12 text-slate-300 dark:text-neutral-600" />
+                )}
+              </div>
+              <div className="flex-1 w-full space-y-2">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                  <div>
+                    <span className="block text-[10px] uppercase font-bold text-slate-400">Categoría</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{selectedComponent.category}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] uppercase font-bold text-slate-400">Marca</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{selectedComponent.brand}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] uppercase font-bold text-slate-400">Modelo</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{selectedComponent.model || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] uppercase font-bold text-slate-400">SKU</span>
+                    <span className="font-mono font-bold text-slate-900 dark:text-white">{selectedComponent.sku || 'N/A'}</span>
+                  </div>
+                </div>
+                <div className="pt-2 border-t border-slate-100 dark:border-neutral-900 flex items-center justify-between">
+                  <div>
+                    <span className="block text-[10px] uppercase font-bold text-slate-400">Precio</span>
+                    <span className="text-lg font-black text-slate-950 dark:text-white">{formatCurrency(selectedComponent.price)}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] uppercase font-bold text-slate-400">Stock actual</span>
+                    <span className="text-sm font-extrabold text-slate-900 dark:text-white">{selectedComponent.stock} unidades</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <span className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Descripción</span>
+              <p className="text-xs text-slate-600 dark:text-neutral-400 leading-relaxed font-medium">
+                {selectedComponent.description}
+              </p>
+            </div>
+
+            <div>
+              <span className="block text-[10px] uppercase font-bold text-slate-400 mb-2">Especificaciones Técnicas</span>
+              {selectedComponent.attributes && selectedComponent.attributes.length > 0 ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {selectedComponent.attributes.map((attr, idx) => (
+                    <div key={idx} className="rounded-lg border border-slate-100 bg-slate-50 p-2.5 dark:border-neutral-800 dark:bg-neutral-900/40">
+                      <span className="block text-[9px] uppercase font-bold text-slate-400 dark:text-neutral-500">{attr.name}</span>
+                      <span className="text-xs font-bold text-slate-800 dark:text-neutral-200">{attr.value}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs font-semibold text-slate-400 dark:text-neutral-500">
+                  Sin especificaciones técnicas dinámicas registradas.
+                </p>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button type="button" onClick={() => setSelectedComponent(null)} className="h-10 px-6 font-bold text-xs bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-neutral-800 dark:text-white dark:hover:bg-neutral-700 border-0 shadow-none">
+                Cerrar
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {componentToEditStock && (
+        <Modal
+          open={!!componentToEditStock}
+          onClose={() => {
+            if (!isUpdatingStock) {
+              setComponentToEditStock(null);
+              setActionError(null);
+              setActionSuccess(null);
+            }
+          }}
+          title={`Actualizar Stock: ${componentToEditStock.name}`}
+        >
+          <div className="space-y-5 text-slate-800 dark:text-neutral-250">
+            <p className="text-xs text-slate-500 dark:text-neutral-400 font-medium">
+              Modifica la cantidad disponible en el inventario para este componente de hardware.
+            </p>
+
+            <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-neutral-900/50 border border-slate-100 dark:border-neutral-800">
+              <span className="text-xs font-bold text-slate-600 dark:text-neutral-300">Cantidad actual:</span>
+              <span className="text-sm font-black text-slate-900 dark:text-white">{componentToEditStock.stock} unidades</span>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-600 dark:text-neutral-300">Nuevo stock en unidades:</label>
+              <input
+                type="number"
+                min="0"
+                value={newStockValue}
+                onChange={(e) => setNewStockValue(Math.max(0, parseInt(e.target.value) || 0))}
+                className={`${fieldClass} w-full`}
+                disabled={isUpdatingStock}
+                placeholder="Ej. 15"
+              />
+            </div>
+
+            {actionError && (
+              <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs font-medium text-red-400 leading-normal">
+                {actionError}
+              </div>
+            )}
+
+            {actionSuccess && (
+              <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-xs font-medium text-emerald-600 dark:text-emerald-400 leading-normal">
+                {actionSuccess}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setComponentToEditStock(null);
+                  setActionError(null);
+                  setActionSuccess(null);
+                }}
+                disabled={isUpdatingStock}
+                className="rounded-lg px-5 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 dark:text-neutral-400 dark:hover:bg-neutral-900 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <Button
+                type="button"
+                onClick={() => void handleUpdateStock()}
+                disabled={isUpdatingStock}
+                className="bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold border-0 h-10 px-6 shadow-lg shadow-teal-500/15"
+              >
+                {isUpdatingStock ? 'Actualizando...' : 'Guardar stock'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </PageCard>
   );
 };
