@@ -26,6 +26,7 @@ export type AuthUser = {
   lastName: string | null;
   phone: string | null;
   isActive: boolean;
+  isVerified: boolean;
 };
 
 export type AuthResponse = {
@@ -41,6 +42,7 @@ export type BackendUser = {
   phone: string | null;
   role: BackendRole;
   isActive: boolean;
+  isVerified: boolean;
   createdAt?: string;
 };
 

@@ -4,9 +4,7 @@ import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, User, Phone } from 'lucide-
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { Button } from '../../components/ui/Button';
 import { FormInput } from '../../components/ui/FormInput';
-import { registerUser, roleHomeRoutes, saveSession, normalizeBackendUser } from '../../services/authService';
-import { updateUser } from '../../services/usersService';
-import { updateStoredSession } from '../../services/session';
+import { registerUser, roleHomeRoutes, saveSession } from '../../services/authService';
 import {
   initGoogleSdk,
   initFacebookSdk,
@@ -104,29 +102,15 @@ export const RegisterPage = () => {
   const onSubmit = async (values: RegisterFormValues) => {
     try {
       setFormError('');
-      
-      const session = await registerUser(values);
-      saveSession(session);
-
-      if (values.firstName?.trim() || values.lastName?.trim() || values.phone?.trim()) {
-        try {
-          const updatedUser = await updateUser('me', {
-            firstName: values.firstName?.trim() || undefined,
-            lastName: values.lastName?.trim() || undefined,
-            phone: values.phone?.trim() || undefined,
-          });
-
-          updateStoredSession({
-            accessToken: session.accessToken,
-            user: normalizeBackendUser(updatedUser),
-          });
-        } catch (profileError) {
-          console.error('Error al actualizar datos de perfil tras registro:', profileError);
-        }
-      }
-
-      const redirect = searchParams.get('redirect');
-      navigate(redirect || roleHomeRoutes[session.user.role]);
+      await registerUser(values);
+      navigate('/verificar-cuenta', {
+        state: {
+          email: values.email,
+          firstName: values.firstName,
+          lastName: values.lastName,
+          phone: values.phone,
+        },
+      });
     } catch (err: any) {
       setFormError(
         err.response?.data?.message ||

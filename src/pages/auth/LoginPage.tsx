@@ -102,8 +102,13 @@ export const LoginPage = () => {
       const redirect = searchParams.get('redirect');
       navigate(redirect || roleHomeRoutes[session.user.role]);
     } catch (err: any) {
+      const msg = err.response?.data?.message || '';
+      if (err.response?.status === 403 && (msg.includes('verificada') || msg.includes('OTP'))) {
+        navigate('/verificar-cuenta', { state: { email: values.email } });
+        return;
+      }
       setFormError(
-        err.response?.data?.message ||
+        msg ||
         'No se pudo iniciar sesion. Revisa tus credenciales o el rol asignado en el sistema.'
       );
     }

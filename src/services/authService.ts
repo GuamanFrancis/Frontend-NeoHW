@@ -9,7 +9,7 @@ import type {
   RegisterFormValues,
 } from '../types/auth';
 
-export { normalizeAuthResponse, normalizeBackendUser, roleHomeRoutes } from './authMapper';
+export { normalizeAuthResponse, normalizeBackendUser, roleHomeRoutes, backendRoleToUserRole } from './authMapper';
 
 export const loginUser = async (values: LoginFormValues): Promise<AuthResponse> => {
   const { data } = await api.post<BackendAuthResponse>('/auth/login', {
@@ -36,13 +36,13 @@ export const loginWithFacebook = async (token: string): Promise<AuthResponse> =>
   return normalizeAuthResponse(data);
 };
 
-export const registerUser = async (values: RegisterFormValues): Promise<AuthResponse> => {
-  const { data } = await api.post<BackendAuthResponse>('/auth/register', {
+export const registerUser = async (values: RegisterFormValues): Promise<{ message: string }> => {
+  const { data } = await api.post<{ message: string }>('/auth/register', {
     email: values.email,
     password: values.password,
   });
 
-  return normalizeAuthResponse(data);
+  return data;
 };
 
 export const saveSession = (session: AuthResponse, remember = true) => {
@@ -62,4 +62,39 @@ export const logoutUser = async () => {
 export const getMyProfile = async (): Promise<BackendUser> => {
   const { data } = await api.get<{ user: BackendUser }>('/auth/me');
   return data.user;
+};
+
+export const requestOtp = async (
+  email: string,
+  purpose: 'ACCOUNT_VERIFICATION' | 'PASSWORD_RESET'
+): Promise<{ message: string }> => {
+  const { data } = await api.post<{ message: string }>('/auth/request-otp', {
+    email,
+    purpose,
+  });
+  return data;
+};
+
+export const verifyAccountOtp = async (
+  email: string,
+  code: string
+): Promise<AuthResponse> => {
+  const { data } = await api.post<BackendAuthResponse>('/auth/verify-account', {
+    email,
+    code,
+  });
+  return normalizeAuthResponse(data);
+};
+
+export const resetPasswordOtp = async (
+  email: string,
+  code: string,
+  newPassword: string
+): Promise<{ message: string }> => {
+  const { data } = await api.post<{ message: string }>('/auth/reset-password', {
+    email,
+    code,
+    newPassword,
+  });
+  return data;
 };

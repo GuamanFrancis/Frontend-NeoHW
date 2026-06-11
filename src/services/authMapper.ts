@@ -33,6 +33,7 @@ export const normalizeBackendUser = (user: BackendUser) => ({
   lastName: user.lastName,
   phone: user.phone,
   isActive: user.isActive,
+  isVerified: user.isVerified,
 });
 
 export const normalizeAuthResponse = (response: BackendAuthResponse): AuthResponse => ({

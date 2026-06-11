@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { LoginPage } from '../pages/auth/LoginPage';
 import { RegisterPage } from '../pages/auth/RegisterPage';
+import { ForgotPasswordPage } from '../pages/auth/ForgotPasswordPage';
 import { HomePage } from '../pages/home/HomePage';
 import  {ClienteDashboard} from '../pages/cliente/ClienteDashboard';
 import { ClienteCatalogoPage } from '../pages/cliente/ClienteCatalogoPage';
@@ -25,6 +26,7 @@ import { roleHomeRoutes, getMyProfile, normalizeBackendUser } from '../services/
 import { getStoredSession, updateStoredSession, clearStoredSession } from '../services/session';
 import type { UserRole } from '../types/auth';
 import { CheckoutStatusPage } from '../pages/cliente/CheckoutStatus';
+import { VerifyAccountPage } from '../pages/auth/VerifyAccountPage';
 type RequireAuthProps = {
   allowedRoles: UserRole[];
   children: ReactNode;
@@ -33,6 +35,9 @@ const RequireAuth = ({ allowedRoles, children }: RequireAuthProps) => {
   const session = getStoredSession();
   if (!session) {
     return <Navigate to="/login" replace />;
+  }
+  if (!session.user.isVerified) {
+    return <Navigate to="/verificar-cuenta" replace />;
   }
   if (!allowedRoles.includes(session.user.role)) {
     return <Navigate to={roleHomeRoutes[session.user.role]} replace />;
@@ -88,6 +93,8 @@ export default function AppRoutes() {
         <Route path="/" element={<PublicOnlyRoute><HomePage /></PublicOnlyRoute>} />
         <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
         <Route path="/registro" element={<PublicOnlyRoute><RegisterPage /></PublicOnlyRoute>} />
+        <Route path="/verificar-cuenta" element={<VerifyAccountPage />} />
+        <Route path="/recuperar-contrasena" element={<PublicOnlyRoute><ForgotPasswordPage /></PublicOnlyRoute>} />
         <Route path="/simulador" element={<PublicOnlyRoute><SimulatorPage /></PublicOnlyRoute>} />
         <Route path="/success" element={<CheckoutStatusPage type="success" />} />
         <Route path="/cancel" element={<CheckoutStatusPage type="cancel" />} />

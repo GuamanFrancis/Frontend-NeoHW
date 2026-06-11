@@ -5,6 +5,7 @@ import { FormInput } from '../../components/ui/FormInput';
 import { normalizeBackendUser } from '../../services/authService';
 import { getStoredSession, updateStoredSession } from '../../services/session';
 import { updateUser } from '../../services/usersService';
+import { getMyOrders } from '../../services/ordersService';
 
 export const MiCuentaPage = () => {
   const session = getStoredSession();
@@ -15,6 +16,9 @@ export const MiCuentaPage = () => {
   const [formMessage, setFormMessage] = useState('');
   const [formError, setFormError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isCheckingOrders, setIsCheckingOrders] = useState(false);
 
   const getInitials = (first: string, last: string) => {
     const f = first.trim().charAt(0).toUpperCase();
@@ -64,6 +68,27 @@ export const MiCuentaPage = () => {
     }
   };
 
+  const handleDeleteClick = async () => {
+    try {
+      setIsCheckingOrders(true);
+      setFormError('');
+      setFormMessage('');
+      const res = await getMyOrders();
+      const pendingStatuses = ['PENDING_PAYMENT', 'PROCESSING', 'SHIPPED'];
+      const hasPending = res?.data?.some((order) => pendingStatuses.includes(order.status));
+      if (hasPending) {
+        setFormError('No puedes eliminar tu cuenta porque tienes pedidos pendientes (pagos, envíos o entregas en proceso).');
+        return;
+      }
+      setShowDeleteModal(true);
+    } catch (err) {
+      console.error(err);
+      setFormError('Error al verificar el estado de tus pedidos. Intenta nuevamente.');
+    } finally {
+      setIsCheckingOrders(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-6xl pb-16 text-slate-800 dark:text-neutral-100">
       <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 relative overflow-hidden shadow-xl dark:border-neutral-900 dark:bg-neutral-950">
@@ -81,31 +106,44 @@ export const MiCuentaPage = () => {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_2.2fr]">
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 flex flex-col items-center justify-between text-center relative overflow-hidden shadow-xl min-h-[460px] dark:border-neutral-900 dark:bg-neutral-950">
-          <div className="absolute top-0 inset-x-0 h-[120px] bg-gradient-to-b from-teal-500/5 to-transparent pointer-events-none" />
-          
-          <div className="flex flex-col items-center mt-6">
-            <div className="relative flex h-32 w-32 items-center justify-center rounded-full bg-slate-100 border border-slate-200 text-3xl font-bold text-slate-800 shadow-lg shadow-black/5 ring-4 ring-teal-500/25 dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:shadow-black/40">
-              <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-teal-500/10 to-transparent pointer-events-none animate-pulse" />
-              {getInitials(firstName, lastName)}
+        <div className="flex flex-col gap-6">
+          <div className="rounded-2xl border border-slate-200 bg-white p-8 flex flex-col items-center justify-between text-center relative overflow-hidden shadow-xl min-h-[460px] dark:border-neutral-900 dark:bg-neutral-950">
+            <div className="absolute top-0 inset-x-0 h-[120px] bg-gradient-to-b from-teal-500/5 to-transparent pointer-events-none" />
+            
+            <div className="flex flex-col items-center mt-6">
+              <div className="relative flex h-32 w-32 items-center justify-center rounded-full bg-slate-100 border border-slate-200 text-3xl font-bold text-slate-800 shadow-lg shadow-black/5 ring-4 ring-teal-500/25 dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:shadow-black/40">
+                <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-teal-500/10 to-transparent pointer-events-none animate-pulse" />
+                {getInitials(firstName, lastName)}
+              </div>
+              
+              <h2 className="mt-6 text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                {firstName || lastName ? `${firstName} ${lastName}`.trim() : 'Usuario'}
+              </h2>
+              
+              <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-teal-500/25 bg-teal-500/10 px-4 py-1.5 text-xs font-bold text-teal-600 dark:text-teal-400">
+                <User className="h-3.5 w-3.5" />
+                {getRoleLabel(session?.user.role ?? 'cliente')}
+              </div>
             </div>
-            
-            <h2 className="mt-6 text-xl font-bold text-slate-900 dark:text-white tracking-tight">
-              {firstName || lastName ? `${firstName} ${lastName}`.trim() : 'Usuario'}
-            </h2>
-            
-            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-teal-500/25 bg-teal-500/10 px-4 py-1.5 text-xs font-bold text-teal-600 dark:text-teal-400">
-              <User className="h-3.5 w-3.5" />
-              {getRoleLabel(session?.user.role ?? 'cliente')}
+
+            <div className="mt-8 pt-6 border-t border-slate-100 w-full flex items-center justify-center gap-3 text-left dark:border-neutral-900/65">
+              <ShieldCheck className="h-5 w-5 text-teal-650 dark:text-teal-400 shrink-0" />
+              <p className="text-xs text-slate-500 dark:text-neutral-400 font-medium leading-relaxed">
+                Manten tu informacion actualizada para una mejor experiencia en NeoHW.
+              </p>
             </div>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-slate-100 w-full flex items-center justify-center gap-3 text-left dark:border-neutral-900/65">
-            <ShieldCheck className="h-5 w-5 text-teal-650 dark:text-teal-400 shrink-0" />
-            <p className="text-xs text-slate-500 dark:text-neutral-400 font-medium leading-relaxed">
-              Manten tu informacion actualizada para una mejor experiencia en NeoHW.
-            </p>
-          </div>
+          {session?.user.role === 'cliente' && (
+            <Button
+              type="button"
+              onClick={() => void handleDeleteClick()}
+              disabled={isCheckingOrders}
+              className="w-full bg-red-600 hover:bg-red-550 text-white font-extrabold border-0 h-11 shadow-lg shadow-red-650/15"
+            >
+              {isCheckingOrders ? 'Verificando pedidos...' : 'Eliminar cuenta'}
+            </Button>
+          )}
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 flex flex-col justify-between shadow-xl dark:border-neutral-900 dark:bg-neutral-950">
@@ -197,6 +235,51 @@ export const MiCuentaPage = () => {
           </div>
         </div>
       </div>
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-neutral-900 dark:bg-neutral-950">
+            <h3 className="text-lg font-bold text-red-650 dark:text-red-400">¿Estás absolutamente seguro?</h3>
+            <p className="mt-2 text-sm text-slate-500 dark:text-neutral-400 font-medium leading-relaxed">
+              Esta acción es irreversible y se eliminarán todos los datos asociados a tu perfil.
+            </p>
+            <p className="mt-4 text-xs font-bold text-slate-700 dark:text-neutral-300">
+              Para confirmar, por favor escribe <span className="text-red-500 font-black">ELIMINAR</span> a continuación:
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-red-500 dark:border-neutral-800 dark:bg-neutral-900 dark:text-white"
+              placeholder="ELIMINAR"
+            />
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmText('');
+                }}
+                className="rounded-lg px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 dark:text-neutral-400 dark:hover:bg-neutral-900"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={deleteConfirmText !== 'ELIMINAR'}
+                onClick={() => {
+                  alert('Cuenta eliminada exitosamente (Simulado)');
+                  setShowDeleteModal(false);
+                  setDeleteConfirmText('');
+                }}
+                className="rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-550 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Confirmar eliminación
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
