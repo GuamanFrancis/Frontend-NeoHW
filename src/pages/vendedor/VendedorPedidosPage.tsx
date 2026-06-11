@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Eye, Filter, Pencil, Search, Truck, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Eye, Filter, Search, Truck, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { PageCard } from '../../components/ui/PageCard';
 import { Modal } from '../../components/ui/Modal';
@@ -17,13 +17,6 @@ const statusStyles: Record<SellerOrderStatus, string> = {
   Cancelado: 'bg-rose-400/10 text-rose-700 ring-rose-500/20 dark:bg-rose-500/15 dark:text-rose-200',
 };
 
-const uiStatusToBackend: Record<SellerOrderStatus, string> = {
-  Pendiente: 'PENDING_PAYMENT',
-  'En proceso': 'PROCESSING',
-  Enviado: 'SHIPPED',
-  Entregado: 'DELIVERED',
-  Cancelado: 'CANCELLED',
-};
 
 const backendStatusToUi: Record<string, SellerOrderStatus> = {
   PENDING_PAYMENT: 'Pendiente',
@@ -91,8 +84,10 @@ export const VendedorPedidosPage = () => {
   const [pageSize, setPageSize] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState<MappedSellerOrder | null>(null);
-  const [modalMode, setModalMode] = useState<'view' | 'edit' | null>(null);
-  const [editStatus, setEditStatus] = useState<SellerOrderStatus>('Pendiente');
+  const [modalMode, setModalMode] = useState<'view' | null>(null);
+  const [orderToCancel, setOrderToCancel] = useState<MappedSellerOrder | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   const [orderToDispatch, setOrderToDispatch] = useState<MappedSellerOrder | null>(null);
   const [dispatchFile, setDispatchFile] = useState<File | null>(null);
@@ -314,35 +309,49 @@ export const VendedorPedidosPage = () => {
     }
   };
 
-  const handleUpdateStatus = async (orderId: string, newStatus: SellerOrderStatus) => {
+  const handleOpenCancelModal = (order: MappedSellerOrder) => {
+    setOrderToCancel(order);
+    setCancelError(null);
+    setIsCancelling(false);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!orderToCancel) return;
+    setCancelError(null);
+    setIsCancelling(true);
+
+    const isMock = orderToCancel.id.startsWith('#NHW-');
+    if (isMock) {
+      setOrders((current) =>
+        current.map((o) => (o.id === orderToCancel.id ? { ...o, status: 'Cancelado' } : o))
+      );
+      setOrderToCancel(null);
+      setIsCancelling(false);
+      return;
+    }
+
     try {
-      const isMock = orderId.startsWith('#NHW-');
-      if (isMock) {
-        setOrders((current) =>
-          current.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
-        );
-      } else {
-        const backendStatus = uiStatusToBackend[newStatus];
-        await updateOrderStatus(orderId, backendStatus);
-        updateLocalOrder(orderId, backendStatus);
-        await loadOrders();
+      if (orderToCancel.status === 'Entregado' || orderToCancel.status === 'Cancelado') {
+        throw new Error('No se puede cancelar un pedido que ya está entregado o cancelado.');
       }
-      setModalMode(null);
-      setSelectedOrder(null);
-    } catch {
-      alert('No se pudo actualizar el estado del pedido.');
+
+      await updateOrderStatus(orderToCancel.id, 'CANCELLED');
+      updateLocalOrder(orderToCancel.id, 'CANCELLED');
+      await loadOrders();
+      setOrderToCancel(null);
+    } catch (err) {
+      console.error(err);
+      const errorMsg = err as { response?: { data?: { message?: string | string[] } }; message: string };
+      const backendMsg = errorMsg.response?.data?.message || errorMsg.message;
+      setCancelError(Array.isArray(backendMsg) ? backendMsg.join(', ') : backendMsg);
+    } finally {
+      setIsCancelling(false);
     }
   };
 
   const openViewModal = (order: MappedSellerOrder) => {
     setSelectedOrder(order);
     setModalMode('view');
-  };
-
-  const openEditModal = (order: MappedSellerOrder) => {
-    setSelectedOrder(order);
-    setEditStatus(order.status);
-    setModalMode('edit');
   };
 
   const filteredOrders = useMemo(() => {
@@ -477,7 +486,6 @@ export const VendedorPedidosPage = () => {
                       <td className="px-4 py-3">
                         <div className="flex items-baseline gap-1.5">
                           <p className="font-medium text-slate-800 dark:text-neutral-200">{order.clientName}</p>
-                          {/* Destacar pedidos nuevos creados hace menos de 24 horas (HU-012) */}
                           {new Date(order.createdAt).getTime() > Date.now() - 24 * 60 * 60 * 1000 && (
                             <span className="relative flex h-2 w-2 shrink-0">
                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -518,14 +526,6 @@ export const VendedorPedidosPage = () => {
                           <button
                             type="button"
                             className={actionButtonClass}
-                            onClick={() => openEditModal(order)}
-                            aria-label={`Editar ${order.id}`}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            className={actionButtonClass}
                             onClick={() => handleOpenDispatchModal(order)}
                             disabled={order.status !== 'En proceso'}
                             title="Preparar Envío"
@@ -542,6 +542,16 @@ export const VendedorPedidosPage = () => {
                             aria-label={`Entregar ${order.id}`}
                           >
                             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                          </button>
+                          <button
+                            type="button"
+                            className={actionButtonClass}
+                            onClick={() => handleOpenCancelModal(order)}
+                            disabled={order.status === 'Entregado' || order.status === 'Cancelado'}
+                            title="Cancelar Pedido"
+                            aria-label={`Cancelar ${order.id}`}
+                          >
+                            <XCircle className="h-4 w-4 text-rose-500" />
                           </button>
                         </div>
                       </td>
@@ -713,68 +723,6 @@ export const VendedorPedidosPage = () => {
       </Modal>
 
       <Modal
-        open={modalMode === 'edit' && Boolean(selectedOrder)}
-        title="Modificar Estado del Pedido"
-        text="Selecciona el nuevo estado para este pedido en el flujo de despacho."
-        onClose={() => setModalMode(null)}
-        footer={
-          <>
-            <Button type="button" variant="ghost" onClick={() => setModalMode(null)}>
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              onClick={() => selectedOrder && void handleUpdateStatus(selectedOrder.id, editStatus)}
-            >
-              Actualizar Estado
-            </Button>
-          </>
-        }
-      >
-        {selectedOrder && (
-          <div className="space-y-4">
-            <div className="rounded-lg bg-slate-50 p-3 dark:bg-white/[0.02] text-sm">
-              <p className="text-xs text-slate-500 dark:text-neutral-400">Pedido actual</p>
-              <p className="font-semibold text-slate-900 dark:text-white mt-0.5">{selectedOrder.id}</p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-2">Cliente</p>
-              <p className="font-medium text-slate-800 dark:text-neutral-300 mt-0.5">{selectedOrder.clientName}</p>
-            </div>
-
-             {selectedOrder.status === 'Pendiente' && (
-              <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-amber-600 text-xs font-semibold leading-relaxed">
-                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500 mt-0.5" />
-                <span>Este pedido está pendiente de pago. Solo el cliente mediante Stripe puede marcarlo como "En proceso". Evita forzar este estado manualmente.</span>
-              </div>
-            )}
-
-            <label className="block space-y-1">
-              <span className="text-sm font-semibold text-slate-700 dark:text-neutral-300">Nuevo Estado</span>
-              <select
-                className={`${fieldClass} w-full`}
-                value={editStatus}
-                onChange={(event) => setEditStatus(event.target.value as SellerOrderStatus)}
-              >
-                {selectedOrder.status === 'Pendiente' ? (
-                  <>
-                    <option value="Pendiente">Pendiente (Esperando pago)</option>
-                    <option value="Cancelado">Cancelado</option>
-                  </>
-                ) : (
-                  <>
-                    <option value="En proceso">En proceso (Pagado)</option>
-                    <option value="Enviado">Enviado (Despachado)</option>
-                    <option value="Entregado">Entregado</option>
-                    <option value="Cancelado">Cancelado</option>
-                  </>
-                )}
-              </select>
-            </label>
-          </div>
-        )}
-      </Modal>
-
-      {/* Modal Premium para Confirmación de Despacho (HU-012) */}
-      <Modal
         open={!!orderToDispatch}
         title="Preparar Despacho del Pedido"
         onClose={() => setOrderToDispatch(null)}
@@ -795,7 +743,6 @@ export const VendedorPedidosPage = () => {
               </div>
             </div>
 
-            {/* Checklist de requisitos de negocio */}
             <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-neutral-800 dark:bg-neutral-900/40 text-xs font-semibold space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">Requisito 1: Pago y Estado</span>
@@ -856,7 +803,7 @@ export const VendedorPedidosPage = () => {
                 type="button"
                 onClick={() => void handleConfirmDispatch()}
                 disabled={isDispatching || orderToDispatch.status !== 'En proceso' || !dispatchFile}
-                className="bg-teal-500 hover:bg-teal-600 text-white font-extrabold"
+                className="bg-teal-500 hover:bg-teal-650 text-white font-extrabold"
               >
                 {isDispatching ? 'Despachando...' : 'Confirmar Envío'}
               </Button>
@@ -865,7 +812,6 @@ export const VendedorPedidosPage = () => {
         )}
       </Modal>
 
-      {/* Modal Premium para Confirmación de Entrega (DELIVERED) */}
       <Modal
         open={!!orderToDeliver}
         title="Registrar Entrega del Pedido"
@@ -887,7 +833,6 @@ export const VendedorPedidosPage = () => {
               </div>
             </div>
 
-            {/* Checklist de requisitos de entrega */}
             <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-neutral-800 dark:bg-neutral-900/40 text-xs font-semibold space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">Estado del Pedido</span>
@@ -898,7 +843,6 @@ export const VendedorPedidosPage = () => {
                 )}
               </div>
 
-              {/* Documento 1: Foto de Entrega */}
               <div className="border-t border-slate-200/40 dark:border-neutral-800 pt-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-slate-500">1. Foto de la Entrega (DELIVERY_PHOTO)</span>
@@ -922,7 +866,6 @@ export const VendedorPedidosPage = () => {
                 />
               </div>
 
-              {/* Documento 2: Firma del Cliente */}
               <div className="border-t border-slate-200/40 dark:border-neutral-800 pt-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-slate-500">2. Firma del Cliente (CUSTOMER_SIGNATURE)</span>
@@ -967,9 +910,59 @@ export const VendedorPedidosPage = () => {
                 type="button"
                 onClick={() => void handleConfirmDelivery()}
                 disabled={isDelivering || orderToDeliver.status !== 'Enviado' || !deliveryPhotoFile || !customerSignatureFile}
-                className="bg-teal-500 hover:bg-teal-600 text-white font-extrabold"
+                className="bg-teal-500 hover:bg-teal-650 text-white font-extrabold"
               >
                 {isDelivering ? 'Procesando...' : 'Confirmar Entrega'}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={!!orderToCancel}
+        title="Cancelar Pedido de Cliente"
+        onClose={() => setOrderToCancel(null)}
+      >
+        {orderToCancel && (
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 shrink-0">
+                <XCircle className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">
+                  ¿Confirmas la cancelación del pedido {orderToCancel.id}?
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">
+                  Esta acción actualizará el estado del pedido a <span className="font-bold text-rose-500">Cancelado (CANCELLED)</span> y liberará los recursos. Esta acción no se puede deshacer.
+                </p>
+              </div>
+            </div>
+
+            {cancelError && (
+              <div className="flex items-start gap-2.5 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-red-600 dark:text-red-300 text-xs font-semibold">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-red-500 mt-0.5" />
+                <span>{cancelError}</span>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-neutral-900">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setOrderToCancel(null)}
+                disabled={isCancelling}
+              >
+                Cerrar
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void handleConfirmCancel()}
+                disabled={isCancelling}
+                className="bg-rose-500 hover:bg-rose-650 text-white font-extrabold"
+              >
+                {isCancelling ? 'Cancelando...' : 'Confirmar Cancelación'}
               </Button>
             </div>
           </div>
