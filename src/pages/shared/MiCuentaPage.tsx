@@ -3,8 +3,8 @@ import { Save, User, Mail, Phone, ShieldCheck, Lock } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { FormInput } from '../../components/ui/FormInput';
 import { normalizeBackendUser } from '../../services/authService';
-import { getStoredSession, updateStoredSession } from '../../services/session';
-import { updateUser } from '../../services/usersService';
+import { getStoredSession, updateStoredSession, clearStoredSession } from '../../services/session';
+import { updateUser, deactivateUser } from '../../services/usersService';
 import { getMyOrders } from '../../services/ordersService';
 
 export const MiCuentaPage = () => {
@@ -19,6 +19,7 @@ export const MiCuentaPage = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isCheckingOrders, setIsCheckingOrders] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const getInitials = (first: string, last: string) => {
     const f = first.trim().charAt(0).toUpperCase();
@@ -266,15 +267,26 @@ export const MiCuentaPage = () => {
               </button>
               <button
                 type="button"
-                disabled={deleteConfirmText !== 'ELIMINAR'}
-                onClick={() => {
-                  alert('Cuenta eliminada exitosamente (Simulado)');
-                  setShowDeleteModal(false);
-                  setDeleteConfirmText('');
+                disabled={deleteConfirmText !== 'ELIMINAR' || isDeleting}
+                onClick={async () => {
+                  try {
+                    setIsDeleting(true);
+                    setFormError('');
+                    await deactivateUser('me');
+                    clearStoredSession();
+                    window.location.href = '/login';
+                  } catch (err) {
+                    console.error(err);
+                    setFormError('No se pudo eliminar la cuenta. Por favor verifica tu conexión e intenta nuevamente.');
+                    setShowDeleteModal(false);
+                  } finally {
+                    setIsDeleting(false);
+                    setDeleteConfirmText('');
+                  }
                 }}
                 className="rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-550 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Confirmar eliminación
+                {isDeleting ? 'Eliminando...' : 'Confirmar eliminación'}
               </button>
             </div>
           </div>
