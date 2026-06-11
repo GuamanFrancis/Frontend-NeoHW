@@ -52,6 +52,8 @@ export const updateStoredSession = (session: AuthResponse) => {
       firstName: session.user.firstName ?? currentSession.user.firstName,
       lastName: session.user.lastName ?? currentSession.user.lastName,
       phone: session.user.phone ?? currentSession.user.phone,
+      isVerified: session.user.isVerified ?? currentSession.user.isVerified,
+      isActive: session.user.isActive ?? currentSession.user.isActive,
     };
 
     const fullName = [mergedUser.firstName, mergedUser.lastName].filter(Boolean).join(' ').trim();
