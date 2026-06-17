@@ -34,7 +34,7 @@ export const normalizeProduct = (product: BackendProduct): CatalogComponent => (
   category: product.category?.name ?? 'Sin categoria',
   categorySlug: product.category?.slug ?? 'sin-categoria',
   categoryId: product.categoryId,
-  brand: product.brand || 'Sin marca',
+  brand: product.brand || '',
   price: product.price,
   stock: product.stock,
   status: stockToStatus(product.stock),

@@ -275,7 +275,7 @@ export const ComponenteDetalleDrawer = ({
                     <span className="font-semibold text-neutral-400">
                       {attr.name}
                     </span>
-                    <span className="font-bold text-neutral-250 text-right">
+                    <span className="font-bold text-neutral-200 text-right">
                       {attr.value} {attr.unit || ''}
                     </span>
                   </div>

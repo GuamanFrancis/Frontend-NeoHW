@@ -160,6 +160,118 @@ export const useAdminCatalog = () => {
   const [attrToDelete, setAttrToDelete] = useState<BackendAttribute | null>(null);
   const [attrToDisassociate, setAttrToDisassociate] = useState<BackendAttribute | null>(null);
 
+  const [formErrors, setFormErrors] = useState<{
+    name?: string;
+    brand?: string;
+    categoryId?: string;
+    price?: string;
+    stock?: string;
+    description?: string;
+    imageUrl?: string;
+  }>({});
+
+  const [attributeErrors, setAttributeErrors] = useState<Record<string, string>>({});
+
+  const [attrErrors, setAttrErrors] = useState<{
+    name?: string;
+    unit?: string;
+    optionsString?: string;
+  }>({});
+
+  const validateField = (field: keyof CatalogFormValues, value: string) => {
+    let error = '';
+    if (field === 'name') {
+      if (!value.trim()) error = 'El nombre es obligatorio.';
+    } else if (field === 'brand') {
+      if (!value.trim()) error = 'La marca es obligatoria.';
+    } else if (field === 'categoryId') {
+      if (!value) error = 'Debes seleccionar una categoría.';
+    } else if (field === 'price') {
+      if (!value.trim()) {
+        error = 'El precio es obligatorio.';
+      } else {
+        const num = Number(value);
+        if (isNaN(num) || num < 0) {
+          error = 'El precio debe ser un número válido mayor o igual a 0.';
+        }
+      }
+    } else if (field === 'stock') {
+      if (!value.trim()) {
+        error = 'El stock es obligatorio.';
+      } else {
+        const num = Number(value);
+        if (!Number.isInteger(num) || num < 0) {
+          error = 'El stock debe ser un número entero mayor o igual a 0.';
+        }
+      }
+    } else if (field === 'description') {
+      if (!value.trim()) error = 'La descripción es obligatoria.';
+    } else if (field === 'imageUrl') {
+      if (!value.trim()) error = 'La URL de la imagen es obligatoria.';
+    }
+
+    setFormErrors(curr => ({ ...curr, [field]: error }));
+  };
+
+  const updateFormField = (field: keyof CatalogFormValues, value: string) => {
+    setFormValues(curr => ({ ...curr, [field]: value }));
+    validateField(field, value);
+  };
+
+  const validateAttributeValue = (attributeId: string, value: string) => {
+    let error = '';
+    const attr = categoryAttributesToFill.find(a => a.id === attributeId);
+    if (attr) {
+      if (!value.trim()) {
+        error = 'Este campo es obligatorio.';
+      } else if (attr.dataType === 'NUMBER') {
+        const num = Number(value);
+        if (isNaN(num)) {
+          error = 'Debe ser un número válido.';
+        }
+      }
+    }
+    setAttributeErrors(curr => ({ ...curr, [attributeId]: error }));
+  };
+
+  const updateAttributeValue = (attributeId: string, value: string) => {
+    setProductAttributesValues(curr => ({ ...curr, [attributeId]: value }));
+    validateAttributeValue(attributeId, value);
+  };
+
+  const validateAttrField = (field: 'name' | 'unit' | 'optionsString', value: string, dataType?: string) => {
+    let error = '';
+    const currentDataType = dataType || attrForm.dataType;
+    if (field === 'name') {
+      if (!value.trim()) {
+        error = 'El nombre es obligatorio.';
+      } else if (value.length > 100) {
+        error = 'El nombre no puede exceder los 100 caracteres.';
+      }
+    } else if (field === 'unit') {
+      if (value.length > 20) {
+        error = 'La unidad no puede exceder los 20 caracteres.';
+      }
+    } else if (field === 'optionsString') {
+      if (['SELECT', 'MULTI_SELECT'].includes(currentDataType) && !value.trim()) {
+        error = 'Debes especificar al menos una opción (separadas por comas).';
+      }
+    }
+    setAttrErrors(curr => ({ ...curr, [field]: error }));
+  };
+
+  const updateAttrFormField = (field: 'name' | 'unit' | 'optionsString' | 'dataType', value: any) => {
+    setAttrForm(curr => {
+      const next = { ...curr, [field]: value };
+      if (field === 'dataType') {
+        validateAttrField('optionsString', next.optionsString, value);
+      } else {
+        validateAttrField(field, value);
+      }
+      return next;
+    });
+  };
+
   useEffect(() => {
     let isMounted = true;
 
@@ -318,6 +430,8 @@ export const useAdminCatalog = () => {
     setCategoryAttributesToFill([]);
     setProductAttributesValues({});
     setModalError('');
+    setFormErrors({});
+    setAttributeErrors({});
     setIsSaving(false);
   };
 
@@ -326,6 +440,8 @@ export const useAdminCatalog = () => {
     setFormValues(emptyForm);
     setCategoryAttributesToFill([]);
     setProductAttributesValues({});
+    setFormErrors({});
+    setAttributeErrors({});
     setSelectedComponent(null);
     setModalMode('create');
   };
@@ -334,6 +450,8 @@ export const useAdminCatalog = () => {
     setModalError('');
     setSelectedComponent(component);
     setFormValues(mapComponentToForm(component));
+    setFormErrors({});
+    setAttributeErrors({});
     setModalMode('edit');
     try {
       const attrs = await getAttributesByCategory(component.categoryId);
@@ -350,8 +468,9 @@ export const useAdminCatalog = () => {
   };
 
   const handleCategoryChange = async (categoryId: string) => {
-    setFormValues((current) => ({ ...current, categoryId }));
+    updateFormField('categoryId', categoryId);
     setProductAttributesValues({});
+    setAttributeErrors({});
     if (!categoryId) {
       setCategoryAttributesToFill([]);
       return;
@@ -392,30 +511,65 @@ export const useAdminCatalog = () => {
     const price = Number(formValues.price);
     const stock = Number(formValues.stock);
 
-    if (
-      !formValues.name.trim() ||
-      !formValues.brand.trim() ||
-      !formValues.categoryId ||
-      !formValues.price.trim() ||
-      !formValues.stock.trim() ||
-      !formValues.description.trim() ||
-      !formValues.imageUrl.trim() ||
-      !Number.isFinite(price) ||
-      price < 0 ||
-      !Number.isFinite(stock) ||
-      stock < 0
-    ) {
-      setModalError('Por favor, completa todos los campos del formulario (incluyendo la descripción y la imagen) con valores válidos.');
-      return;
+    const newFormErrors: typeof formErrors = {};
+    let hasErrors = false;
+
+    if (!formValues.name.trim()) {
+      newFormErrors.name = 'El nombre es obligatorio.';
+      hasErrors = true;
+    }
+    if (!formValues.brand.trim()) {
+      newFormErrors.brand = 'La marca es obligatoria.';
+      hasErrors = true;
+    }
+    if (!formValues.categoryId) {
+      newFormErrors.categoryId = 'Debes seleccionar una categoría.';
+      hasErrors = true;
+    }
+    if (!formValues.price.trim()) {
+      newFormErrors.price = 'El precio es obligatorio.';
+      hasErrors = true;
+    } else if (isNaN(price) || price < 0) {
+      newFormErrors.price = 'El precio debe ser un número válido mayor o igual a 0.';
+      hasErrors = true;
+    }
+    if (!formValues.stock.trim()) {
+      newFormErrors.stock = 'El stock es obligatorio.';
+      hasErrors = true;
+    } else if (!Number.isInteger(stock) || stock < 0) {
+      newFormErrors.stock = 'El stock debe ser un número entero mayor o igual a 0.';
+      hasErrors = true;
+    }
+    if (!formValues.description.trim()) {
+      newFormErrors.description = 'La descripción es obligatoria.';
+      hasErrors = true;
+    }
+    if (!formValues.imageUrl.trim()) {
+      newFormErrors.imageUrl = 'La URL de la imagen es obligatoria.';
+      hasErrors = true;
     }
 
-    const missingAttr = categoryAttributesToFill.some(attr => {
-      const val = productAttributesValues[attr.id];
-      return !val || !val.trim();
+    setFormErrors(newFormErrors);
+
+    const newAttrErrors: Record<string, string> = {};
+    categoryAttributesToFill.forEach(attr => {
+      const val = productAttributesValues[attr.id] ?? '';
+      if (!val.trim()) {
+        newAttrErrors[attr.id] = 'Este campo es obligatorio.';
+        hasErrors = true;
+      } else if (attr.dataType === 'NUMBER') {
+        const num = Number(val);
+        if (isNaN(num)) {
+          newAttrErrors[attr.id] = 'Debe ser un número válido.';
+          hasErrors = true;
+        }
+      }
     });
 
-    if (missingAttr) {
-      setModalError('Por favor, completa todas las especificaciones técnicas asociadas a la categoría.');
+    setAttributeErrors(newAttrErrors);
+
+    if (hasErrors) {
+      setModalError('Por favor, completa todos los campos obligatorios con valores válidos.');
       return;
     }
 
@@ -506,6 +660,7 @@ export const useAdminCatalog = () => {
     setAttrForm({ name: '', slug: '', dataType: 'TEXT', unit: '', optionsString: '' });
     setSelectedAttribute(null);
     setAttrModalError('');
+    setAttrErrors({});
     setAttrModalMode('create');
   };
 
@@ -519,12 +674,25 @@ export const useAdminCatalog = () => {
       optionsString: attr.options ? attr.options.join(', ') : '',
     });
     setAttrModalError('');
+    setAttrErrors({});
     setAttrModalMode('edit');
   };
 
   const saveAttribute = async () => {
-    if (!attrForm.name.trim()) {
-      setAttrModalError('El nombre es obligatorio.');
+    const hasNameError = !attrForm.name.trim();
+    const hasOptionsError = ['SELECT', 'MULTI_SELECT'].includes(attrForm.dataType) && !attrForm.optionsString.trim();
+    const hasUnitError = attrForm.unit.length > 20;
+
+    const newErrors = {
+      name: hasNameError ? 'El nombre es obligatorio.' : attrForm.name.length > 100 ? 'El nombre no puede exceder los 100 caracteres.' : undefined,
+      unit: hasUnitError ? 'La unidad no puede exceder los 20 caracteres.' : undefined,
+      optionsString: hasOptionsError ? 'Debes especificar al menos una opción (separadas por comas).' : undefined,
+    };
+
+    setAttrErrors(newErrors);
+
+    if (newErrors.name || newErrors.unit || newErrors.optionsString) {
+      setAttrModalError('Por favor, completa todos los campos obligatorios con valores válidos.');
       return;
     }
     const options = ['SELECT', 'MULTI_SELECT'].includes(attrForm.dataType)
@@ -746,6 +914,12 @@ export const useAdminCatalog = () => {
     productAttributesValues,
     attrToDelete,
     attrToDisassociate,
+    formErrors,
+    updateFormField,
+    attributeErrors,
+    updateAttributeValue,
+    attrErrors,
+    updateAttrFormField,
     setSearch,
     setCategoryFilter,
     setStatusFilter,

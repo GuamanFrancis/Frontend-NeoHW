@@ -49,20 +49,23 @@ export const AdminCatalogoPage = () => {
     setAttrToDelete,
     attrToDisassociate,
     setAttrToDisassociate,
+    formErrors,
+    updateFormField,
+    attributeErrors,
+    updateAttributeValue,
+    attrErrors,
+    updateAttrFormField,
     setSearch,
     setCategoryFilter,
     setStatusFilter,
     setPageSize,
     setCurrentPage,
-    setFormValues,
     setCatModalMode,
     setCatForm,
     setRuleModalMode,
     setRuleForm,
     setSelectedCategoryIdForAttr,
     setAttrModalMode,
-    setAttrForm,
-    setProductAttributesValues,
     categorySelectOptions,
     categoryFilterOptions,
     filteredComponents,
@@ -186,12 +189,10 @@ export const AdminCatalogoPage = () => {
           modalMode={modalMode}
           modalError={modalError}
           formValues={formValues}
-          setFormValues={setFormValues}
           selectedComponent={selectedComponent}
           categorySelectOptions={categorySelectOptions}
           categoryAttributesToFill={categoryAttributesToFill}
           productAttributesValues={productAttributesValues}
-          setProductAttributesValues={setProductAttributesValues}
           resetFilters={resetFilters}
           closeModal={closeModal}
           openEditModal={openEditModal}
@@ -201,6 +202,10 @@ export const AdminCatalogoPage = () => {
           saveComponent={saveComponent}
           removeComponent={removeComponent}
           categoryFilterOptions={categoryFilterOptions}
+          formErrors={formErrors}
+          updateFormField={updateFormField}
+          attributeErrors={attributeErrors}
+          updateAttributeValue={updateAttributeValue}
         />
       )}
 
@@ -213,7 +218,6 @@ export const AdminCatalogoPage = () => {
           attrModalMode={attrModalMode}
           setAttrModalMode={setAttrModalMode}
           attrForm={attrForm}
-          setAttrForm={setAttrForm}
           attrModalError={attrModalError}
           isSavingAttr={isSavingAttr}
           attrToDelete={attrToDelete}
@@ -229,6 +233,8 @@ export const AdminCatalogoPage = () => {
           associateAttr={associateAttr}
           disassociateAttr={disassociateAttr}
           handleConfirmDisassociateAttribute={handleConfirmDisassociateAttribute}
+          attrErrors={attrErrors}
+          updateAttrFormField={updateAttrFormField}
         />
       )}
 

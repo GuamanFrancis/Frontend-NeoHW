@@ -220,7 +220,7 @@ export const MiCuentaPage = () => {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold dark:text-neutral-400">
                 <Lock className="h-4 w-4 text-teal-650 shrink-0 dark:text-teal-400" />
-                <span>Tu informacion esta segura con nosotros. No compartimos tus datos con terceros.</span>
+                <span>Tu informacion esta segura con nosotros.</span>
               </div>
               
               <Button 

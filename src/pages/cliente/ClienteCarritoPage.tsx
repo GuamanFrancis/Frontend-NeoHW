@@ -203,7 +203,7 @@ export const ClienteCarritoPage = () => {
       <div className="mx-auto max-w-7xl pb-16 text-slate-900 dark:text-neutral-100">
         <div className="mb-8 border-b border-slate-100 dark:border-neutral-900 pb-6">
           <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white leading-none">
-            Gestionar carrito de compras
+            Carrito de compras
           </h1>
           <p className="text-sm text-slate-500 dark:text-neutral-400 mt-2 font-medium">
             Revisa los productos que agregaste, actualiza cantidades y continúa para finalizar tu compra.
@@ -234,7 +234,7 @@ export const ClienteCarritoPage = () => {
     <div className="mx-auto max-w-7xl pb-16 text-slate-900 dark:text-neutral-100">
       <div className="mb-6 border-b border-slate-100 dark:border-neutral-900 pb-6">
         <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white leading-none">
-          Gestionar carrito de compras
+          Carrito de compras
         </h1>
         <p className="text-sm text-slate-500 dark:text-neutral-400 mt-2 font-medium">
           Revisa los productos que agregaste, actualiza cantidades y continúa para finalizar tu compra.
@@ -280,9 +280,11 @@ export const ClienteCarritoPage = () => {
                             >
                               {product.name}
                             </h4>
-                            <div className="text-[10px] text-slate-400 dark:text-neutral-500 font-bold mt-0.5 uppercase tracking-wider">
-                              {product.category} • {product.brand}
-                            </div>
+                            {product.category && product.category !== 'Sin categoria' && product.category !== 'Sin categoría' && (
+                              <div className="text-[10px] text-slate-400 dark:text-neutral-500 font-bold mt-0.5 uppercase tracking-wider">
+                                {product.category}
+                              </div>
+                            )}
                             {product.sku && (
                               <div className="text-[10px] text-slate-400 dark:text-neutral-500 font-medium mt-1">
                                 SKU: {product.sku}

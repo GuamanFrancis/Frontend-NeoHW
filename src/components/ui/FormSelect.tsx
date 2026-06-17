@@ -25,7 +25,7 @@ export const FormSelect = forwardRef<HTMLSelectElement, FormSelectProps>(
             {...props}
           >
             {options.map((option) => (
-              <option key={option.value} value={option.value}>
+              <option key={option.value} value={option.value} className="bg-white text-slate-950 dark:bg-neutral-900 dark:text-white">
                 {option.label}
               </option>
             ))}

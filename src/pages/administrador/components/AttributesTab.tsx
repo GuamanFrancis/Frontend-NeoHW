@@ -19,13 +19,6 @@ type AttributesTabProps = {
     unit: string;
     optionsString: string;
   };
-  setAttrForm: React.Dispatch<React.SetStateAction<{
-    name: string;
-    slug: string;
-    dataType: AttributeDataType;
-    unit: string;
-    optionsString: string;
-  }>>;
   attrModalError: string;
   isSavingAttr: boolean;
   attrToDelete: BackendAttribute | null;
@@ -41,6 +34,12 @@ type AttributesTabProps = {
   associateAttr: (id: string) => void;
   disassociateAttr: (attr: BackendAttribute) => void;
   handleConfirmDisassociateAttribute: () => void;
+  attrErrors: {
+    name?: string;
+    unit?: string;
+    optionsString?: string;
+  };
+  updateAttrFormField: (field: 'name' | 'unit' | 'optionsString' | 'dataType', value: any) => void;
 };
 
 export const AttributesTab = ({
@@ -51,7 +50,6 @@ export const AttributesTab = ({
   attrModalMode,
   setAttrModalMode,
   attrForm,
-  setAttrForm,
   attrModalError,
   isSavingAttr,
   attrToDelete,
@@ -67,6 +65,8 @@ export const AttributesTab = ({
   associateAttr,
   disassociateAttr,
   handleConfirmDisassociateAttribute,
+  attrErrors,
+  updateAttrFormField,
 }: AttributesTabProps) => {
   return (
     <>
@@ -101,9 +101,9 @@ export const AttributesTab = ({
                   globalAttributes.map((attr) => (
                     <tr key={attr.id} className="transition hover:bg-slate-50 dark:hover:bg-white/[0.02]">
                       <td className="px-3 py-2 font-semibold text-slate-950 dark:text-white">{attr.name}</td>
-                      <td className="px-3 py-2 text-slate-650 dark:text-neutral-455">{attr.slug}</td>
+                      <td className="px-3 py-2 text-slate-500 dark:text-neutral-400">{attr.slug}</td>
                       <td className="px-3 py-2">
-                        <span className="inline-flex rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700 dark:bg-neutral-850 dark:text-neutral-300">
+                        <span className="inline-flex rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700 dark:bg-neutral-800 dark:text-neutral-300">
                           {attr.dataType}
                         </span>
                       </td>
@@ -219,13 +219,14 @@ export const AttributesTab = ({
           <FormInput
             label="Nombre del atributo"
             value={attrForm.name}
-            onChange={(e) => setAttrForm(curr => ({ ...curr, name: e.target.value }))}
+            onChange={(e) => updateAttrFormField('name', e.target.value)}
             placeholder="Socket, Frecuencia, Capacidad"
+            error={attrErrors.name}
           />
           <FormSelect
             label="Tipo de Dato"
             value={attrForm.dataType}
-            onChange={(e) => setAttrForm(curr => ({ ...curr, dataType: e.target.value as AttributeDataType }))}
+            onChange={(e) => updateAttrFormField('dataType', e.target.value)}
             options={[
               { label: 'Texto', value: 'TEXT' },
               { label: 'Número', value: 'NUMBER' },
@@ -237,17 +238,19 @@ export const AttributesTab = ({
           <FormInput
             label="Unidad (opcional)"
             value={attrForm.unit}
-            onChange={(e) => setAttrForm(curr => ({ ...curr, unit: e.target.value }))}
+            onChange={(e) => updateAttrFormField('unit', e.target.value)}
             placeholder="GB, MHz, W, etc."
             optional
+            error={attrErrors.unit}
           />
           {['SELECT', 'MULTI_SELECT'].includes(attrForm.dataType) && (
             <div className="md:col-span-2">
               <FormInput
                 label="Opciones (separadas por comas)"
                 value={attrForm.optionsString}
-                onChange={(e) => setAttrForm(curr => ({ ...curr, optionsString: e.target.value }))}
+                onChange={(e) => updateAttrFormField('optionsString', e.target.value)}
                 placeholder="AM4, AM5, LGA1700"
+                error={attrErrors.optionsString}
               />
             </div>
           )}

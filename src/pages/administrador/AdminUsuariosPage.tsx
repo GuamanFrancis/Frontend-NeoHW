@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
   Eye,
   Filter,
@@ -73,15 +74,25 @@ export const AdminUsuariosPage = () => {
     confirmDeactivateUser,
     requestDeactivateUser,
     userToDeactivate,
+    isUnlocked,
+    setIsUnlocked,
     setCurrentPage,
     setPageSize,
     setFormValues,
   } = useAdminUsers();
 
+  const [showUnlockWarning, setShowUnlockWarning] = useState(false);
+
+  useEffect(() => {
+    if (modalMode !== 'edit') {
+      setShowUnlockWarning(false);
+    }
+  }, [modalMode]);
+
   return (
     <PageCard
       title="Gestion de usuarios"
-      text="Administra los usuarios del sistema, roles y permisos de acceso."
+      text="Administra los usuarios del sistema y sus roles correspondientes."
       icon={<UsersRound className="h-6 w-6" />}
     >
       <div className="space-y-4">
@@ -144,7 +155,6 @@ export const AdminUsuariosPage = () => {
                   <th className="px-5 py-4 font-bold">Correo electronico</th>
                   <th className="px-5 py-4 font-bold">Rol</th>
                   <th className="px-5 py-4 font-bold">Estado</th>
-                  <th className="px-5 py-4 font-bold">Ultimo acceso</th>
                   <th className="px-5 py-4 text-right font-bold">Acciones</th>
                 </tr>
               </thead>
@@ -178,8 +188,6 @@ export const AdminUsuariosPage = () => {
                         {user.status}
                       </div>
                     </td>
-
-                    <td className="px-5 py-4 text-slate-600 dark:text-neutral-300">{user.lastAccess}</td>
 
                     <td className="px-5 py-4">
                       <div className="flex justify-end gap-2">
@@ -218,7 +226,7 @@ export const AdminUsuariosPage = () => {
 
                 {isLoading && (
                   <tr>
-                    <td colSpan={6} className="px-5 py-10 text-center text-sm text-slate-500 dark:text-neutral-400">
+                    <td colSpan={5} className="px-5 py-10 text-center text-sm text-slate-500 dark:text-neutral-400">
                       Cargando usuarios...
                     </td>
                   </tr>
@@ -226,7 +234,7 @@ export const AdminUsuariosPage = () => {
 
                 {!isLoading && pageUsers.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-5 py-10 text-center text-sm text-slate-500 dark:text-neutral-400">
+                    <td colSpan={5} className="px-5 py-10 text-center text-sm text-slate-500 dark:text-neutral-400">
                       No se encontraron usuarios con los filtros actuales.
                     </td>
                   </tr>
@@ -315,15 +323,56 @@ export const AdminUsuariosPage = () => {
             value={formValues.name}
             onChange={(event) => setFormValues({ ...formValues, name: event.target.value })}
             placeholder="Nombre completo"
-            disabled
+            disabled={!isUnlocked}
           />
           <FormInput
             label="Telefono"
             value={formValues.phone}
             onChange={(event) => setFormValues({ ...formValues, phone: event.target.value })}
             placeholder="Ej: +593 99 999 9999"
-            disabled
+            disabled={!isUnlocked}
           />
+
+          {!isUnlocked && !showUnlockWarning && (
+            <div className="sm:col-span-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowUnlockWarning(true)}
+                className="text-xs font-semibold text-teal-600 hover:text-teal-700 dark:text-teal-400"
+              >
+                Habilitar edición de datos personales
+              </button>
+            </div>
+          )}
+
+          {showUnlockWarning && !isUnlocked && (
+            <div className="sm:col-span-2 rounded-xl border border-slate-200 bg-slate-50/50 p-4 dark:border-neutral-800 dark:bg-neutral-900/30 text-xs">
+              <p className="font-bold text-rose-600 dark:text-rose-400">Advertencia de seguridad</p>
+              <p className="mt-1 text-slate-600 dark:text-neutral-400">
+                Vas a modificar la información personal del usuario (Nombre y/o Teléfono). Asegúrate de que los datos sean correctos.
+              </p>
+              <div className="mt-3.5 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowUnlockWarning(false)}
+                  className="rounded-lg px-3 py-1.5 font-semibold text-slate-500 hover:bg-slate-200/50 dark:text-neutral-400 dark:hover:bg-neutral-800"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsUnlocked(true);
+                    setShowUnlockWarning(false);
+                  }}
+                  className="rounded-lg bg-teal-500 px-3.5 py-1.5 font-bold text-white hover:bg-teal-600 transition"
+                >
+                  Entendido, continuar
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="sm:col-span-2">
             <FormInput
               label="Correo electronico"
@@ -375,7 +424,7 @@ export const AdminUsuariosPage = () => {
               <p className="text-slate-500 dark:text-neutral-400">Correo electronico</p>
               <p className="mt-1 font-bold text-slate-950 dark:text-white">{selectedUser.email}</p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-lg border border-slate-200 p-4 dark:border-neutral-800">
                 <p className="text-slate-500 dark:text-neutral-400">Rol</p>
                 <p className="mt-1 font-bold text-slate-950 dark:text-white">{selectedUser.role}</p>
@@ -383,10 +432,6 @@ export const AdminUsuariosPage = () => {
               <div className="rounded-lg border border-slate-200 p-4 dark:border-neutral-800">
                 <p className="text-slate-500 dark:text-neutral-400">Estado</p>
                 <p className="mt-1 font-bold text-slate-950 dark:text-white">{selectedUser.status}</p>
-              </div>
-              <div className="rounded-lg border border-slate-200 p-4 dark:border-neutral-800">
-                <p className="text-slate-500 dark:text-neutral-400">Ultimo acceso</p>
-                <p className="mt-1 font-bold text-slate-950 dark:text-white">{selectedUser.lastAccess}</p>
               </div>
             </div>
           </div>

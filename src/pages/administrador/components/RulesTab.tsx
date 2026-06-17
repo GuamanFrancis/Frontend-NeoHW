@@ -56,7 +56,7 @@ export const RulesTab = ({
       <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
         <div className="mb-4">
           <h3 className="text-lg font-bold text-slate-950 dark:text-white leading-none">Reglas de Compatibilidad</h3>
-          <p className="text-xs text-slate-500 mt-1 font-medium">Gestiona las reglas de hardware que usa el Simulador 3D para evitar ensambles incompatibles.</p>
+          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 font-medium">Gestiona las reglas de hardware que usa el Simulador 3D para evitar ensambles incompatibles.</p>
         </div>
 
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-neutral-800 dark:bg-neutral-950 mt-4">
@@ -89,7 +89,7 @@ export const RulesTab = ({
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="inline-flex rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 dark:bg-blue-400/10 dark:text-blue-300">
+                        <span className="inline-flex rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-bold text-teal-700 dark:bg-teal-500/10 dark:text-teal-300">
                           {rule.ruleType}
                         </span>
                       </td>

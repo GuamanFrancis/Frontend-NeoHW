@@ -117,6 +117,7 @@ export const checkProductCompatibility = (
   const installedRam = components.find((c) => c.id === 'ram_1')?.dbProduct;
   const installedGpu = components.find((c) => c.id === 'gpu')?.dbProduct;
   const installedPsu = components.find((c) => c.id === 'psu')?.dbProduct;
+  const installedCooler = components.find((c) => c.id === 'cooler')?.dbProduct;
 
   if (slotId === 'motherboard') {
     if (installedCpu) {
@@ -150,6 +151,13 @@ export const checkProductCompatibility = (
         return `Zócalo incompatible: Placa requiere ${moboSocket.toUpperCase()}, CPU tiene ${cpuSocket.toUpperCase()}.`;
       }
     }
+    if (installedCooler) {
+      const cpuSocket = getProductAttr(prod, 'Socket');
+      const coolerSockets = getProductAttr(installedCooler, 'Sockets Soportados');
+      if (cpuSocket && coolerSockets && !coolerSockets.toLowerCase().includes(cpuSocket.toLowerCase())) {
+        return `Socket incompatible: CPU requiere ${cpuSocket.toUpperCase()}, disipador instalado soporta ${coolerSockets.toUpperCase()}.`;
+      }
+    }
     if (installedPsu) {
       const psuWatts = parseInt(getProductAttr(installedPsu, 'Potencia') || '0', 10);
       const cpuTdp = parseInt(getProductAttr(prod, 'TDP') || '0', 10);
@@ -177,6 +185,13 @@ export const checkProductCompatibility = (
       const caseForm = getProductAttr(prod, 'Formatos Soportados');
       if (moboForm && caseForm && !isFormFactorCompatible(moboForm, caseForm)) {
         return `Gabinete incompatible: No soporta formato de placa ${moboForm.toUpperCase()} (gabinete soporta ${caseForm.toUpperCase()}).`;
+      }
+    }
+    if (installedCooler) {
+      const coolerHeight = parseFloat(getProductAttr(installedCooler, 'Altura Cooler') || '0');
+      const maxCoolerHeight = parseFloat(getProductAttr(prod, 'Altura Máxima Cooler') || '0');
+      if (coolerHeight > 0 && maxCoolerHeight > 0 && coolerHeight > maxCoolerHeight) {
+        return `Gabinete incompatible: Altura máxima para cooler es ${maxCoolerHeight}mm, pero el disipador instalado mide ${coolerHeight}mm.`;
       }
     }
     if (installedPsu) {
@@ -227,6 +242,23 @@ export const checkProductCompatibility = (
       const maxGpuLength = parseFloat(getProductAttr(installedCase, 'Largo Máximo GPU') || '0');
       if (gpuLength > 0 && maxGpuLength > 0 && gpuLength > maxGpuLength) {
         return `Tarjeta gráfica incompatible: Mide ${gpuLength}mm, pero el gabinete solo permite hasta ${maxGpuLength}mm.`;
+      }
+    }
+  }
+
+  if (slotId === 'cooler') {
+    if (installedCpu) {
+      const cpuSocket = getProductAttr(installedCpu, 'Socket');
+      const coolerSockets = getProductAttr(prod, 'Sockets Soportados');
+      if (cpuSocket && coolerSockets && !coolerSockets.toLowerCase().includes(cpuSocket.toLowerCase())) {
+        return `Socket incompatible: CPU requiere ${cpuSocket.toUpperCase()}, disipador seleccionado soporta ${coolerSockets.toUpperCase()}.`;
+      }
+    }
+    if (installedCase) {
+      const coolerHeight = parseFloat(getProductAttr(prod, 'Altura Cooler') || '0');
+      const maxCoolerHeight = parseFloat(getProductAttr(installedCase, 'Altura Máxima Cooler') || '0');
+      if (coolerHeight > 0 && maxCoolerHeight > 0 && coolerHeight > maxCoolerHeight) {
+        return `Disipador incompatible: Altura es ${coolerHeight}mm, pero el gabinete solo permite hasta ${maxCoolerHeight}mm.`;
       }
     }
   }

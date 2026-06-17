@@ -1,11 +1,10 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Boxes, Search, Filter, Lock, Eye, Edit2 } from 'lucide-react';
+import { Boxes, Search, Filter, Eye, Edit2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { PageCard } from '../../components/ui/PageCard';
 import { Modal } from '../../components/ui/Modal';
 import { getCatalogComponents, updateCatalogComponent } from '../../services/catalogService';
 import type { CatalogComponent, CatalogStockStatus } from '../../types/catalog';
-import { getStoredSession } from '../../services/session';
 
 const statusLabel: Record<CatalogStockStatus, string> = {
   disponible: 'Disponible',
@@ -40,7 +39,6 @@ export const VendedorInventarioPage = () => {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('todos');
   const [statusFilter, setStatusFilter] = useState<'todos' | CatalogStockStatus>('todos');
-  const [ownerFilter, setOwnerFilter] = useState<'todos' | 'propios' | 'externos'>('todos');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -50,9 +48,6 @@ export const VendedorInventarioPage = () => {
   const [isUpdatingStock, setIsUpdatingStock] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
-
-  const session = getStoredSession();
-  const currentUserId = session?.user.id;
 
   const loadInventory = async () => {
     try {
@@ -82,16 +77,9 @@ export const VendedorInventarioPage = () => {
       const matchesCategory = categoryFilter === 'todos' || item.category === categoryFilter;
       const matchesStatus = statusFilter === 'todos' || item.status === statusFilter;
 
-      let matchesOwner = true;
-      if (ownerFilter === 'propios') {
-        matchesOwner = item.sellerId === currentUserId;
-      } else if (ownerFilter === 'externos') {
-        matchesOwner = item.sellerId !== currentUserId;
-      }
-
-      return matchesSearch && matchesCategory && matchesStatus && matchesOwner;
+      return matchesSearch && matchesCategory && matchesStatus;
     });
-  }, [items, search, categoryFilter, statusFilter, ownerFilter, currentUserId]);
+  }, [items, search, categoryFilter, statusFilter]);
 
   const categoryOptions = useMemo(() => {
     const names = Array.from(new Set(items.map((item) => item.category).filter(Boolean))).sort();
@@ -116,7 +104,6 @@ export const VendedorInventarioPage = () => {
     setSearch('');
     setCategoryFilter('todos');
     setStatusFilter('todos');
-    setOwnerFilter('todos');
     setCurrentPage(1);
   };
 
@@ -166,7 +153,7 @@ export const VendedorInventarioPage = () => {
       </div>
 
       <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
-        <div className="grid gap-3 lg:grid-cols-[1.2fr_180px_180px_180px_auto]">
+        <div className="grid gap-3 lg:grid-cols-[1.2fr_180px_180px_auto]">
           <label className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
@@ -176,7 +163,7 @@ export const VendedorInventarioPage = () => {
                 setSearch(e.target.value);
                 setCurrentPage(1);
               }}
-              placeholder="Buscar componente, marca o descripción..."
+              placeholder="Buscar componente o descripción..."
               className={`${fieldClass} w-full pl-10`}
             />
           </label>
@@ -210,19 +197,6 @@ export const VendedorInventarioPage = () => {
             <option value="agotado">Agotado</option>
           </select>
 
-          <select
-            className={fieldClass}
-            value={ownerFilter}
-            onChange={(e) => {
-              setOwnerFilter(e.target.value as 'todos' | 'propios' | 'externos');
-              setCurrentPage(1);
-            }}
-          >
-            <option value="todos">Propiedad: Todos</option>
-            <option value="propios">Mis Productos</option>
-            <option value="externos">Productos de Terceros</option>
-          </select>
-
           <Button type="button" variant="outline" className="h-10 px-4 text-sm" onClick={clearFilters}>
             <Filter className="h-4 w-4" />
             Limpiar
@@ -236,10 +210,8 @@ export const VendedorInventarioPage = () => {
                 <tr>
                   <th className="px-4 py-3 font-bold">Componente</th>
                   <th className="px-4 py-3 font-bold">Categoria</th>
-                  <th className="px-4 py-3 font-bold">Marca</th>
                   <th className="px-4 py-3 font-bold">Precio</th>
                   <th className="px-4 py-3 font-bold">Stock</th>
-                  <th className="px-4 py-3 font-bold">Propiedad</th>
                   <th className="px-4 py-3 font-bold">Estado</th>
                   <th className="px-4 py-3 font-bold">Acciones</th>
                 </tr>
@@ -247,13 +219,13 @@ export const VendedorInventarioPage = () => {
               <tbody className="divide-y divide-slate-150 dark:divide-neutral-900/50">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-slate-400">
+                    <td colSpan={6} className="py-8 text-center text-slate-400">
                       Cargando catálogo...
                     </td>
                   </tr>
                 ) : pageItems.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-slate-400">
+                    <td colSpan={6} className="py-8 text-center text-slate-400">
                       No se encontraron componentes en inventario.
                     </td>
                   </tr>
@@ -289,26 +261,12 @@ export const VendedorInventarioPage = () => {
                       <td className="px-4 py-3 font-semibold text-slate-600 dark:text-neutral-300">
                         {item.category}
                       </td>
-                      <td className="px-4 py-3 text-slate-600 dark:text-neutral-300">
-                        {item.brand}
-                      </td>
+
                       <td className="px-4 py-3 font-bold text-slate-900 dark:text-white">
                         {formatCurrency(item.price)}
                       </td>
                       <td className="px-4 py-3 font-extrabold text-slate-800 dark:text-neutral-100">
                         {item.stock} uds
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {item.sellerId === currentUserId ? (
-                          <span className="inline-flex items-center rounded-full bg-teal-400/10 px-2 py-1 text-[10px] font-bold text-teal-600 dark:bg-teal-400/10 dark:text-teal-400 border border-teal-500/20">
-                            Propio
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-400 dark:text-neutral-500">
-                            <Lock className="h-3 w-3" />
-                            Externo
-                          </span>
-                        )}
                       </td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold ${statusStyle[item.status]}`}>
@@ -413,7 +371,7 @@ export const VendedorInventarioPage = () => {
           onClose={() => setSelectedComponent(null)}
           title={`Detalles de Componente: ${selectedComponent.name}`}
         >
-          <div className="space-y-6 text-slate-800 dark:text-neutral-250">
+          <div className="space-y-6 text-slate-800 dark:text-neutral-200">
             <div className="flex flex-col gap-4 sm:flex-row items-center sm:items-start gap-6">
               <div className="h-28 w-28 shrink-0 flex items-center justify-center rounded-xl border border-slate-100 bg-slate-50 p-2 dark:border-neutral-800 dark:bg-neutral-900/60">
                 {selectedComponent.imageUrl ? (
@@ -432,10 +390,7 @@ export const VendedorInventarioPage = () => {
                     <span className="block text-[10px] uppercase font-bold text-slate-400">Categoría</span>
                     <span className="font-bold text-slate-900 dark:text-white">{selectedComponent.category}</span>
                   </div>
-                  <div>
-                    <span className="block text-[10px] uppercase font-bold text-slate-400">Marca</span>
-                    <span className="font-bold text-slate-900 dark:text-white">{selectedComponent.brand}</span>
-                  </div>
+
                   <div>
                     <span className="block text-[10px] uppercase font-bold text-slate-400">Modelo</span>
                     <span className="font-bold text-slate-900 dark:text-white">{selectedComponent.model || 'N/A'}</span>
@@ -504,7 +459,7 @@ export const VendedorInventarioPage = () => {
           }}
           title={`Actualizar Stock: ${componentToEditStock.name}`}
         >
-          <div className="space-y-5 text-slate-800 dark:text-neutral-250">
+          <div className="space-y-5 text-slate-800 dark:text-neutral-200">
             <p className="text-xs text-slate-500 dark:text-neutral-400 font-medium">
               Modifica la cantidad disponible en el inventario para este componente de hardware.
             </p>

@@ -47,7 +47,7 @@ export const CategoriesTab = ({
       <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
         <div className="mb-4">
           <h3 className="text-lg font-bold text-slate-950 dark:text-white leading-none">Categorías de Hardware</h3>
-          <p className="text-xs text-slate-500 mt-1 font-medium">Gestiona la clasificación del hardware en la tienda (Procesadores, Memorias RAM, etc.).</p>
+          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 font-medium">Gestiona la clasificación del hardware en la tienda (Procesadores, Memorias RAM, etc.).</p>
         </div>
 
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-neutral-800 dark:bg-neutral-950 mt-4">

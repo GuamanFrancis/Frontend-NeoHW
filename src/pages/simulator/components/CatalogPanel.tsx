@@ -32,8 +32,7 @@ export const CatalogPanel: React.FC<CatalogPanelProps> = ({
   const activeComponentLabel = components.find((c) => c.id === activeSlotId)?.label || '';
   const filteredProducts = modalProducts.filter(
     (p) =>
-      p.name.toLowerCase().includes(catalogSearch.toLowerCase()) ||
-      p.brand.toLowerCase().includes(catalogSearch.toLowerCase())
+      p.name.toLowerCase().includes(catalogSearch.toLowerCase())
   );
 
   return (
@@ -54,7 +53,7 @@ export const CatalogPanel: React.FC<CatalogPanelProps> = ({
       <div className="px-3 py-2 border-b border-slate-150 dark:border-neutral-850 shrink-0 bg-white dark:bg-neutral-950">
         <input
           type="text"
-          placeholder="Buscar por nombre o marca..."
+          placeholder="Buscar por nombre..."
           value={catalogSearch}
           onChange={(e) => setCatalogSearch(e.target.value)}
           className="w-full px-2.5 py-1.5 text-[11px] rounded-lg border border-slate-300 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-900 text-slate-900 dark:text-white focus:outline-none focus:border-teal-500 transition shadow-inner"
@@ -89,9 +88,6 @@ export const CatalogPanel: React.FC<CatalogPanelProps> = ({
                     {prod.name}
                   </h4>
                   <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                    <span className="text-[8px] bg-slate-200 dark:bg-neutral-800 text-slate-650 dark:text-neutral-300 font-extrabold px-1.5 py-0.5 rounded">
-                      {prod.brand}
-                    </span>
                     {compatError ? (
                       <span className="text-[8px] bg-red-500/10 text-red-650 dark:text-red-400 font-extrabold px-1.5 py-0.5 rounded border border-red-500/20">
                         Incompatible

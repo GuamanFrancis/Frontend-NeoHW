@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { BackendRole, BackendUser } from '../../../types/auth';
-import { changeUserRole, deactivateUser, getUsers, getUserById } from '../../../services/usersService';
+import { changeUserRole, deactivateUser, getUsers, getUserById, updateUser } from '../../../services/usersService';
 
 export type UserRole = 'Super administrador' | 'Administrador' | 'Vendedor' | 'Cliente';
 export type UserStatus = 'Activo' | 'Inactivo';
@@ -103,6 +103,7 @@ export const useAdminUsers = () => {
   const [pageError, setPageError] = useState('');
   const [modalError, setModalError] = useState('');
   const [userToDeactivate, setUserToDeactivate] = useState<AdminUser | null>(null);
+  const [isUnlocked, setIsUnlocked] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -182,6 +183,7 @@ export const useAdminUsers = () => {
       role: user.role,
       status: user.status,
     });
+    setIsUnlocked(false);
     setModalMode('edit');
   };
 
@@ -200,6 +202,7 @@ export const useAdminUsers = () => {
     setSelectedUser(null);
     setModalMode(null);
     setModalError('');
+    setIsUnlocked(false);
   };
 
   const saveUser = async () => {
@@ -216,9 +219,31 @@ export const useAdminUsers = () => {
         updatedUser = await changeUserRole(selectedUser.id, requestedRole);
       }
 
+      const originalName = selectedUser.name;
+      const originalPhone = selectedUser.phone === 'Sin telefono' ? '' : selectedUser.phone;
+
+      if (formValues.name !== originalName || formValues.phone !== originalPhone) {
+        const parts = formValues.name.trim().split(/\s+/);
+        const firstName = parts[0] || '';
+        const lastName = parts.slice(1).join(' ') || '';
+        const phone = formValues.phone.trim() || undefined;
+
+        const updatedPersonal = await updateUser(selectedUser.id, {
+          firstName,
+          lastName,
+          phone,
+        });
+        updatedUser = updatedPersonal;
+      }
+
       if (updatedUser) {
         setUsers((currentUsers) =>
           currentUsers.map((user) => (user.id === selectedUser.id ? mapBackendUser(updatedUser) : user)),
+        );
+      } else if (formValues.name !== originalName || formValues.phone !== originalPhone || requestedRole !== selectedUser.backendRole) {
+        const freshUser = await getUserById(selectedUser.id);
+        setUsers((currentUsers) =>
+          currentUsers.map((user) => (user.id === selectedUser.id ? mapBackendUser(freshUser) : user)),
         );
       }
       closeModal();
@@ -288,6 +313,8 @@ export const useAdminUsers = () => {
     confirmDeactivateUser,
     requestDeactivateUser,
     userToDeactivate,
+    isUnlocked,
+    setIsUnlocked,
     setCurrentPage,
     setPageSize,
     setFormValues,

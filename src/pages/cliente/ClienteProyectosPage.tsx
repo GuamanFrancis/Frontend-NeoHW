@@ -55,7 +55,8 @@ const mapBackendProjects = (
               'placas-madre': 'motherboard',
               'procesadores': 'cpu',
               'tarjetas-graficas': 'gpu',
-              'almacenamiento': 'storage'
+              'almacenamiento': 'storage',
+              'refrigeracion': 'cooler'
             };
             slotId = standardSlots[catalogComp.categorySlug] || catalogComp.categorySlug;
           }
@@ -74,7 +75,7 @@ const mapBackendProjects = (
           category: 'Componente',
           categorySlug: 'componente',
           categoryId: '',
-          brand: 'Sin marca',
+          brand: '',
           price: priceNum || 0,
           stock: 0,
           status: 'agotado',
@@ -400,7 +401,7 @@ export const ClienteProyectosPage = () => {
                               {component.name}
                             </p>
                             <p className="text-[10px] text-slate-500 dark:text-neutral-400 mt-0.5">
-                              Slot: <span className="capitalize font-bold text-teal-500">{slotId.replace('_', ' ')}</span> • Marca: <span className="font-bold">{component.brand}</span>
+                              Slot: <span className="capitalize font-bold text-teal-500">{slotId.replace('_', ' ')}</span>
                             </p>
                           </div>
                         </div>

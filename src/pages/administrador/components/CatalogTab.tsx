@@ -34,12 +34,10 @@ type CatalogTabProps = {
   modalMode: ModalMode;
   modalError: string;
   formValues: CatalogFormValues;
-  setFormValues: React.Dispatch<React.SetStateAction<CatalogFormValues>>;
   selectedComponent: CatalogComponent | null;
   categorySelectOptions: Array<{ label: string; value: string }>;
   categoryAttributesToFill: BackendAttribute[];
   productAttributesValues: Record<string, string>;
-  setProductAttributesValues: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   resetFilters: () => void;
   closeModal: () => void;
   openEditModal: (c: CatalogComponent) => void;
@@ -49,6 +47,18 @@ type CatalogTabProps = {
   saveComponent: () => void;
   removeComponent: () => void;
   categoryFilterOptions: Array<{ label: string; value: string }>;
+  formErrors: {
+    name?: string;
+    brand?: string;
+    categoryId?: string;
+    price?: string;
+    stock?: string;
+    description?: string;
+    imageUrl?: string;
+  };
+  updateFormField: (field: keyof CatalogFormValues, value: string) => void;
+  attributeErrors: Record<string, string>;
+  updateAttributeValue: (attributeId: string, value: string) => void;
 };
 
 const fieldClass =
@@ -79,12 +89,10 @@ export const CatalogTab = ({
   modalMode,
   modalError,
   formValues,
-  setFormValues,
   selectedComponent,
   categorySelectOptions,
   categoryAttributesToFill,
   productAttributesValues,
-  setProductAttributesValues,
   resetFilters,
   closeModal,
   openEditModal,
@@ -94,6 +102,10 @@ export const CatalogTab = ({
   saveComponent,
   removeComponent,
   categoryFilterOptions,
+  formErrors,
+  updateFormField,
+  attributeErrors,
+  updateAttributeValue,
 }: CatalogTabProps) => {
   return (
     <>
@@ -108,7 +120,7 @@ export const CatalogTab = ({
                 setSearch(event.target.value);
                 setCurrentPage(1);
               }}
-              placeholder="Buscar componente, marca o modelo..."
+              placeholder="Buscar componente o modelo..."
               className={`${fieldClass} w-full pl-10`}
             />
           </label>
@@ -154,7 +166,6 @@ export const CatalogTab = ({
                 <tr>
                   <th className="px-4 py-3 font-bold">Producto</th>
                   <th className="px-4 py-3 font-bold">Categoría</th>
-                  <th className="px-4 py-3 font-bold">Marca</th>
                   <th className="px-4 py-3 font-bold">Precio</th>
                   <th className="px-4 py-3 font-bold">Stock</th>
                   <th className="px-4 py-3 font-bold">Estado</th>
@@ -180,9 +191,8 @@ export const CatalogTab = ({
                       </div>
                     </td>
                     <td className="px-4 py-3 text-slate-600 dark:text-neutral-300">{component.category}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-neutral-300">{component.brand}</td>
-                    <td className="px-4 py-3 font-semibold text-teal-700 dark:text-teal-300">{formatPrice(component.price)}</td>
-                    <td className={`px-4 py-3 font-semibold ${component.stock === 0 ? 'text-red-600 dark:text-red-300' : 'text-amber-600 dark:text-amber-300'}`}>
+                    <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{formatPrice(component.price)}</td>
+                    <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">
                       {component.stock}
                     </td>
                     <td className="px-4 py-3">
@@ -223,7 +233,7 @@ export const CatalogTab = ({
 
                 {isLoading && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-slate-500 dark:text-neutral-400">
+                    <td colSpan={6} className="px-4 py-8 text-center text-slate-500 dark:text-neutral-400">
                       Cargando catalogo...
                     </td>
                   </tr>
@@ -231,7 +241,7 @@ export const CatalogTab = ({
 
                 {!isLoading && pageComponents.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-slate-500 dark:text-neutral-400">
+                    <td colSpan={6} className="px-4 py-8 text-center text-slate-500 dark:text-neutral-400">
                       No hay componentes para los filtros actuales.
                     </td>
                   </tr>
@@ -334,48 +344,56 @@ export const CatalogTab = ({
             <FormInput
               label="Nombre del producto"
               value={formValues.name}
-              onChange={(event) => setFormValues((current) => ({ ...current, name: event.target.value }))}
+              onChange={(event) => updateFormField('name', event.target.value)}
               placeholder="AMD Ryzen 7 9700X"
+              error={formErrors.name}
             />
             <FormInput
               label="Marca"
               value={formValues.brand}
-              onChange={(event) => setFormValues((current) => ({ ...current, brand: event.target.value }))}
-              placeholder="AMD"
+              onChange={(event) => updateFormField('brand', event.target.value)}
+              placeholder="Ej: ID-COOLING, ASUS, Corsair"
+              error={formErrors.brand}
             />
+
             <FormSelect
               label="Categoria"
               value={formValues.categoryId}
               onChange={(event) => void handleCategoryChange(event.target.value)}
               options={categorySelectOptions}
+              error={formErrors.categoryId}
             />
             <FormInput
               label="Precio (USD)"
               value={formValues.price}
-              onChange={(event) => setFormValues((current) => ({ ...current, price: event.target.value }))}
+              onChange={(event) => updateFormField('price', event.target.value)}
               placeholder="425.99"
               inputMode="decimal"
+              error={formErrors.price}
             />
             <FormInput
               label="Stock"
               value={formValues.stock}
-              onChange={(event) => setFormValues((current) => ({ ...current, stock: event.target.value }))}
+              onChange={(event) => updateFormField('stock', event.target.value)}
               placeholder="18"
               inputMode="numeric"
               disabled={modalMode === 'edit'}
               title={modalMode === 'edit' ? "El stock solo puede ser modificado por el Vendedor desde la pestaña de Inventario." : undefined}
+              error={formErrors.stock}
             />
             <FormInput
               label="Descripcion"
               value={formValues.description}
-              onChange={(event) => setFormValues((current) => ({ ...current, description: event.target.value }))}
+              onChange={(event) => updateFormField('description', event.target.value)}
               placeholder="12 nucleos / 24 hilos"
+              error={formErrors.description}
             />
             <FormInput
               label="URL de imagen"
               value={formValues.imageUrl}
-              onChange={(event) => setFormValues((current) => ({ ...current, imageUrl: event.target.value }))}
+              onChange={(event) => updateFormField('imageUrl', event.target.value)}
               placeholder="https://..."
+              error={formErrors.imageUrl}
             />
             
             {categoryAttributesToFill.length > 0 && (
@@ -384,9 +402,6 @@ export const CatalogTab = ({
                 <div className="grid gap-4 md:grid-cols-2">
                   {categoryAttributesToFill.map(attr => {
                     const val = productAttributesValues[attr.id] ?? '';
-                    const onChangeVal = (v: string) => {
-                      setProductAttributesValues(curr => ({ ...curr, [attr.id]: v }));
-                    };
                     
                     if (attr.dataType === 'SELECT' || attr.dataType === 'MULTI_SELECT') {
                       const options = [
@@ -398,8 +413,9 @@ export const CatalogTab = ({
                           key={attr.id}
                           label={`${attr.name}${attr.unit ? ` (${attr.unit})` : ''}`}
                           value={val}
-                          onChange={(e) => onChangeVal(e.target.value)}
+                          onChange={(e) => updateAttributeValue(attr.id, e.target.value)}
                           options={options}
+                          error={attributeErrors[attr.id]}
                         />
                       );
                     }
@@ -410,12 +426,13 @@ export const CatalogTab = ({
                           key={attr.id}
                           label={`${attr.name}`}
                           value={val}
-                          onChange={(e) => onChangeVal(e.target.value)}
+                          onChange={(e) => updateAttributeValue(attr.id, e.target.value)}
                           options={[
                             { label: 'Seleccionar', value: '' },
                             { label: 'Sí', value: 'true' },
                             { label: 'No', value: 'false' },
                           ]}
+                          error={attributeErrors[attr.id]}
                         />
                       );
                     }
@@ -425,8 +442,9 @@ export const CatalogTab = ({
                         key={attr.id}
                         label={`${attr.name}${attr.unit ? ` (${attr.unit})` : ''}`}
                         value={val}
-                        onChange={(e) => onChangeVal(e.target.value)}
+                        onChange={(e) => updateAttributeValue(attr.id, e.target.value)}
                         placeholder={`Ingresa ${attr.name.toLowerCase()}`}
+                        error={attributeErrors[attr.id]}
                       />
                     );
                   })}
@@ -458,7 +476,6 @@ export const CatalogTab = ({
           <div className="space-y-4 text-sm">
             <div className="grid gap-3 md:grid-cols-2">
               <p><span className="font-semibold">Producto:</span> {selectedComponent.name}</p>
-              <p><span className="font-semibold">Marca:</span> {selectedComponent.brand}</p>
               <p><span className="font-semibold">Categoria:</span> {selectedComponent.category}</p>
               <p><span className="font-semibold">Precio:</span> {formatPrice(selectedComponent.price)}</p>
               <p><span className="font-semibold">Stock:</span> {selectedComponent.stock}</p>
@@ -471,8 +488,8 @@ export const CatalogTab = ({
                 <div className="grid gap-2 grid-cols-2 text-xs bg-slate-50 dark:bg-neutral-900/40 p-2.5 rounded-lg border border-slate-100 dark:border-neutral-800">
                   {selectedComponent.attributes.map((attr, idx) => (
                     <div key={idx} className="flex justify-between border-b border-slate-200/50 dark:border-neutral-800/50 pb-1">
-                      <span className="text-slate-500">{attr.name}</span>
-                      <span className="font-bold text-slate-800 dark:text-neutral-250">{attr.value} {attr.unit || ''}</span>
+                      <span className="text-slate-500 dark:text-neutral-400">{attr.name}</span>
+                      <span className="font-bold text-slate-800 dark:text-neutral-200">{attr.value} {attr.unit || ''}</span>
                     </div>
                   ))}
                 </div>

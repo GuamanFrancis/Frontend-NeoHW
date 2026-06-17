@@ -9,11 +9,13 @@ import {
   HardDrive,
   Zap,
   Box as BoxIcon,
+  Snowflake,
   type LucideIcon
 } from 'lucide-react';
 import { getCatalogComponents } from '../../../services/catalogService';
 import type { CatalogComponent, CatalogQueryParams } from '../../../types/catalog';
 import { useCart } from '../../../context/CartContext';
+import { getCategories, getLeafCategories } from '../../../services/categoryService';
 
 export const CATEGORY_ICONS: Record<string, LucideIcon> = {
   todos: LayoutGrid,
@@ -24,9 +26,10 @@ export const CATEGORY_ICONS: Record<string, LucideIcon> = {
   almacenamiento: HardDrive,
   'fuentes-de-poder': Zap,
   gabinetes: BoxIcon,
+  refrigeracion: Snowflake,
 };
 
-export const CATEGORIES = [
+export const FALLBACK_CATEGORIES = [
   { id: 'all', name: 'Todos', slug: 'todos' },
   { id: '1', name: 'Procesadores', slug: 'procesadores' },
   { id: '2', name: 'Placas madre', slug: 'placas-madre' },
@@ -35,6 +38,7 @@ export const CATEGORIES = [
   { id: '5', name: 'Almacenamiento', slug: 'almacenamiento' },
   { id: '6', name: 'Fuentes de poder', slug: 'fuentes-de-poder' },
   { id: '8', name: 'Gabinetes', slug: 'gabinetes' },
+  { id: '9', name: 'Refrigeración', slug: 'refrigeracion' },
 ];
 
 export const ITEMS_PER_PAGE = 8;
@@ -59,6 +63,34 @@ export const useClienteCatalog = () => {
   const [searchText, setSearchText] = useState('');
   const location = useLocation();
   const initialCategory = location.state?.categorySlug || 'todos';
+
+  const [categories, setCategories] = useState<{ id: string; name: string; slug: string }[]>(FALLBACK_CATEGORIES);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadCategories = async () => {
+      try {
+        const backendCats = await getCategories();
+        if (!isMounted) return;
+        const leafCats = getLeafCategories(backendCats);
+        const mappedCats = leafCats.map((cat) => ({
+          id: cat.id,
+          name: cat.name,
+          slug: cat.slug,
+        }));
+        setCategories([
+          { id: 'all', name: 'Todos', slug: 'todos' },
+          ...mappedCats,
+        ]);
+      } catch (error) {
+        console.error('Error al cargar categorías:', error);
+      }
+    };
+    void loadCategories();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const [activeCategoryTab, setActiveCategoryTab] = useState(initialCategory);
   const [selectedBrand, setSelectedBrand] = useState('Todas');
@@ -241,11 +273,11 @@ export const useClienteCatalog = () => {
   ]);
 
   const { groupedComponents, totalPages } = useMemo(() => {
-    const groups: { category: typeof CATEGORIES[0]; items: CatalogComponent[] }[] = [];
+    const groups: { category: { id: string; name: string; slug: string }; items: CatalogComponent[] }[] = [];
     const categoriesToRender =
       activeCategoryTab === 'todos'
-        ? CATEGORIES.filter((c) => c.slug !== 'todos')
-        : CATEGORIES.filter((c) => c.slug === activeCategoryTab);
+        ? categories.filter((c) => c.slug !== 'todos')
+        : categories.filter((c) => c.slug === activeCategoryTab);
 
     let maxItemsInAnyCategory = 0;
 
@@ -263,7 +295,7 @@ export const useClienteCatalog = () => {
 
     const calculatedTotalPages = Math.max(1, Math.ceil(maxItemsInAnyCategory / ITEMS_PER_PAGE));
     return { groupedComponents: groups, totalPages: calculatedTotalPages };
-  }, [filteredComponents, activeCategoryTab, currentPage]);
+  }, [filteredComponents, activeCategoryTab, currentPage, categories]);
 
   const handleAddToCart = (componente: CatalogComponent) => {
     addToCart(componente);
@@ -336,5 +368,6 @@ export const useClienteCatalog = () => {
     handleOpenDrawer,
     handleCloseDrawer,
     resetFilters,
+    categories,
   };
 };

@@ -47,9 +47,19 @@ function recalcStates(currentStates: Record<string, ComponentState>, allComps: P
   return out;
 }
 
+const getUserId = (): string | undefined => {
+  try {
+    return getStoredSession()?.user?.id;
+  } catch {
+    return undefined;
+  }
+};
+
 const getStoredComponents = (): PCComponent[] => {
   try {
-    const stored = localStorage.getItem('neohw_live_assembly');
+    const userId = getUserId();
+    const key = userId ? `neohw_live_assembly_${userId}` : 'neohw_live_assembly_guest';
+    const stored = localStorage.getItem(key);
     if (stored) {
       const parsed = JSON.parse(stored);
       if (parsed.components && Array.isArray(parsed.components)) {
@@ -69,7 +79,9 @@ const getStoredComponents = (): PCComponent[] => {
 
 const getStoredAssemblyStates = (): Record<string, ComponentState> => {
   try {
-    const stored = localStorage.getItem('neohw_live_assembly');
+    const userId = getUserId();
+    const key = userId ? `neohw_live_assembly_${userId}` : 'neohw_live_assembly_guest';
+    const stored = localStorage.getItem(key);
     if (stored) {
       const parsed = JSON.parse(stored);
       if (parsed.assemblyStates) {
@@ -98,6 +110,12 @@ export const useSimulator = () => {
 
   const [components, setComponents] = useState<PCComponent[]>(getStoredComponents);
   const [assemblyStates, setAssemblyStates] = useState<Record<string, ComponentState>>(getStoredAssemblyStates);
+
+  useEffect(() => {
+    setComponents(getStoredComponents());
+    setAssemblyStates(getStoredAssemblyStates());
+  }, [userId]);
+
   const [isAnimating, setIsAnimating] = useState(false);
   
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
@@ -261,11 +279,12 @@ export const useSimulator = () => {
   
   useEffect(() => {
     try {
-      localStorage.setItem('neohw_live_assembly', JSON.stringify({ components, assemblyStates }));
+      const key = userId ? `neohw_live_assembly_${userId}` : 'neohw_live_assembly_guest';
+      localStorage.setItem(key, JSON.stringify({ components, assemblyStates }));
     } catch (e) {
       console.error(e);
     }
-  }, [components, assemblyStates]);
+  }, [components, assemblyStates, userId]);
 
   useEffect(() => {
     const loadProject = location.state?.loadProject;
@@ -289,8 +308,9 @@ export const useSimulator = () => {
   }, [location.state, navigate, location.pathname]);
 
   const handleSaveTempAssembly = useCallback(() => {
-    localStorage.setItem('neohw_temp_assembly', JSON.stringify({ components, assemblyStates }));
-  }, [components, assemblyStates]);
+    const key = userId ? `neohw_temp_assembly_${userId}` : 'neohw_temp_assembly_guest';
+    localStorage.setItem(key, JSON.stringify({ components, assemblyStates }));
+  }, [components, assemblyStates, userId]);
 
   const handleOpenSaveModal = useCallback(() => {
     if (!userId) {
@@ -370,11 +390,12 @@ export const useSimulator = () => {
     setCameraAction({ type: 'reset', ts: Date.now() });
     setSceneKey(prev => prev + 1);
     try {
-      localStorage.removeItem('neohw_live_assembly');
+      const key = userId ? `neohw_live_assembly_${userId}` : 'neohw_live_assembly_guest';
+      localStorage.removeItem(key);
     } catch (e) {
       console.error(e);
     }
-  }, []);
+  }, [userId]);
 
   const handleRemoveComponent = useCallback((id: string) => {
     const idsToRemove = new Set<string>([id]);
@@ -505,21 +526,45 @@ export const useSimulator = () => {
     const updated: ChatMessage[] = [...chatMessages, { role: 'user', content: userMsg }];
     setChatMessages(updated);
     setChatMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+
+    const activeComps = components.filter((c) => c.dbProduct);
+    const contextText = activeComps.length > 0
+      ? 'El usuario tiene los siguientes componentes seleccionados en el simulador 3D:\n' +
+        activeComps.map((c) => `- ${c.label} (Slot: ${c.id}): ${c.dbProduct?.name} [ID: ${c.dbProduct?.id}]`).join('\n')
+      : 'El usuario no tiene componentes seleccionados en el simulador 3D.';
+
+    const apiMessages: ChatMessage[] = [
+      ...chatMessages,
+      { role: 'user', content: `${contextText}\n\nPregunta del usuario: ${userMsg}` }
+    ];
+
     try {
       await streamAiChat(
-          updated,
+          apiMessages,
           (chunk) => setChatMessages((prev) => {
+            const lastIdx = prev.length - 1;
+            if (lastIdx < 0) return prev;
+            const last = prev[lastIdx];
+            if (last.role !== 'assistant') return prev;
             const copy = [...prev];
-            const last = copy[copy.length - 1];
-            if (last?.role === 'assistant') last.content += chunk;
+            copy[lastIdx] = {
+              ...last,
+              content: last.content + chunk
+            };
             return copy;
           }),
           () => setAiLoading(false),
           () => {
             setChatMessages((prev) => {
+              const lastIdx = prev.length - 1;
+              if (lastIdx < 0) return prev;
+              const last = prev[lastIdx];
+              if (last.role !== 'assistant') return prev;
               const copy = [...prev];
-              const last = copy[copy.length - 1];
-              if (last?.role === 'assistant') last.content = '❌ Ocurrió un error al conectar con el asistente IA. Intente nuevamente.';
+              copy[lastIdx] = {
+                ...last,
+                content: '❌ Ocurrió un error al conectar con el asistente IA. Intente nuevamente.'
+              };
               return copy;
             });
             setAiLoading(false);
@@ -528,7 +573,7 @@ export const useSimulator = () => {
     } catch {
       setAiLoading(false);
     }
-  }, [chatInput, aiLoading, chatMessages]);
+  }, [chatInput, aiLoading, chatMessages, components]);
 
   return {
     isPublic,

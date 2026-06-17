@@ -73,5 +73,13 @@ export const updateStoredSession = (session: AuthResponse) => {
 export const clearStoredSession = () => {
   localStorage.removeItem(SESSION_KEY);
   sessionStorage.removeItem(SESSION_KEY);
+  const keysToRemove: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && (key.startsWith('neohw_live_assembly') || key.startsWith('neohw_temp_assembly'))) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach((key) => localStorage.removeItem(key));
   window.dispatchEvent(new Event('neohw-session-change'));
 };

@@ -66,14 +66,7 @@ const HomeProductCard = ({
       onMouseLeave={onMouseLeave}
       className="group relative flex flex-col rounded-xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/30 p-4 transition-all duration-300 hover:border-teal-500/50 hover:shadow-[0_0_15px_rgba(20,184,166,0.15)] overflow-hidden shadow-sm dark:shadow-none"
     >
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-widest">
-          {item.brand}
-        </span>
-        <div className="text-xs text-neutral-600 hover:text-rose-500 transition cursor-pointer">
-          ♥
-        </div>
-      </div>
+
       <div
         className="mb-4 flex h-36 items-center justify-center overflow-hidden rounded-lg bg-slate-50 dark:bg-neutral-900/50 p-2 cursor-pointer"
         onClick={() => onOpenDrawer(item)}

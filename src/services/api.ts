@@ -19,9 +19,49 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config;
 });
 
+const errorTranslations: Record<string, string> = {
+  'invalid credentials': 'Credenciales incorrectas.',
+  'user is disabled': 'Tu usuario está deshabilitado. Contacta al administrador.',
+  'user not found': 'Usuario no encontrado.',
+  'password is incorrect': 'La contraseña es incorrecta.',
+  'email already exists': 'El correo electrónico ya está registrado.',
+  'invalid or expired token': 'El código es inválido o ha expirado.',
+  'otp code invalid or expired': 'Código de verificación inválido o expirado.',
+  'invalid otp code': 'Código de verificación inválido.',
+  'unauthorized': 'No autorizado.',
+  'forbidden': 'Acceso prohibido.',
+  'forbidden resource': 'Acceso denegado.',
+};
+
+const translateMessage = (msg: unknown): any => {
+  if (typeof msg === 'string') {
+    const trimmed = msg.trim().toLowerCase();
+    if (errorTranslations[trimmed]) {
+      return errorTranslations[trimmed];
+    }
+    for (const key of Object.keys(errorTranslations)) {
+      if (trimmed.includes(key)) {
+        return errorTranslations[key];
+      }
+    }
+    return msg;
+  }
+  if (Array.isArray(msg)) {
+    return msg.map(translateMessage);
+  }
+  return msg;
+};
+
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
+    if (error.response?.data && typeof error.response.data === 'object') {
+      const data = error.response.data as { message?: unknown };
+      if (data.message) {
+        data.message = translateMessage(data.message);
+      }
+    }
+
     const originalRequest = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
 
     const requestUrl = originalRequest?.url ?? '';

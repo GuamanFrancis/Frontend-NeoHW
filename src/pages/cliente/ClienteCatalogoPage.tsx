@@ -12,7 +12,6 @@ import type { CatalogComponent } from '../../types/catalog';
 import { ComponenteDetalleDrawer } from './ComponenteDetalleDrawer';
 import {
   useClienteCatalog,
-  CATEGORIES,
   CATEGORY_ICONS,
   statusBadges,
   statusLabels
@@ -39,14 +38,7 @@ const ProductGridCard = ({
       onMouseLeave={onMouseLeave}
       className="group relative flex flex-col rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm transition-all duration-300 hover:border-teal-500/50 hover:shadow-lg dark:border-neutral-850 dark:bg-neutral-950/30 overflow-hidden"
     >
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-widest">
-          {item.brand}
-        </span>
-        <div className="text-xs text-slate-300 dark:text-neutral-700 hover:text-rose-500 transition cursor-pointer">
-          ♥
-        </div>
-      </div>
+
       <div
         className="mb-4 flex h-36 items-center justify-center overflow-hidden rounded-lg bg-slate-50 dark:bg-neutral-900/50 p-2 cursor-pointer"
         onClick={() => onOpenDrawer(item)}
@@ -164,8 +156,6 @@ const ProductListCard = ({
           </span>
         </div>
         <div className="flex items-center text-xs text-slate-400 dark:text-neutral-500 font-bold gap-3 mb-3">
-          <span className="uppercase tracking-widest">{item.brand}</span>
-          <span>•</span>
           <span>{item.category}</span>
         </div>
         <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-xs text-slate-500 dark:text-neutral-400 font-semibold border-t border-slate-50 dark:border-neutral-900/50 pt-2.5">
@@ -230,7 +220,7 @@ export const ClienteCatalogoPage = () => {
       <div className="relative mb-8 flex flex-col items-center justify-between gap-4 md:flex-row border-b border-slate-100 dark:border-neutral-900 pb-6">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white leading-none">
-            Explorar catálogo de componentes de hardware
+            Catálogo de componentes
           </h1>
           <p className="text-sm text-slate-500 dark:text-neutral-400 mt-2 font-medium">
             Explora, compara y elige los mejores componentes para tu próximo ensamble.
@@ -248,7 +238,7 @@ export const ClienteCatalogoPage = () => {
               }}
               onFocus={() => catalog.setShowSuggestions(true)}
               onBlur={() => setTimeout(() => catalog.setShowSuggestions(false), 200)}
-              placeholder="Buscar componente, marca o especificación..."
+              placeholder="Buscar componente o especificación..."
               className="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-slate-400 dark:placeholder:text-neutral-500"
             />
           </div>
@@ -269,9 +259,6 @@ export const ClienteCatalogoPage = () => {
                     className="flex w-full items-center justify-between px-2 py-2 text-left text-xs font-semibold hover:bg-slate-50 dark:hover:bg-white/[0.03] rounded-md transition"
                   >
                     <span>{item.name}</span>
-                    <span className="text-[10px] font-bold text-teal-500 dark:text-teal-400 uppercase">
-                      {item.brand}
-                    </span>
                   </button>
                 ))}
               </div>
@@ -281,25 +268,7 @@ export const ClienteCatalogoPage = () => {
       </div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200/60 bg-white p-4 shadow-sm dark:border-neutral-900 dark:bg-neutral-950/20">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-wider mb-1 px-1">
-              Marca
-            </span>
-            <div className="relative">
-              <select
-                value={catalog.selectedBrand}
-                onChange={(e) => catalog.setSelectedBrand(e.target.value)}
-                className="h-10 rounded-lg border border-slate-200 bg-white pl-3 pr-10 text-xs font-bold shadow-sm outline-none cursor-pointer appearance-none dark:border-neutral-800 dark:bg-neutral-900"
-              >
-                {catalog.brandsList.map((brand) => (
-                  <option key={brand} value={brand}>
-                    {brand}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-slate-400 dark:text-neutral-500" />
-            </div>
-          </div>
+
           <div className="flex flex-col">
             <span className="text-[10px] font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-wider mb-1 px-1">
               Rango de precio
@@ -392,7 +361,7 @@ export const ClienteCatalogoPage = () => {
         </div>
       </div>
       <div className="mb-8 flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-        {CATEGORIES.map((cat) => {
+        {catalog.categories.map((cat) => {
           const Icon = CATEGORY_ICONS[cat.slug] || LayoutGrid;
           const isActive = catalog.activeCategoryTab === cat.slug;
           return (
