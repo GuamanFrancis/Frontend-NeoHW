@@ -76,6 +76,7 @@ export const ClientePedidosPage = () => {
   const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [orderIdToCancel, setOrderIdToCancel] = useState<string | null>(null);
 
   const loadOrders = async () => {
     if (!userId) return;
@@ -183,7 +184,6 @@ export const ClientePedidosPage = () => {
   };
 
   const handleCancelOrder = async (orderId: string) => {
-    if (!window.confirm('¿Está seguro de que desea cancelar este pedido?')) return;
     setCancellingOrderId(orderId);
     try {
       await updateOrderStatus(orderId, 'CANCELLED');
@@ -192,7 +192,7 @@ export const ClientePedidosPage = () => {
       loadOrders();
     } catch (err) {
       console.error(err);
-      alert('No tienes permisos para cancelar este pedido. Por favor, contacta a un administrador o vendedor.');
+      alert('Para procesar la cancelación de tu pedido, por favor comunícate con un asesor de ventas o el soporte técnico de NeoHW.');
     } finally {
       setCancellingOrderId(null);
     }
@@ -441,7 +441,7 @@ export const ClientePedidosPage = () => {
                                 type="button"
                                 variant="outline"
                                 disabled={cancellingOrderId === order.id}
-                                onClick={() => handleCancelOrder(order.id)}
+                                onClick={() => setOrderIdToCancel(order.id)}
                                 className="border-rose-500/30 text-rose-500 hover:bg-rose-50 dark:border-rose-500/25 dark:hover:bg-rose-950/15 h-8 px-3 text-[10px] uppercase font-extrabold flex items-center gap-1"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
@@ -668,7 +668,7 @@ export const ClientePedidosPage = () => {
                     type="button"
                     variant="outline"
                     disabled={cancellingOrderId === selectedOrder.id}
-                    onClick={() => handleCancelOrder(selectedOrder.id)}
+                    onClick={() => setOrderIdToCancel(selectedOrder.id)}
                     className="border-rose-500/30 text-rose-500 hover:bg-rose-50 dark:border-rose-500/25 dark:hover:bg-rose-950/15"
                   >
                     {cancellingOrderId === selectedOrder.id ? 'Cancelando...' : 'Cancelar Pedido'}
@@ -692,7 +692,51 @@ export const ClientePedidosPage = () => {
         )}
       </Modal>
 
-      
+      <Modal
+        open={!!orderIdToCancel}
+        title="Cancelar Pedido"
+        onClose={() => setOrderIdToCancel(null)}
+      >
+        <div className="space-y-6">
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 shrink-0 flex items-center justify-center rounded-full bg-rose-500/10 text-rose-500 dark:bg-rose-500/20">
+              <Trash2 className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                ¿Está seguro de que desea cancelar este pedido?
+              </p>
+              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                Esta acción no se puede deshacer y cancelará el pedido permanentemente.
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOrderIdToCancel(null)}
+              className="text-xs font-bold"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={async () => {
+                if (orderIdToCancel) {
+                  const id = orderIdToCancel;
+                  setOrderIdToCancel(null);
+                  await handleCancelOrder(id);
+                }
+              }}
+              className="bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs"
+            >
+              Aceptar
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
       <ComponenteDetalleDrawer
         componente={selectedProduct}
         open={isDetailOpen}

@@ -43,7 +43,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
               <div key={c.id} className="flex items-center justify-between gap-2 text-slate-700 dark:text-neutral-300">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span className="shrink-0">{c.icon}</span>
-                  <span className="truncate font-medium">{c.dbProduct?.name}</span>
+                  <span className="truncate font-medium">{c.selectedName || c.dbProduct?.name}</span>
                 </div>
                 <span className="shrink-0 font-bold text-slate-900 dark:text-white">
                   ${parseFloat(c.dbProduct?.price as any || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}

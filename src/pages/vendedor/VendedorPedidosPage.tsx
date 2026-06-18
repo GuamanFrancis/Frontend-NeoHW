@@ -3,7 +3,7 @@ import { Eye, Filter, Search, Truck, AlertTriangle, CheckCircle2, XCircle } from
 import { Button } from '../../components/ui/Button';
 import { PageCard } from '../../components/ui/PageCard';
 import { Modal } from '../../components/ui/Modal';
-import { getOrders, updateOrderStatus, uploadOrderDocument, updateLocalOrder, type OrderItemBackend } from '../../services/ordersService';
+import { getOrders, updateOrderStatus, uploadOrderDocument, type OrderItemBackend } from '../../services/ordersService';
 
 export type SellerOrderStatus = 'Pendiente' | 'En proceso' | 'Enviado' | 'Entregado' | 'Cancelado';
 
@@ -111,7 +111,6 @@ export const VendedorPedidosPage = () => {
         if (order.status === 'PENDING_PAYMENT' && paidOrders.includes(order.id)) {
           try {
             await updateOrderStatus(order.id, 'PROCESSING');
-            updateLocalOrder(order.id, 'PROCESSING');
             order.status = 'PROCESSING';
           } catch (err) {
             console.error(err);
@@ -229,12 +228,8 @@ export const VendedorPedidosPage = () => {
         throw new Error('Es obligatorio subir una Prueba de Envío (SHIPPING_PROOF) en formato PDF o Imagen para despachar este pedido.');
       }
 
-      const docRes = await uploadOrderDocument(orderToDispatch.id, dispatchFile, 'SHIPPING_PROOF');
+      await uploadOrderDocument(orderToDispatch.id, dispatchFile, 'SHIPPING_PROOF');
       await updateOrderStatus(orderToDispatch.id, 'SHIPPED');
-      updateLocalOrder(orderToDispatch.id, 'SHIPPED', {
-        documentType: 'SHIPPING_PROOF',
-        fileUrl: docRes.document?.fileUrl || docRes.fileUrl || ''
-      });
 
       await loadOrders();
       setOrderToDispatch(null);
@@ -284,18 +279,9 @@ export const VendedorPedidosPage = () => {
         throw new Error('Debe subir la Firma del Cliente (CUSTOMER_SIGNATURE) para entregar el pedido.');
       }
 
-      const docPhotoRes = await uploadOrderDocument(orderToDeliver.id, deliveryPhotoFile, 'DELIVERY_PHOTO');
-      const docSigRes = await uploadOrderDocument(orderToDeliver.id, customerSignatureFile, 'CUSTOMER_SIGNATURE');
+      await uploadOrderDocument(orderToDeliver.id, deliveryPhotoFile, 'DELIVERY_PHOTO');
+      await uploadOrderDocument(orderToDeliver.id, customerSignatureFile, 'CUSTOMER_SIGNATURE');
       await updateOrderStatus(orderToDeliver.id, 'DELIVERED');
-
-      updateLocalOrder(orderToDeliver.id, 'DELIVERED', {
-        documentType: 'DELIVERY_PHOTO',
-        fileUrl: docPhotoRes.document?.fileUrl || docPhotoRes.fileUrl || ''
-      });
-      updateLocalOrder(orderToDeliver.id, 'DELIVERED', {
-        documentType: 'CUSTOMER_SIGNATURE',
-        fileUrl: docSigRes.document?.fileUrl || docSigRes.fileUrl || ''
-      });
 
       await loadOrders();
       setOrderToDeliver(null);
@@ -336,7 +322,6 @@ export const VendedorPedidosPage = () => {
       }
 
       await updateOrderStatus(orderToCancel.id, 'CANCELLED');
-      updateLocalOrder(orderToCancel.id, 'CANCELLED');
       await loadOrders();
       setOrderToCancel(null);
     } catch (err) {

@@ -78,9 +78,17 @@ export const useClienteCatalog = () => {
           name: cat.name,
           slug: cat.slug,
         }));
+        const uniqueMappedCats: typeof mappedCats = [];
+        const seenSlugs = new Set<string>();
+        for (const cat of mappedCats) {
+          if (!seenSlugs.has(cat.slug)) {
+            seenSlugs.add(cat.slug);
+            uniqueMappedCats.push(cat);
+          }
+        }
         setCategories([
           { id: 'all', name: 'Todos', slug: 'todos' },
-          ...mappedCats,
+          ...uniqueMappedCats,
         ]);
       } catch (error) {
         console.error('Error al cargar categorías:', error);

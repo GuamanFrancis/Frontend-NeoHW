@@ -107,7 +107,7 @@ export const ForgotPasswordPage = () => {
   return (
     <AuthLayout cardClassName="py-8 lg:py-7 !max-w-[480px]">
       {step === 1 && (
-        <form className="mt-7 space-y-5" onSubmit={handleRequestCode}>
+        <form className="mt-7 space-y-5" onSubmit={handleRequestCode} noValidate>
           <div className="text-center">
             <h2 className="text-3xl font-extrabold leading-tight text-slate-950 dark:text-white xl:text-4xl">
               Recuperar cuenta
@@ -152,7 +152,7 @@ export const ForgotPasswordPage = () => {
       )}
 
       {step === 2 && (
-        <form className="mt-7 space-y-5" onSubmit={handleVerifyCode}>
+        <form className="mt-7 space-y-5" onSubmit={handleVerifyCode} noValidate>
           <div className="text-center">
             <h2 className="text-3xl font-extrabold leading-tight text-slate-950 dark:text-white xl:text-4xl">
               Ingresar código
@@ -207,7 +207,7 @@ export const ForgotPasswordPage = () => {
       )}
 
       {step === 3 && (
-        <form className="mt-7 space-y-5" onSubmit={handleResetPassword}>
+        <form className="mt-7 space-y-5" onSubmit={handleResetPassword} noValidate>
           <div className="text-center">
             <h2 className="text-3xl font-extrabold leading-tight text-slate-950 dark:text-white xl:text-4xl">
               Nueva contraseña

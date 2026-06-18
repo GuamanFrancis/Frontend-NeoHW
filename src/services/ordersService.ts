@@ -151,60 +151,6 @@ export const uploadOrderDocument = async (
   return data;
 };
 
-interface LocalOrderDoc {
-  id: string;
-  documentType: string;
-  fileUrl: string;
-  createdAt: string;
-}
 
-interface LocalOrderUpdate {
-  id: string;
-  status: string;
-  documents?: LocalOrderDoc[];
-  [key: string]: unknown;
-}
-
-export const updateLocalOrder = (
-  orderId: string,
-  status: string,
-  doc?: { documentType: string; fileUrl: string }
-) => {
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && key.startsWith('client_orders_')) {
-      try {
-        const orders = JSON.parse(localStorage.getItem(key) || '[]') as LocalOrderUpdate[];
-        let updated = false;
-        const newOrders = orders.map((o: LocalOrderUpdate) => {
-          if (o.id === orderId) {
-            updated = true;
-            const updatedOrder = { ...o, status };
-            if (doc) {
-              const docs = o.documents || [];
-              if (!docs.some((d: LocalOrderDoc) => d.documentType === doc.documentType)) {
-                docs.push({
-                  id: Math.random().toString(),
-                  documentType: doc.documentType,
-                  fileUrl: doc.fileUrl,
-                  createdAt: new Date().toISOString()
-                });
-              }
-              updatedOrder.documents = docs;
-            }
-            return updatedOrder;
-          }
-          return o;
-        });
-        if (updated) {
-          localStorage.setItem(key, JSON.stringify(newOrders));
-          break;
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  }
-};
 
 

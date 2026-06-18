@@ -217,7 +217,10 @@ export const ClienteCatalogoPage = () => {
           <span className="text-sm font-bold">{catalog.cartSuccessMessage}</span>
         </div>
       )}
-      <div className="relative mb-8 flex flex-col items-center justify-between gap-4 md:flex-row border-b border-slate-100 dark:border-neutral-900 pb-6">
+      <div
+        className="relative mb-8 flex flex-col items-center justify-between gap-4 md:flex-row border-b border-slate-100 dark:border-neutral-900 pb-6"
+        onMouseEnter={catalog.handleCloseDrawer}
+      >
         <div>
           <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white leading-none">
             Catálogo de componentes
@@ -266,7 +269,10 @@ export const ClienteCatalogoPage = () => {
           )}
         </div>
       </div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200/60 bg-white p-4 shadow-sm dark:border-neutral-900 dark:bg-neutral-950/20">
+      <div
+        className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200/60 bg-white p-4 shadow-sm dark:border-neutral-900 dark:bg-neutral-950/20"
+        onMouseEnter={catalog.handleCloseDrawer}
+      >
         <div className="flex flex-wrap items-center gap-3">
 
           <div className="flex flex-col">
@@ -360,7 +366,10 @@ export const ClienteCatalogoPage = () => {
           </div>
         </div>
       </div>
-      <div className="mb-8 flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+      <div
+        className="mb-8 flex gap-2 overflow-x-auto pb-2 scrollbar-none"
+        onMouseEnter={catalog.handleCloseDrawer}
+      >
         {catalog.categories.map((cat) => {
           const Icon = CATEGORY_ICONS[cat.slug] || LayoutGrid;
           const isActive = catalog.activeCategoryTab === cat.slug;

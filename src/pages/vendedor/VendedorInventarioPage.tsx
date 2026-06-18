@@ -1,10 +1,11 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Boxes, Search, Filter, Eye, Edit2 } from 'lucide-react';
+import { Boxes, Search, Filter, Eye } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { PageCard } from '../../components/ui/PageCard';
 import { Modal } from '../../components/ui/Modal';
-import { getCatalogComponents, updateCatalogComponent } from '../../services/catalogService';
-import type { CatalogComponent, CatalogStockStatus } from '../../types/catalog';
+import { getCatalogComponents } from '../../services/catalogService';
+import { getCategories } from '../../services/categoryService';
+import type { CatalogComponent, CatalogStockStatus, BackendCategory } from '../../types/catalog';
 
 const statusLabel: Record<CatalogStockStatus, string> = {
   disponible: 'Disponible',
@@ -33,6 +34,7 @@ const actionButtonClass =
 
 export const VendedorInventarioPage = () => {
   const [items, setItems] = useState<CatalogComponent[]>([]);
+  const [categories, setCategories] = useState<BackendCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [pageError, setPageError] = useState('');
 
@@ -41,18 +43,31 @@ export const VendedorInventarioPage = () => {
   const [statusFilter, setStatusFilter] = useState<'todos' | CatalogStockStatus>('todos');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
 
   const [selectedComponent, setSelectedComponent] = useState<CatalogComponent | null>(null);
-  const [componentToEditStock, setComponentToEditStock] = useState<CatalogComponent | null>(null);
-  const [newStockValue, setNewStockValue] = useState<number>(0);
-  const [isUpdatingStock, setIsUpdatingStock] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+
+  const loadCategories = async () => {
+    try {
+      const cats = await getCategories();
+      setCategories(cats);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const loadInventory = async () => {
     try {
-      const response = await getCatalogComponents({ page: 1, limit: 100 });
+      setIsLoading(true);
+      const categoryParam = categoryFilter === 'todos' ? undefined : categoryFilter;
+      const response = await getCatalogComponents({
+        page: currentPage,
+        limit: pageSize,
+        search: search.trim() || undefined,
+        category: categoryParam,
+      });
       setItems(response.items);
+      setTotalItems(response.total);
       setPageError('');
     } catch (err) {
       setPageError('No fue posible sincronizar inventario con backend. Verifica la conexion e intenta de nuevo.');
@@ -62,37 +77,29 @@ export const VendedorInventarioPage = () => {
   };
 
   useEffect(() => {
-    void loadInventory();
+    void loadCategories();
   }, []);
 
+  useEffect(() => {
+    void loadInventory();
+  }, [currentPage, pageSize, search, categoryFilter]);
+
   const filteredItems = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    return items.filter((item) => {
-      const matchesSearch =
-        !query ||
-        item.name.toLowerCase().includes(query) ||
-        item.brand.toLowerCase().includes(query) ||
-        item.description.toLowerCase().includes(query);
-
-      const matchesCategory = categoryFilter === 'todos' || item.category === categoryFilter;
-      const matchesStatus = statusFilter === 'todos' || item.status === statusFilter;
-
-      return matchesSearch && matchesCategory && matchesStatus;
-    });
-  }, [items, search, categoryFilter, statusFilter]);
+    if (statusFilter === 'todos') return items;
+    return items.filter((item) => item.status === statusFilter);
+  }, [items, statusFilter]);
 
   const categoryOptions = useMemo(() => {
-    const names = Array.from(new Set(items.map((item) => item.category).filter(Boolean))).sort();
     return [
       { label: 'Categorías: Todas', value: 'todos' },
-      ...names.map((name) => ({ label: name, value: name })),
+      ...categories.map((cat) => ({ label: cat.name, value: cat.slug })),
     ];
-  }, [items]);
+  }, [categories]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
-  const pageItems = filteredItems.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  const firstResult = filteredItems.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-  const lastResult = Math.min(currentPage * pageSize, filteredItems.length);
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const pageItems = filteredItems;
+  const firstResult = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const lastResult = Math.min(currentPage * pageSize, totalItems);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -105,33 +112,6 @@ export const VendedorInventarioPage = () => {
     setCategoryFilter('todos');
     setStatusFilter('todos');
     setCurrentPage(1);
-  };
-
-  const handleUpdateStock = async () => {
-    if (!componentToEditStock) return;
-    try {
-      setIsUpdatingStock(true);
-      setActionError(null);
-      setActionSuccess(null);
-      await updateCatalogComponent(componentToEditStock.id, { stock: newStockValue });
-      setActionSuccess('Stock actualizado exitosamente.');
-      await loadInventory();
-      setTimeout(() => {
-        setComponentToEditStock(null);
-        setActionSuccess(null);
-      }, 1500);
-    } catch (err: any) {
-      console.error(err);
-      const backendMsg = err.response?.data?.message || err.message || '';
-      const isForbidden = err.response?.status === 403 || backendMsg.includes('permission') || backendMsg.includes('INSUFFICIENT');
-      if (isForbidden) {
-        setActionError('Error de autorización: Tu rol de Vendedor no tiene permisos en el backend para modificar el catálogo.');
-      } else {
-        setActionError(`Error al actualizar el stock: ${Array.isArray(backendMsg) ? backendMsg.join(', ') : backendMsg}`);
-      }
-    } finally {
-      setIsUpdatingStock(false);
-    }
   };
 
   return (
@@ -148,7 +128,7 @@ export const VendedorInventarioPage = () => {
 
       <div className="mb-4 flex items-center justify-between">
         <span className="text-sm font-semibold text-slate-550 dark:text-neutral-400">
-          Mostrando {firstResult}-{lastResult} de {filteredItems.length} componentes
+          Mostrando {firstResult}-{lastResult} de {totalItems} componentes
         </span>
       </div>
 
@@ -282,19 +262,6 @@ export const VendedorInventarioPage = () => {
                             aria-label="Ver detalles"
                           >
                             <Eye className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setComponentToEditStock(item);
-                              setNewStockValue(item.stock);
-                              setActionError(null);
-                              setActionSuccess(null);
-                            }}
-                            className={actionButtonClass}
-                            aria-label="Editar stock"
-                          >
-                            <Edit2 className="h-4 w-4" />
                           </button>
                         </div>
                       </td>
@@ -441,79 +408,6 @@ export const VendedorInventarioPage = () => {
             <div className="flex justify-end pt-2">
               <Button type="button" onClick={() => setSelectedComponent(null)} className="h-10 px-6 font-bold text-xs bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-neutral-800 dark:text-white dark:hover:bg-neutral-700 border-0 shadow-none">
                 Cerrar
-              </Button>
-            </div>
-          </div>
-        </Modal>
-      )}
-
-      {componentToEditStock && (
-        <Modal
-          open={!!componentToEditStock}
-          onClose={() => {
-            if (!isUpdatingStock) {
-              setComponentToEditStock(null);
-              setActionError(null);
-              setActionSuccess(null);
-            }
-          }}
-          title={`Actualizar Stock: ${componentToEditStock.name}`}
-        >
-          <div className="space-y-5 text-slate-800 dark:text-neutral-200">
-            <p className="text-xs text-slate-500 dark:text-neutral-400 font-medium">
-              Modifica la cantidad disponible en el inventario para este componente de hardware.
-            </p>
-
-            <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-neutral-900/50 border border-slate-100 dark:border-neutral-800">
-              <span className="text-xs font-bold text-slate-600 dark:text-neutral-300">Cantidad actual:</span>
-              <span className="text-sm font-black text-slate-900 dark:text-white">{componentToEditStock.stock} unidades</span>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-600 dark:text-neutral-300">Nuevo stock en unidades:</label>
-              <input
-                type="number"
-                min="0"
-                value={newStockValue}
-                onChange={(e) => setNewStockValue(Math.max(0, parseInt(e.target.value) || 0))}
-                className={`${fieldClass} w-full`}
-                disabled={isUpdatingStock}
-                placeholder="Ej. 15"
-              />
-            </div>
-
-            {actionError && (
-              <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs font-medium text-red-400 leading-normal">
-                {actionError}
-              </div>
-            )}
-
-            {actionSuccess && (
-              <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-xs font-medium text-emerald-600 dark:text-emerald-400 leading-normal">
-                {actionSuccess}
-              </div>
-            )}
-
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setComponentToEditStock(null);
-                  setActionError(null);
-                  setActionSuccess(null);
-                }}
-                disabled={isUpdatingStock}
-                className="rounded-lg px-5 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 dark:text-neutral-400 dark:hover:bg-neutral-900 disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <Button
-                type="button"
-                onClick={() => void handleUpdateStock()}
-                disabled={isUpdatingStock}
-                className="bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold border-0 h-10 px-6 shadow-lg shadow-teal-500/15"
-              >
-                {isUpdatingStock ? 'Actualizando...' : 'Guardar stock'}
               </Button>
             </div>
           </div>

@@ -21,6 +21,15 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), tailwindcss()],
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: './src/test/setup.ts',
+      include: [
+        'src/pages/shared/MiCuentaPage.test.tsx',
+        'src/services/usersService.test.ts',
+      ],
+    },
     server: {
       port: 3000,
       proxy: {
