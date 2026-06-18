@@ -345,7 +345,7 @@ Se dispone de un plan de pruebas estructurado para garantizar el comportamiento 
 
 ## 👨‍💻 Autores
 
-- **Desarrollador:** 
+- **Desarrollador:**  Guaman Ilvis Francis Josue
 - **Tutor Académico:** Ing. Lorena Chulde - Escuela Politécnica Nacional (EPN)
 
 ---
@@ -354,4 +354,4 @@ Se dispone de un plan de pruebas estructurado para garantizar el comportamiento 
 
 Este proyecto ha sido desarrollado como trabajo de titulación con fines académicos y de investigación.
 
-Derechos de Autor © 2026. Todos los derechos reservados.
+Derechos de Autor Francis Guaman © 2026. Todos los derechos reservados.
