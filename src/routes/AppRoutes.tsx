@@ -5,8 +5,9 @@ import { LoginPage } from '../pages/auth/LoginPage';
 import { RegisterPage } from '../pages/auth/RegisterPage';
 import { ForgotPasswordPage } from '../pages/auth/ForgotPasswordPage';
 import { HomePage } from '../pages/home/HomePage';
-import  {ClienteDashboard} from '../pages/cliente/ClienteDashboard';
+import { ClienteDashboard } from '../pages/cliente/ClienteDashboard';
 import { ClienteCatalogoPage } from '../pages/cliente/ClienteCatalogoPage';
+import { PublicCatalogoPage } from '../pages/home/PublicCatalogoPage';
 import { ClienteCarritoPage } from '../pages/cliente/ClienteCarritoPage';
 import { ClienteProyectosPage } from '../pages/cliente/ClienteProyectosPage';
 import { ClientePedidosPage } from '../pages/cliente/ClientePedidosPage';
@@ -96,6 +97,7 @@ export default function AppRoutes() {
         <Route path="/verificar-cuenta" element={<VerifyAccountPage />} />
         <Route path="/recuperar-contrasena" element={<PublicOnlyRoute><ForgotPasswordPage /></PublicOnlyRoute>} />
         <Route path="/simulador" element={<PublicOnlyRoute><SimulatorPage /></PublicOnlyRoute>} />
+        <Route path="/catalogo" element={<PublicCatalogoPage />} />
         <Route path="/success" element={<CheckoutStatusPage type="success" />} />
         <Route path="/cancel" element={<CheckoutStatusPage type="cancel" />} />
         <Route path="/cliente" element={<RequireAuth allowedRoles={['cliente']}><ClienteDashboard /></RequireAuth>}>

@@ -489,9 +489,13 @@ export const useSimulator = () => {
       return;
     }
     setComponents((prev) => prev.map((c) => c.id === activeSlotId ? { ...c, selectedName: product.name, dbProduct: product, quantity: 1 } : c));
-    if (activeSlotId === 'case') setAssemblyStates((prev) => recalcStates({ ...prev, case: 'installed' }, PC_COMPONENTS));
+    if (activeSlotId === 'case') {
+      setAssemblyStates((prev) => recalcStates({ ...prev, case: 'installed' }, PC_COMPONENTS));
+    } else {
+      startInstall(activeSlotId);
+    }
     setActiveSlotId(null);
-  }, [activeSlotId]);
+  }, [activeSlotId, startInstall]);
 
   const handleConfirmRamQuantity = useCallback((quantity: number) => {
     if (!selectedRamProduct || !selectedRamSlotId) return;
@@ -507,7 +511,7 @@ export const useSimulator = () => {
     setAssemblyStates((prev) => {
       const next = { ...prev };
       for (let i = 1; i <= 4; i++) {
-        next[`ram_${i}`] = i <= quantity ? 'available' : 'locked';
+        next[`ram_${i}`] = i <= quantity ? 'installed' : 'locked';
       }
       return recalcStates(next, PC_COMPONENTS);
     });

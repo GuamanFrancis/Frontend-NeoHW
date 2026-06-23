@@ -8,7 +8,6 @@ import {
   ShoppingCart,
   ChevronDown,
   ChevronUp,
-  Calendar,
   DollarSign,
   AlertTriangle,
   CheckCircle2,
@@ -18,6 +17,7 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { useCart } from '../../context/CartContext';
 import type { CatalogComponent } from '../../types/catalog';
+import { ComponenteDetalleDrawer } from './ComponenteDetalleDrawer';
 import { getProjects } from '../../services/projectsService';
 import type { BackendProject } from '../../services/projectsService';
 import { getCatalogComponentById } from '../../services/catalogService';
@@ -100,6 +100,24 @@ const mapBackendProjects = (
   });
 };
 
+const SLOT_NAMES_ES: Record<string, string> = {
+  case: 'Gabinete',
+  psu: 'Fuente de poder',
+  motherboard: 'Placa madre',
+  cpu: 'Procesador',
+  gpu: 'Tarjeta gráfica',
+  storage: 'Almacenamiento',
+  cooler: 'Refrigeración',
+};
+
+const getFriendlySlotName = (slotId: string): string => {
+  if (slotId.startsWith('ram_')) {
+    const num = slotId.split('_')[1];
+    return `Memoria RAM ${num}`;
+  }
+  return SLOT_NAMES_ES[slotId] || slotId;
+};
+
 export const ClienteProyectosPage = () => {
   const navigate = useNavigate();
   const { addMultipleToCart } = useCart();
@@ -110,8 +128,7 @@ export const ClienteProyectosPage = () => {
   
   const [projectToDelete, setProjectToDelete] = useState<SavedProject | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  
+  const [selectedComponent, setSelectedComponent] = useState<CatalogComponent | null>(null);
 
   useEffect(() => {
     const fetchProjectsData = async () => {
@@ -193,32 +210,9 @@ export const ClienteProyectosPage = () => {
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    try {
-      const date = new Date(dateStr);
-      return date.toLocaleDateString('es-EC', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } catch {
-      return dateStr;
-    }
-  };
-
   if (loading) {
     return (
-      <div className="mx-auto max-w-7xl pb-16 text-slate-900 dark:text-neutral-100">
-        <div className="mb-8 border-b border-slate-100 dark:border-neutral-900 pb-6">
-          <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white leading-none">
-            Proyectos de Ensamblaje
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-neutral-400 mt-2 font-medium">
-            Administra tus configuraciones personalizadas de PC y simula o compra en cualquier momento.
-          </p>
-        </div>
+      <div className="mx-auto max-w-[95rem] pb-16 text-slate-900 dark:text-neutral-100 pt-5">
         <div className="flex flex-col items-center justify-center py-20 text-center border border-slate-200 rounded-xl bg-white dark:border-neutral-900 dark:bg-neutral-950/20 animate-pulse">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-teal-500 border-t-transparent mb-4" />
           <h3 className="text-sm font-bold text-slate-700 dark:text-neutral-300">Cargando tus proyectos...</h3>
@@ -229,21 +223,12 @@ export const ClienteProyectosPage = () => {
 
   if (projects.length === 0) {
     return (
-      <div className="mx-auto max-w-7xl pb-16 text-slate-900 dark:text-neutral-100">
-        <div className="mb-8 border-b border-slate-100 dark:border-neutral-900 pb-6">
-          <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white leading-none">
-            Proyectos de Ensamblaje
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-neutral-400 mt-2 font-medium">
-            Administra tus configuraciones personalizadas de PC y simula o compra en cualquier momento.
-          </p>
-        </div>
-
+      <div className="mx-auto max-w-[95rem] pb-16 text-slate-900 dark:text-neutral-100 pt-2">
         <div className="flex h-96 flex-col items-center justify-between rounded-2xl border border-dashed border-slate-200 dark:border-neutral-800 bg-white/50 p-8 text-center dark:bg-neutral-900/10 max-w-2xl mx-auto py-16">
-          <FolderHeart className="h-16 w-16 text-slate-300 dark:text-neutral-700" />
+          <FolderHeart className="h-16 w-16 text-teal-500" />
           <div>
             <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-4">No tienes proyectos guardados</h3>
-            <p className="text-sm text-slate-400 dark:text-neutral-500 mt-2 max-w-md">
+            <p className="text-base text-slate-955 dark:text-white mt-2 max-w-md leading-relaxed">
               Aún no has guardado ninguna configuración de hardware en el simulador 3D. 
               Crea tu PC ideal con la validación de compatibilidad por Inteligencia Artificial y guárdala aquí.
             </p>
@@ -251,7 +236,7 @@ export const ClienteProyectosPage = () => {
           <button
             type="button"
             onClick={() => navigate('/cliente/simulador')}
-            className="flex items-center justify-center gap-2 rounded-lg bg-teal-500 hover:bg-teal-600 text-white font-bold px-6 py-3 transition shadow-sm mt-6 text-sm"
+            className="flex items-center justify-center gap-2 rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 font-semibold px-6 py-3 transition shadow-sm mt-6 text-sm cursor-pointer"
           >
             <Cpu className="h-4 w-4" />
             Ir al Simulador 3D IA
@@ -262,7 +247,7 @@ export const ClienteProyectosPage = () => {
   }
 
   return (
-    <div className="mx-auto max-w-7xl pb-16 text-slate-900 dark:text-neutral-100">
+    <div className="mx-auto max-w-[95rem] pb-16 text-slate-900 dark:text-neutral-100 pt-2">
       {toastMessage && (
         <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-xl border border-teal-500/30 bg-neutral-900 px-4 py-3 shadow-2xl animate-fade-in-up">
           <CheckCircle2 className="h-4 w-4 text-teal-400" />
@@ -270,19 +255,11 @@ export const ClienteProyectosPage = () => {
         </div>
       )}
 
-      <div className="mb-8 border-b border-slate-100 dark:border-neutral-900 pb-6 flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white leading-none">
-            Proyectos de Ensamblaje
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-neutral-400 mt-2 font-medium">
-            Administra tus configuraciones personalizadas de PC, simula en 3D o agrégalas al carrito de compras.
-          </p>
-        </div>
+      <div className="mb-3 flex items-center justify-end pb-2 border-b border-slate-100 dark:border-neutral-900">
         <button
           type="button"
           onClick={() => navigate('/cliente/simulador')}
-          className="flex items-center justify-center gap-2 rounded-lg bg-teal-500 hover:bg-teal-600 text-white font-bold px-4 py-2.5 transition shadow-sm text-xs"
+          className="flex items-center justify-center gap-2 rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 font-semibold px-4 py-2.5 transition shadow-sm text-sm cursor-pointer"
         >
           <Cpu className="h-4 w-4" />
           Nuevo Ensamble
@@ -303,17 +280,13 @@ export const ClienteProyectosPage = () => {
                 <div className="flex-1 min-w-[250px]">
                   <div className="flex items-center gap-2">
                     <FolderHeart className="h-5 w-5 text-teal-500" />
-                    <h3 className="text-lg font-extrabold text-slate-950 dark:text-white truncate">
+                    <h3 className="text-xl font-bold text-slate-955 dark:text-white truncate">
                       {project.name}
                     </h3>
                   </div>
-                  <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-slate-500 dark:text-neutral-400">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3.5 w-3.5" />
-                      {formatDate(project.createdAt)}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <PackageOpen className="h-3.5 w-3.5" />
+                  <div className="flex flex-wrap items-center gap-4 mt-2 text-sm font-semibold text-slate-955 dark:text-white">
+                    <span className="flex items-center gap-1.5">
+                      <PackageOpen className="h-4 w-4 text-teal-500" />
                       {componentCount} componentes
                     </span>
                   </div>
@@ -321,11 +294,11 @@ export const ClienteProyectosPage = () => {
 
                 <div className="flex items-center gap-4 flex-wrap">
                   <div className="text-right">
-                    <span className="text-xs text-slate-400 dark:text-neutral-500 uppercase tracking-wider block font-bold">
+                    <span className="text-sm text-slate-955 dark:text-white uppercase tracking-wider block font-bold">
                       Costo Estimado
                     </span>
-                    <span className="text-lg font-black text-teal-500 dark:text-teal-400 flex items-center justify-end">
-                      <DollarSign className="h-4 w-4 -mr-0.5" />
+                    <span className="text-xl font-bold text-slate-955 dark:text-white flex items-center justify-end">
+                      <DollarSign className="h-5 w-5 -mr-0.5" />
                       {project.totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
@@ -335,7 +308,7 @@ export const ClienteProyectosPage = () => {
                       type="button"
                       onClick={() => handleLoadInSimulator(project)}
                       title="Cargar en el simulador 3D"
-                      className="h-10 px-4 rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-500 hover:bg-teal-500/25 transition text-xs font-bold flex items-center gap-1.5"
+                      className="h-10 px-4 rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 transition text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
                     >
                       <Play className="h-3.5 w-3.5 fill-current" />
                       Simular
@@ -344,7 +317,7 @@ export const ClienteProyectosPage = () => {
                       type="button"
                       onClick={() => handleBuyProject(project)}
                       title="Añadir todas las partes al carrito"
-                      className="h-10 px-4 rounded-lg bg-teal-500 hover:bg-teal-600 text-white transition text-xs font-bold flex items-center gap-1.5 shadow-sm"
+                      className="h-10 px-4 rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 transition text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer"
                     >
                       <ShoppingCart className="h-3.5 w-3.5" />
                       Comprar todo
@@ -353,14 +326,14 @@ export const ClienteProyectosPage = () => {
                       type="button"
                       onClick={() => setProjectToDelete(project)}
                       title="Eliminar proyecto"
-                      className="h-10 w-10 flex items-center justify-center rounded-lg border border-slate-200 dark:border-neutral-800 text-slate-500 hover:text-red-500 hover:bg-red-500/10 dark:text-neutral-400 dark:hover:text-red-400 transition"
+                      className="h-10 w-10 flex items-center justify-center rounded-lg border border-slate-200 dark:border-neutral-800 text-slate-955 dark:text-white hover:text-red-500 hover:bg-red-500/10 dark:hover:text-red-400 transition cursor-pointer"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
                     <button
                       type="button"
                       onClick={() => toggleExpand(project.id)}
-                      className="h-10 w-10 flex items-center justify-center rounded-lg border border-slate-200 dark:border-neutral-800 text-slate-500 dark:text-neutral-400 hover:bg-slate-50 dark:hover:bg-neutral-900 transition"
+                      className="h-10 w-10 flex items-center justify-center rounded-lg border border-slate-200 dark:border-neutral-800 text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 transition cursor-pointer"
                     >
                       {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </button>
@@ -370,55 +343,98 @@ export const ClienteProyectosPage = () => {
 
               {isExpanded && (
                 <div className="border-t border-slate-100 dark:border-neutral-900 bg-slate-50/50 dark:bg-neutral-950/40 p-5">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-neutral-500 mb-3 px-1">
+                  <h4 className="text-sm font-bold uppercase tracking-wider text-slate-955 dark:text-white mb-3 px-1">
                     Componentes Seleccionados
                   </h4>
-                  <div className="divide-y divide-slate-150 dark:divide-neutral-900/60 max-w-5xl">
+                  <div className="space-y-3">
                     {Object.entries(project.componentsMap).map(([slotId, component]) => (
                       <div
                         key={slotId}
-                        className="py-3 flex items-center justify-between gap-4 first:pt-0 last:pb-0"
+                        className="group relative flex flex-col md:flex-row items-center gap-5 rounded-xl border border-slate-200/80 bg-white dark:border-neutral-800 dark:bg-neutral-900/20 p-4 shadow-sm transition-all duration-300 hover:border-teal-500/40 hover:shadow-md"
                       >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="h-12 w-12 rounded-lg border border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden flex items-center justify-center shrink-0">
-                            {component.imageUrl ? (
-                              <img
-                                src={component.imageUrl}
-                                alt={component.name}
-                                className="h-full w-full object-cover"
-                                onError={(e) => {
-                                  
-                                  e.currentTarget.src = '';
-                                  e.currentTarget.className = 'hidden';
-                                }}
-                              />
-                            ) : (
-                              <Cpu className="h-5 w-5 text-slate-400" />
+                        {/* Left Side: Product image with fallback */}
+                        <div
+                          className="flex h-24 w-24 md:h-28 md:w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-50 dark:bg-neutral-900/50 cursor-pointer"
+                          onClick={() => setSelectedComponent(component)}
+                        >
+                          <img
+                            src={component.imageUrl || '/favicon.jpg'}
+                            alt={component.name}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/favicon.jpg';
+                            }}
+                          />
+                        </div>
+
+                        {/* Center Side: Divided into 2 columns on desktop (Info left, Description right) */}
+                        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 min-w-0">
+                          {/* Info Column (Left) */}
+                          <div className="min-w-0 flex flex-col justify-between">
+                            <div>
+                              <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                                <h4
+                                  className="text-lg md:text-xl font-bold text-slate-955 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition cursor-pointer truncate"
+                                  onClick={() => setSelectedComponent(component)}
+                                >
+                                  {component.name}
+                                </h4>
+                                <span
+                                  className={`text-sm font-bold uppercase tracking-wider ${
+                                    component.stock > 0 ? 'text-teal-600 dark:text-teal-400' : 'text-rose-600 dark:text-rose-400'
+                                  }`}
+                                >
+                                  {component.stock > 0 ? 'Disponible' : 'Agotado'}
+                                </span>
+                              </div>
+
+                              <div className="text-sm md:text-base font-bold text-slate-955 dark:text-white uppercase tracking-wider mb-2">
+                                Ranura: <span className="capitalize text-teal-600 dark:text-teal-400">{getFriendlySlotName(slotId)}</span>
+                              </div>
+                            </div>
+
+                            {/* Specifications grid (2 columns, up to 4 attributes, 2 on top and 2 below) */}
+                            {component.attributes && component.attributes.length > 0 && (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 mt-2 pt-2 border-t border-slate-100 dark:border-neutral-900/50 text-sm md:text-base">
+                                {component.attributes.slice(0, 4).map((attr, idx) => (
+                                  <div key={idx} className="flex items-center gap-1.5">
+                                    <span className="font-bold text-slate-955 dark:text-white">{attr.name}:</span>
+                                    <span className="text-slate-955 dark:text-white font-medium">{attr.value} {attr.unit || ''}</span>
+                                  </div>
+                                ))}
+                              </div>
                             )}
                           </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-extrabold text-slate-950 dark:text-white truncate">
-                              {component.name}
-                            </p>
-                            <p className="text-[10px] text-slate-500 dark:text-neutral-400 mt-0.5">
-                              Slot: <span className="capitalize font-bold text-teal-500">{slotId.replace('_', ' ')}</span>
-                            </p>
+
+                          {/* Description Column (Right) */}
+                          <div className="flex flex-col justify-start lg:justify-center min-w-0 border-t lg:border-t-0 lg:border-l border-slate-100 dark:border-neutral-900/50 pt-3 lg:pt-0 lg:pl-6">
+                            <span className="text-xs font-bold text-slate-955 dark:text-white uppercase tracking-wider mb-1 block">
+                              Descripción
+                            </span>
+                            {component.description ? (
+                              <p className="text-sm md:text-base text-slate-955 dark:text-white font-normal leading-relaxed line-clamp-4">
+                                {component.description}
+                              </p>
+                            ) : (
+                              <p className="text-sm text-slate-400 dark:text-neutral-500 italic">
+                                Sin descripción disponible
+                              </p>
+                            )}
                           </div>
                         </div>
 
-                        <div className="text-right shrink-0 flex items-center gap-4">
-                          <div>
-                            <span className="text-sm font-black text-slate-950 dark:text-white">
-                              ${component.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                            </span>
-                            <span
-                              className={`text-[8px] font-bold block mt-0.5 uppercase tracking-wider ${
-                                component.stock > 0 ? 'text-emerald-500' : 'text-rose-500'
-                              }`}
-                            >
-                              {component.stock > 0 ? `Stock: ${component.stock}` : 'Sin stock'}
-                            </span>
-                          </div>
+                        {/* Right Side: Price & Actions */}
+                        <div className="flex md:flex-col items-center md:items-end justify-between md:justify-center gap-3 w-full md:w-auto shrink-0 md:border-l border-slate-100 dark:border-neutral-800 md:pl-5 min-w-[120px]">
+                          <span className="text-lg md:text-xl font-bold text-slate-955 dark:text-white">
+                            ${component.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedComponent(component)}
+                            className="w-full md:w-auto rounded-lg border border-slate-955 dark:border-neutral-700 px-4 py-2.5 text-center text-sm font-bold hover:bg-slate-50 dark:hover:bg-neutral-900 transition text-slate-955 dark:text-white whitespace-nowrap cursor-pointer"
+                          >
+                            Ver detalles
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -441,10 +457,10 @@ export const ClienteProyectosPage = () => {
               <AlertTriangle className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-sm font-extrabold text-slate-900 dark:text-white">
+              <p className="text-base font-bold text-slate-955 dark:text-white">
                 ¿Estás seguro de que deseas eliminar este proyecto?
               </p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">
+              <p className="text-sm text-slate-955 dark:text-white mt-1 leading-relaxed">
                 Esta acción no se puede deshacer. El proyecto "{projectToDelete?.name}" se borrará permanentemente de tu cuenta.
               </p>
             </div>
@@ -460,13 +476,21 @@ export const ClienteProyectosPage = () => {
             <button
               type="button"
               onClick={handleDeleteConfirm}
-              className="rounded-lg bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 transition text-xs shadow-sm"
+              className="rounded-lg bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 transition text-sm shadow-sm"
             >
               Sí, eliminar
             </button>
           </div>
         </div>
       </Modal>
+
+      {selectedComponent && (
+        <ComponenteDetalleDrawer
+          componente={selectedComponent}
+          open={!!selectedComponent}
+          onClose={() => setSelectedComponent(null)}
+        />
+      )}
     </div>
   );
 };

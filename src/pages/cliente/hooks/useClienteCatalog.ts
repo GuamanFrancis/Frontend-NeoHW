@@ -44,9 +44,9 @@ export const FALLBACK_CATEGORIES = [
 export const ITEMS_PER_PAGE = 8;
 
 export const statusBadges = {
-  disponible: 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/25',
-  'stock-bajo': 'bg-amber-500/10 text-amber-500 border border-amber-500/25',
-  agotado: 'bg-rose-500/10 text-rose-500 border border-rose-500/25',
+  disponible: 'text-emerald-500 font-semibold',
+  'stock-bajo': 'text-amber-500 font-semibold',
+  agotado: 'text-rose-500 font-semibold',
 };
 
 export const statusLabels = {
@@ -101,6 +101,15 @@ export const useClienteCatalog = () => {
   }, []);
 
   const [activeCategoryTab, setActiveCategoryTab] = useState(initialCategory);
+
+  useEffect(() => {
+    if (location.state?.categorySlug) {
+      setActiveCategoryTab(location.state.categorySlug);
+    } else {
+      setActiveCategoryTab('todos');
+    }
+  }, [location.state]);
+
   const [selectedBrand, setSelectedBrand] = useState('Todas');
   const [selectedPriceRange, setSelectedPriceRange] = useState('Todos');
   const [selectedAvailability, setSelectedAvailability] = useState('Todas');
@@ -131,51 +140,10 @@ export const useClienteCatalog = () => {
     };
   }, []);
 
-  const handleMouseEnterCard = (item: CatalogComponent, event: React.MouseEvent) => {
-    if (closeTimerRef.current) {
-      clearTimeout(closeTimerRef.current);
-      closeTimerRef.current = null;
-    }
-    if (hoverTimerRef.current) {
-      clearTimeout(hoverTimerRef.current);
-    }
-    const rect = event.currentTarget.getBoundingClientRect();
-    hoverTimerRef.current = setTimeout(() => {
-      setTriggerType('hover');
-      setAnchorRect(rect);
-      setSelectedComponent(item);
-      setIsDrawerOpen(true);
-    }, 2000);
-  };
-
-  const handleMouseLeaveCard = () => {
-    if (hoverTimerRef.current) {
-      clearTimeout(hoverTimerRef.current);
-      hoverTimerRef.current = null;
-    }
-    if (isDrawerOpen && triggerType === 'hover') {
-      closeTimerRef.current = setTimeout(() => {
-        setIsDrawerOpen(false);
-        setSelectedComponent(null);
-      }, 300);
-    }
-  };
-
-  const handleMouseEnterPopup = () => {
-    if (closeTimerRef.current) {
-      clearTimeout(closeTimerRef.current);
-      closeTimerRef.current = null;
-    }
-  };
-
-  const handleMouseLeavePopup = () => {
-    if (triggerType === 'hover') {
-      closeTimerRef.current = setTimeout(() => {
-        setIsDrawerOpen(false);
-        setSelectedComponent(null);
-      }, 300);
-    }
-  };
+  const handleMouseEnterCard = () => {};
+  const handleMouseLeaveCard = () => {};
+  const handleMouseEnterPopup = () => {};
+  const handleMouseLeavePopup = () => {};
 
   useEffect(() => {
     const fetchCatalog = async () => {

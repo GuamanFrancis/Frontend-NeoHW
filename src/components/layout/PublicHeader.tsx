@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import {
-  Box,
   LogOut,
   Search,
   ShoppingCart,
-  UserPlus,
   Sun,
   Moon,
 } from 'lucide-react';
@@ -68,15 +66,15 @@ export const PublicHeader = () => {
   };
 
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white dark:border-neutral-900 dark:bg-neutral-950">
+    <header className="border-b border-slate-200 bg-white dark:border-neutral-900 dark:bg-neutral-950">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5">
         <Link to="/" className="flex items-center gap-3">
-          <Box className="h-9 w-9 text-teal-500" strokeWidth={2.6} />
+          <img src="/favicon.jpg" alt="Logo NeoHW" className="h-9 w-9 object-cover rounded-lg" />
           <span className="text-3xl font-extrabold text-slate-900 dark:text-white">
             Neo<span className="text-teal-500">HW</span>
           </span>
         </Link>
-        <div className="hidden items-center gap-8 text-sm font-bold text-slate-600 dark:text-neutral-300 lg:flex">
+        <div className="hidden items-center gap-8 text-base font-normal text-slate-955 dark:text-white lg:flex">
           <a
             href="/"
             onClick={(e) => handleScrollTo(e, 'inicio')}
@@ -84,15 +82,9 @@ export const PublicHeader = () => {
           >
             Inicio
           </a>
-          <Link to="/cliente/catalogo" className="transition hover:text-teal-500 dark:hover:text-teal-400">Catálogo</Link>
+          <Link to="/catalogo" className="transition hover:text-teal-500 dark:hover:text-teal-400">Catálogo</Link>
           <Link to="/simulador" className="transition hover:text-teal-500 dark:hover:text-teal-400">Simulador IA</Link>
-          <a
-            href="/"
-            onClick={(e) => handleScrollTo(e, 'ofertas')}
-            className="transition hover:text-teal-500 dark:hover:text-teal-400"
-          >
-            Ofertas
-          </a>
+
           <a
             href="/"
             onClick={(e) => handleScrollTo(e, 'beneficios')}
@@ -105,21 +97,21 @@ export const PublicHeader = () => {
           <button
             type="button"
             onClick={toggleTheme}
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-100 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-900"
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-955 transition hover:bg-slate-100 dark:border-neutral-800 dark:text-white dark:hover:bg-neutral-900"
             aria-label="Cambiar tema"
           >
-            {theme === 'dark' ? <Sun className="h-5 w-5 text-teal-400" /> : <Moon className="h-5 w-5 text-slate-500" />}
+            {theme === 'dark' ? <Sun className="h-5 w-5 text-teal-400" /> : <Moon className="h-5 w-5 text-slate-955" />}
           </button>
           <Link
-            to="/cliente/catalogo"
-            className="hidden h-10 w-10 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100 dark:text-neutral-300 dark:hover:bg-neutral-900 md:flex"
+            to="/catalogo"
+            className="hidden h-10 w-10 items-center justify-center rounded-lg text-slate-955 transition hover:bg-slate-100 dark:text-white dark:hover:bg-neutral-900 md:flex"
             aria-label="Buscar"
           >
             <Search className="h-5 w-5" />
           </Link>
           <Link
             to="/cliente/carrito"
-            className="relative flex h-10 w-10 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100 dark:text-neutral-300 dark:hover:bg-neutral-900"
+            className="relative flex h-10 w-10 items-center justify-center rounded-lg text-slate-955 transition hover:bg-slate-100 dark:text-white dark:hover:bg-neutral-900"
             aria-label="Carrito"
           >
             <ShoppingCart className="h-5 w-5" />
@@ -130,38 +122,38 @@ export const PublicHeader = () => {
             )}
           </Link>
           {session ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-5 ml-2">
               <Link
                 to={dashboardPath}
-                className="h-10 items-center justify-center rounded-lg border border-teal-500/20 bg-teal-500/10 px-4 text-sm font-bold text-teal-600 dark:text-teal-400 transition hover:bg-teal-500/20 flex"
+                className="text-base font-normal text-slate-955 dark:text-white transition hover:text-teal-500 dark:hover:text-teal-400"
               >
                 Panel de {session.user.role === 'admin' ? 'Admin' : session.user.role === 'vendedor' ? 'Vendedor' : 'Cliente'}
               </Link>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 dark:border-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-white transition"
+                className="flex items-center gap-1.5 text-base font-normal text-slate-955 dark:text-white transition hover:text-teal-500 dark:hover:text-teal-400 cursor-pointer"
                 aria-label="Cerrar sesión"
               >
                 <LogOut className="h-4 w-4" />
+                <span>Salir</span>
               </button>
             </div>
           ) : (
-            <>
+            <div className="flex items-center gap-5 ml-2">
               <Link
                 to="/login"
-                className="hidden h-10 items-center justify-center rounded-lg border border-teal-500/20 bg-teal-500/5 px-4 text-sm font-bold text-teal-600 dark:text-teal-400 transition hover:bg-teal-500/10 sm:flex"
+                className="hidden text-base font-normal text-slate-955 dark:text-white transition hover:text-teal-500 dark:hover:text-teal-400 sm:flex"
               >
                 Iniciar sesión
               </Link>
               <Link
                 to="/registro"
-                className="flex h-10 items-center justify-center gap-2 rounded-lg bg-teal-500 px-4 text-sm font-bold text-white transition hover:bg-teal-400 shadow-[0_0_15px_rgba(20,184,166,0.15)]"
+                className="flex items-center text-base font-normal text-slate-955 dark:text-white transition hover:text-teal-500 dark:hover:text-teal-400"
               >
-                <UserPlus className="h-4 w-4" />
-                Crear cuenta
+                <span>Crear cuenta</span>
               </Link>
-            </>
+            </div>
           )}
         </div>
       </nav>

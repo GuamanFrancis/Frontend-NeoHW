@@ -12,7 +12,6 @@ import {
   Eye,
   Trash2
 } from 'lucide-react';
-import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { getStoredSession } from '../../services/session';
 import { createStripeSession } from '../../services/paymentsService';
@@ -68,7 +67,7 @@ export const ClientePedidosPage = () => {
   const [endDate, setEndDate] = useState<string>('');
 
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 8;
 
   const [selectedOrder, setSelectedOrder] = useState<OrderLocal | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<CatalogComponent | null>(null);
@@ -224,37 +223,37 @@ export const ClientePedidosPage = () => {
     switch (status) {
       case 'PENDING_PAYMENT':
         return (
-          <span className="bg-amber-500/10 text-amber-500 border border-amber-500/25 px-2.5 py-1 rounded-full text-[10px] uppercase font-black tracking-wide">
+          <span className="text-amber-600 dark:text-amber-400 font-bold uppercase tracking-wider text-xs">
             Pendiente de Pago
           </span>
         );
       case 'PROCESSING':
         return (
-          <span className="bg-teal-500/10 text-teal-400 border border-teal-500/25 px-2.5 py-1 rounded-full text-[10px] uppercase font-black tracking-wide">
-            Pagado
+          <span className="text-teal-600 dark:text-teal-400 font-bold uppercase tracking-wider text-xs">
+            Pendiente de Envío
           </span>
         );
       case 'SHIPPED':
         return (
-          <span className="bg-blue-500/10 text-blue-400 border border-blue-500/25 px-2.5 py-1 rounded-full text-[10px] uppercase font-black tracking-wide">
-            Enviado
+          <span className="text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider text-xs">
+            En Camino
           </span>
         );
       case 'DELIVERED':
         return (
-          <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 px-2.5 py-1 rounded-full text-[10px] uppercase font-black tracking-wide">
+          <span className="text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider text-xs">
             Entregado
           </span>
         );
       case 'CANCELLED':
         return (
-          <span className="bg-rose-500/10 text-rose-500 border border-rose-500/25 px-2.5 py-1 rounded-full text-[10px] uppercase font-black tracking-wide">
+          <span className="text-rose-600 dark:text-rose-400 font-bold uppercase tracking-wider text-xs">
             Cancelado
           </span>
         );
       default:
         return (
-          <span className="bg-neutral-800 text-neutral-400 px-2.5 py-1 rounded-full text-[10px] uppercase font-black tracking-wide">
+          <span className="text-slate-955 dark:text-white font-bold uppercase tracking-wider text-xs">
             {status}
           </span>
         );
@@ -271,234 +270,223 @@ export const ClientePedidosPage = () => {
     } catch {
       return dateStr;
     }
-  };
-
-  return (
-    <div className="mx-auto max-w-7xl pb-16 text-slate-900 dark:text-neutral-100">
-      
-      <div className="mb-8 border-b border-slate-100 dark:border-neutral-900 pb-6">
-        <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white leading-none">
-          Historial de compras
-        </h1>
-        <p className="text-sm text-slate-500 dark:text-neutral-400 mt-2 font-medium">
-          Consulta, filtra y gestiona el estado de todos tus pedidos realizados en el sistema.
-        </p>
-      </div>
-
-      
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-neutral-900 dark:bg-neutral-950/20 mb-6">
-        <div className="flex items-center gap-2 mb-4 text-xs font-black uppercase tracking-wider text-slate-400 dark:text-neutral-500">
-          <Filter className="h-4 w-4 text-teal-500" />
-          <span>Filtros de búsqueda</span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-xs font-bold text-slate-500 dark:text-neutral-400 mb-1.5 uppercase">
-              Estado del pedido
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full h-11 px-3 rounded-lg border border-slate-200 bg-slate-50 dark:border-neutral-850 dark:bg-neutral-900 text-xs font-bold text-slate-700 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
-            >
-              <option value="ALL">Todos los estados</option>
-              <option value="PENDING_PAYMENT">Pendiente de Pago</option>
-              <option value="PROCESSING">Procesando</option>
-              <option value="SHIPPED">Enviado</option>
-              <option value="DELIVERED">Entregado</option>
-              <option value="CANCELLED">Cancelado</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-slate-500 dark:text-neutral-400 mb-1.5 uppercase">
-              Desde (Fecha inicio)
-            </label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => {
-                setStartDate(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full h-11 px-3 rounded-lg border border-slate-200 bg-slate-50 dark:border-neutral-850 dark:bg-neutral-900 text-xs font-bold text-slate-700 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-slate-500 dark:text-neutral-400 mb-1.5 uppercase">
-              Hasta (Fecha fin)
-            </label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => {
-                setEndDate(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full h-11 px-3 rounded-lg border border-slate-200 bg-slate-50 dark:border-neutral-850 dark:bg-neutral-900 text-xs font-bold text-slate-700 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
-            />
-          </div>
-          <div className="flex items-end">
-            <Button
-              variant="outline"
-              fullWidth
-              onClick={() => {
-                setStatusFilter('ALL');
-                setStartDate('');
-                setEndDate('');
-                setCurrentPage(1);
-              }}
-              className="h-11 font-bold text-xs"
-            >
-              Limpiar filtros
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center border border-slate-200 rounded-xl bg-white dark:border-neutral-900 dark:bg-neutral-950/20 animate-pulse">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-teal-500 border-t-transparent mb-4" />
-          <h3 className="text-sm font-bold text-slate-700 dark:text-neutral-300">Cargando tu historial de pedidos...</h3>
-        </div>
-      ) : filteredOrders.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-slate-200 rounded-xl bg-white dark:border-neutral-900 dark:bg-neutral-950/20">
-          <ShoppingBag className="h-16 w-16 text-slate-300 dark:text-neutral-800 mb-4" />
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white">No se encontraron pedidos</h3>
-          <p className="text-xs text-slate-400 dark:text-neutral-500 mt-2 max-w-sm leading-relaxed">
-            Intenta cambiar los filtros seleccionados o realiza una compra en el catálogo para generar tu primera orden.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white dark:border-neutral-900 dark:bg-neutral-950">
-            <table className="w-full border-collapse text-left text-xs">
-              <thead>
-                <tr className="border-b border-slate-100 text-[10px] font-bold text-slate-500 uppercase tracking-wider dark:border-neutral-900 dark:text-neutral-500">
-                  <th className="py-4 px-6">ID Pedido</th>
-                  <th className="py-4 px-6">Fecha</th>
-                  <th className="py-4 px-6">Componentes</th>
-                  <th className="py-4 px-6 text-right">Total a pagar</th>
-                  <th className="py-4 px-6 text-center">Estado</th>
-                  <th className="py-4 px-6"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-neutral-900">
-                {displayedOrders.map((order) => {
-                  const productNames = order.items.map(item => item.product.name).join(', ');
-                  const itemsCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
-
-                  return (
-                    <tr key={order.id} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-colors">
-                      <td className="py-4 px-6 font-bold text-slate-950 whitespace-nowrap dark:text-white">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-mono text-slate-700 dark:text-neutral-300 select-all">
-                            #{order.id.slice(0, 8)}...
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleCopyId(order.id)}
-                            className="text-slate-400 hover:text-slate-600 transition dark:text-neutral-500 dark:hover:text-neutral-300"
-                            title="Copiar ID completo"
-                          >
-                            {copiedId === order.id ? (
-                              <span className="text-[10px] text-teal-500 font-bold">¡Copiado!</span>
-                            ) : (
-                              <Copy className="h-3.5 w-3.5" />
-                            )}
-                          </button>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 text-slate-600 font-semibold dark:text-neutral-400 whitespace-nowrap">
-                        {formatDate(order.createdAt)}
-                      </td>
-                      <td className="py-4 px-6 max-w-xs truncate text-slate-500 font-medium dark:text-neutral-400" title={productNames}>
-                        <span className="font-bold text-slate-700 dark:text-neutral-300 mr-1">({itemsCount})</span>
-                        {productNames}
-                      </td>
-                      <td className="py-4 px-6 text-right font-black text-slate-900 whitespace-nowrap dark:text-white">
-                        ${order.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
-                      </td>
-                      <td className="py-4 px-6 text-center whitespace-nowrap">
-                        {getStatusBadge(order.status)}
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center justify-end gap-3">
-                          {order.status === 'PENDING_PAYMENT' && (
-                            <>
-                              <Button
-                                type="button"
-                                disabled={payingOrderId === order.id}
-                                onClick={() => handlePayOrder(order.id)}
-                                className="bg-teal-500 hover:bg-teal-400 text-neutral-950 font-extrabold h-8 px-4 text-[10px] uppercase border-0 shadow-sm"
-                              >
-                                {payingOrderId === order.id ? 'Cargando...' : 'Pagar'}
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                disabled={cancellingOrderId === order.id}
-                                onClick={() => setOrderIdToCancel(order.id)}
-                                className="border-rose-500/30 text-rose-500 hover:bg-rose-50 dark:border-rose-500/25 dark:hover:bg-rose-950/15 h-8 px-3 text-[10px] uppercase font-extrabold flex items-center gap-1"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                                Cancelar
-                              </Button>
-                            </>
-                          )}
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => setSelectedOrder(order)}
-                            className="h-8 px-3 text-[10px] font-bold flex items-center gap-1"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                            Detalle
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between pt-4">
-              <span className="text-xs text-slate-500 dark:text-neutral-400 font-semibold">
-                Mostrando página {currentPage} de {totalPages} ({filteredOrders.length} pedidos en total)
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="h-9 px-3"
+  };  return (
+    <div className="mx-auto max-w-[95rem] pb-16 text-slate-900 dark:text-neutral-100 pt-2">
+      <div className="flex flex-col lg:flex-row gap-6 mt-4">
+        {/* Left Column: Filters (Sidebar style) */}
+        <div className="w-full lg:w-[280px] shrink-0">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-neutral-900 dark:bg-neutral-950/20">
+            <div className="flex items-center gap-2 mb-4 text-sm font-bold uppercase tracking-wider text-slate-955 dark:text-white">
+              <Filter className="h-4 w-4 text-teal-500" />
+              <span>Filtros de búsqueda</span>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-955 dark:text-white mb-1.5 uppercase">
+                  Estado del pedido
+                </label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full h-11 px-3 rounded-lg border border-slate-200 bg-slate-50 dark:border-neutral-850 dark:bg-neutral-900 text-sm font-semibold text-slate-955 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
                 >
-                  <ChevronLeft className="h-4 w-4" />
-                  Anterior
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="h-9 px-3"
-                >
-                  Siguiente
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+                  <option value="ALL">Todos los estados</option>
+                  <option value="PENDING_PAYMENT">Pendiente de Pago</option>
+                  <option value="PROCESSING">Procesando</option>
+                  <option value="SHIPPED">Enviado</option>
+                  <option value="DELIVERED">Entregado</option>
+                  <option value="CANCELLED">Cancelado</option>
+                </select>
               </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-955 dark:text-white mb-1.5 uppercase">
+                  Desde (Fecha inicio)
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full h-11 px-3 rounded-lg border border-slate-200 bg-slate-50 dark:border-neutral-850 dark:bg-neutral-900 text-sm font-semibold text-slate-955 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-955 dark:text-white mb-1.5 uppercase">
+                  Hasta (Fecha fin)
+                </label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => {
+                    setEndDate(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full h-11 px-3 rounded-lg border border-slate-200 bg-slate-50 dark:border-neutral-850 dark:bg-neutral-900 text-sm font-semibold text-slate-955 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setStatusFilter('ALL');
+                  setStartDate('');
+                  setEndDate('');
+                  setCurrentPage(1);
+                }}
+                className="w-full h-11 flex items-center justify-center gap-2 rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 font-bold px-4 py-2 transition shadow-sm text-sm cursor-pointer"
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Orders list or state view */}
+        <div className="flex-1 min-w-0">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center border border-slate-200 rounded-xl bg-white dark:border-neutral-900 dark:bg-neutral-950/20 animate-pulse">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-teal-500 border-t-transparent mb-4" />
+              <h3 className="text-sm font-bold text-slate-955 dark:text-white">Cargando tu historial de pedidos...</h3>
+            </div>
+          ) : filteredOrders.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-slate-200 rounded-xl bg-white dark:border-neutral-900 dark:bg-neutral-950/20">
+              <ShoppingBag className="h-16 w-16 text-teal-500 mb-4" />
+              <h3 className="text-xl font-bold text-slate-955 dark:text-white">No se encontraron pedidos</h3>
+              <p className="text-base text-slate-955 dark:text-white mt-2 max-w-sm leading-relaxed">
+                Intenta cambiar los filtros seleccionados o realiza una compra en el catálogo para generar tu primera orden.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white dark:border-neutral-900 dark:bg-neutral-950">
+                <table className="w-full border-collapse text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-xs font-bold text-slate-955 uppercase tracking-wider dark:border-neutral-900 dark:text-white">
+                      <th className="py-3 px-4">ID Pedido</th>
+                      <th className="py-3 px-4">Fecha</th>
+                      <th className="py-3 px-4">Componentes</th>
+                      <th className="py-3 px-4 text-right">Total a pagar</th>
+                      <th className="py-3 px-4 text-center">Estado</th>
+                      <th className="py-3 px-4"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-neutral-900">
+                    {displayedOrders.map((order) => {
+                      const productNames = order.items.map(item => item.product.name).join(', ');
+                      const itemsCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+
+                      return (
+                        <tr key={order.id} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-colors">
+                          <td className="py-3 px-4 font-bold text-slate-955 whitespace-nowrap dark:text-white">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono text-slate-955 dark:text-white select-all font-bold">
+                                #{order.id.slice(0, 8)}...
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyId(order.id)}
+                                className="text-slate-955 hover:text-teal-500 transition dark:text-white dark:hover:text-teal-400"
+                                title="Copiar ID completo"
+                              >
+                                {copiedId === order.id ? (
+                                  <span className="text-[10px] text-teal-500 font-bold">¡Copiado!</span>
+                                ) : (
+                                  <Copy className="h-3.5 w-3.5" />
+                                )}
+                              </button>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-slate-955 font-semibold dark:text-white whitespace-nowrap">
+                            {formatDate(order.createdAt)}
+                          </td>
+                          <td className="py-3 px-4 max-w-xs truncate text-slate-955 font-medium dark:text-white" title={productNames}>
+                            <span className="font-bold text-slate-955 dark:text-white mr-1">({itemsCount})</span>
+                            {productNames}
+                          </td>
+                          <td className="py-3 px-4 text-right font-bold text-slate-955 whitespace-nowrap dark:text-white text-base">
+                            ${order.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                          </td>
+                          <td className="py-3 px-4 text-center whitespace-nowrap">
+                            {getStatusBadge(order.status)}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center justify-end gap-3">
+                              {order.status === 'PENDING_PAYMENT' && (
+                                <>
+                                  <button
+                                    type="button"
+                                    disabled={payingOrderId === order.id}
+                                    onClick={() => handlePayOrder(order.id)}
+                                    className="h-9 px-4 rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 font-bold text-xs uppercase transition shadow-sm cursor-pointer whitespace-nowrap disabled:opacity-50"
+                                  >
+                                    {payingOrderId === order.id ? 'Cargando...' : 'Pagar'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={cancellingOrderId === order.id}
+                                    onClick={() => setOrderIdToCancel(order.id)}
+                                    className="h-9 px-3 rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 font-bold text-xs uppercase flex items-center gap-1 transition shadow-sm cursor-pointer disabled:opacity-50"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    Cancelar
+                                  </button>
+                                </>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => setSelectedOrder(order)}
+                                className="h-9 px-3 rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 font-bold text-xs flex items-center gap-1 transition shadow-sm cursor-pointer whitespace-nowrap"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                                Detalle
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination block */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-4">
+                  <span className="text-sm text-slate-955 dark:text-white font-semibold">
+                    Mostrando página {currentPage} de {totalPages} ({filteredOrders.length} pedidos en total)
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="h-9 px-3 rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 font-bold text-xs flex items-center gap-1 transition shadow-sm cursor-pointer disabled:opacity-50"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Anterior
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="h-9 px-3 rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 font-bold text-xs flex items-center gap-1 transition shadow-sm cursor-pointer disabled:opacity-50"
+                    >
+                      Siguiente
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
-      )}
+      </div>
 
-      
+      {/* Selected Order Detail Modal */}
       <Modal
         open={!!selectedOrder}
         title="Detalles del Pedido"
@@ -509,10 +497,10 @@ export const ClientePedidosPage = () => {
             <div className="border-b border-slate-100 dark:border-neutral-900 pb-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-wider block">
+                  <span className="text-xs font-bold text-slate-955 dark:text-white uppercase tracking-wider block">
                     ID completo del pedido
                   </span>
-                  <span className="font-mono text-sm font-extrabold text-slate-900 dark:text-white select-all">
+                  <span className="font-mono text-base font-extrabold text-slate-955 dark:text-white select-all">
                     {selectedOrder.id}
                   </span>
                 </div>
@@ -520,50 +508,48 @@ export const ClientePedidosPage = () => {
                   {getStatusBadge(selectedOrder.status)}
                 </div>
               </div>
-              <div className="flex flex-wrap gap-4 mt-3 text-xs text-slate-500 dark:text-neutral-400 font-semibold">
+              <div className="flex flex-wrap gap-4 mt-3 text-sm text-slate-955 dark:text-white font-semibold">
                 <span className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4 text-slate-400" />
+                  <Calendar className="h-4 w-4 text-slate-955 dark:text-white" />
                   {formatDate(selectedOrder.createdAt)}
                 </span>
                 <span className="flex items-center gap-1">
-                  <CreditCard className="h-4 w-4 text-slate-400" />
-                  Método: <span className="text-slate-700 dark:text-neutral-300">Stripe (Tarjeta de Crédito)</span>
+                  <CreditCard className="h-4 w-4 text-slate-955 dark:text-white" />
+                  Método: <span className="text-slate-955 dark:text-white">Stripe (Tarjeta de Crédito)</span>
                 </span>
               </div>
             </div>
 
-            
             {selectedOrder.shippingAddress && (
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-neutral-900 dark:bg-neutral-900/10">
-                  <div className="flex items-center gap-2 mb-2 text-xs font-black uppercase tracking-wider text-slate-500 dark:text-neutral-400">
+                <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-neutral-900/40 dark:bg-neutral-900/10">
+                  <div className="flex items-center gap-2 mb-2 text-sm font-bold uppercase tracking-wider text-slate-955 dark:text-white">
                     <MapPin className="h-4 w-4 text-teal-500" />
                     <span>Dirección de envío</span>
                   </div>
-                  <div className="text-xs font-semibold text-slate-700 dark:text-neutral-300 space-y-1">
+                  <div className="text-sm font-semibold text-slate-955 dark:text-white space-y-1">
                     <p>{selectedOrder.shippingAddress.street}</p>
                     <p>{selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state}</p>
                     <p>C.P. {selectedOrder.shippingAddress.postalCode} • {selectedOrder.shippingAddress.country}</p>
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-neutral-900 dark:bg-neutral-900/10">
-                  <div className="flex items-center gap-2 mb-2 text-xs font-black uppercase tracking-wider text-slate-500 dark:text-neutral-400">
+                <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-neutral-900/40 dark:bg-neutral-900/10">
+                  <div className="flex items-center gap-2 mb-2 text-sm font-bold uppercase tracking-wider text-slate-955 dark:text-white">
                     <Info className="h-4 w-4 text-teal-500" />
                     <span>Información de Contacto</span>
                   </div>
-                  <div className="text-xs font-semibold text-slate-700 dark:text-neutral-300 space-y-1">
-                    <p><span className="font-bold text-slate-400">Nombre: </span>{selectedOrder.shippingAddress.fullName || `${session?.user?.firstName || ''} ${session?.user?.lastName || ''}`.trim() || 'No especificado'}</p>
-                    <p><span className="font-bold text-slate-400">Correo: </span>{selectedOrder.shippingAddress.email || session?.user?.email || 'No especificado'}</p>
-                    <p><span className="font-bold text-slate-400">Teléfono: </span>{selectedOrder.shippingAddress.phone || session?.user?.phone || 'No especificado'}</p>
+                  <div className="text-sm font-semibold text-slate-955 dark:text-white space-y-1">
+                    <p><span className="font-bold text-slate-955 dark:text-white">Nombre: </span>{selectedOrder.shippingAddress.fullName || `${session?.user?.firstName || ''} ${session?.user?.lastName || ''}`.trim() || 'No especificado'}</p>
+                    <p><span className="font-bold text-slate-955 dark:text-white">Correo: </span>{selectedOrder.shippingAddress.email || session?.user?.email || 'No especificado'}</p>
+                    <p><span className="font-bold text-slate-955 dark:text-white">Teléfono: </span>{selectedOrder.shippingAddress.phone || session?.user?.phone || 'No especificado'}</p>
                   </div>
                 </div>
               </div>
             )}
 
-            
             <div>
-              <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-neutral-500 mb-3">
+              <h4 className="text-sm font-bold uppercase tracking-wider text-slate-955 dark:text-white mb-3">
                 Componentes adquiridos
               </h4>
               <div className="divide-y divide-slate-100 dark:divide-neutral-900 rounded-xl border border-slate-200 bg-white dark:border-neutral-900 dark:bg-neutral-950/20 px-4 py-2">
@@ -577,31 +563,30 @@ export const ClientePedidosPage = () => {
                         onClick={() => handleOpenProductDetail({ ...item.product, priceAtTime: item.priceAtTime })}
                         title="Ver ficha técnica"
                       >
-                        <div className="h-10 w-10 shrink-0 flex items-center justify-center rounded border border-slate-150 bg-slate-50 p-0.5 dark:border-neutral-850 dark:bg-neutral-900">
-                          {item.product.imageUrl ? (
-                            <img
-                              src={item.product.imageUrl}
-                              alt={item.product.name}
-                              className="max-h-full max-w-full object-contain"
-                            />
-                          ) : (
-                            <ShoppingBag className="h-5 w-5 text-slate-400" />
-                          )}
+                        <div className="h-14 w-14 shrink-0 flex items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-neutral-800 dark:bg-neutral-900/50">
+                          <img
+                            src={item.product.imageUrl || '/favicon.jpg'}
+                            alt={item.product.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/favicon.jpg';
+                            }}
+                          />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-teal-500 group-hover:underline">
+                          <p className="text-sm font-bold text-slate-955 dark:text-white truncate group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:underline">
                             {item.product.name}
                           </p>
-                          <p className="text-[10px] text-slate-400 dark:text-neutral-500 mt-0.5">
+                          <p className="text-xs text-slate-955 dark:text-white mt-0.5 font-medium">
                             Precio unitario: ${unitPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                           </p>
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <span className="text-xs font-black text-slate-900 dark:text-white block">
+                        <span className="text-sm font-bold text-slate-955 dark:text-white block">
                           ${subTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </span>
-                        <span className="text-[10px] text-slate-400 dark:text-neutral-500 font-bold block mt-0.5">
+                        <span className="text-xs text-slate-955 dark:text-white font-semibold block mt-0.5">
                           Cantidad: x{item.quantity}
                         </span>
                       </div>
@@ -613,7 +598,7 @@ export const ClientePedidosPage = () => {
 
             {selectedOrder.documents && selectedOrder.documents.length > 0 && (
               <div className="border-t border-slate-100 dark:border-neutral-900 pt-4">
-                <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-neutral-500 mb-3">
+                <h4 className="text-sm font-bold uppercase tracking-wider text-slate-955 dark:text-white mb-3">
                   Documentos y Soportes del Envío
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -629,11 +614,11 @@ export const ClientePedidosPage = () => {
                         href={doc.fileUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2.5 p-3 rounded-lg border border-slate-200 bg-slate-50/50 hover:bg-slate-100/70 hover:border-teal-500/30 transition text-xs font-bold text-slate-700 dark:border-neutral-850 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-850"
+                        className="flex items-center gap-2.5 p-3 rounded-lg border border-slate-200 bg-slate-50/50 hover:bg-slate-100/70 hover:border-teal-500/30 transition text-sm font-bold text-slate-955 dark:border-neutral-850 dark:bg-neutral-900 dark:text-white dark:hover:bg-neutral-850"
                       >
                         <span className="h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
                         <span>{docNames[doc.documentType] || doc.documentType}</span>
-                        <span className="text-[10px] text-slate-400 dark:text-neutral-500 ml-auto font-semibold">Ver archivo ↗</span>
+                        <span className="text-xs text-slate-955 dark:text-white ml-auto font-semibold">Ver archivo ↗</span>
                       </a>
                     );
                   })}
@@ -642,49 +627,45 @@ export const ClientePedidosPage = () => {
             )}
 
             <div className="rounded-xl bg-slate-50 border border-slate-100 p-4 dark:bg-neutral-900 dark:border-neutral-850 flex items-center justify-between">
-              <div className="text-xs font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
+              <div className="text-sm font-bold text-slate-955 dark:text-white uppercase tracking-wider">
                 Total del pedido
               </div>
               <div className="text-right">
-                <span className="text-xl font-black text-teal-600 dark:text-teal-400 block leading-none">
+                <span className="text-2xl font-bold text-teal-600 dark:text-teal-400 block leading-none">
                   ${selectedOrder.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </span>
-                <span className="text-[9px] font-bold text-slate-400 dark:text-neutral-500 mt-1 inline-block">
+                <span className="text-xs font-bold text-slate-955 dark:text-white mt-1 inline-block">
                   USD
                 </span>
               </div>
             </div>
 
             <div className="pt-4 border-t border-slate-100 dark:border-neutral-900 flex justify-end gap-3">
-              <Button
-                variant="ghost"
+              <button
+                type="button"
                 onClick={() => setSelectedOrder(null)}
+                className="rounded-lg border border-slate-250 dark:border-neutral-800 px-4 py-2 text-xs font-bold text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 transition cursor-pointer"
               >
                 Cerrar
-              </Button>
+              </button>
               {selectedOrder.status === 'PENDING_PAYMENT' && (
                 <>
-                  <Button
+                  <button
                     type="button"
-                    variant="outline"
                     disabled={cancellingOrderId === selectedOrder.id}
                     onClick={() => setOrderIdToCancel(selectedOrder.id)}
-                    className="border-rose-500/30 text-rose-500 hover:bg-rose-50 dark:border-rose-500/25 dark:hover:bg-rose-950/15"
+                    className="rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 font-bold px-4 py-2 transition text-xs shadow-sm cursor-pointer disabled:opacity-50"
                   >
                     {cancellingOrderId === selectedOrder.id ? 'Cancelando...' : 'Cancelar Pedido'}
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     type="button"
                     disabled={payingOrderId === selectedOrder.id}
                     onClick={() => handlePayOrder(selectedOrder.id)}
-                    className="bg-teal-500 hover:bg-teal-600 text-white font-extrabold shadow"
+                    className="rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 font-bold px-4 py-2 transition text-xs shadow-sm cursor-pointer disabled:opacity-50"
                   >
-                    {payingOrderId === selectedOrder.id ? (
-                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    ) : (
-                      'Pagar ahora con Stripe'
-                    )}
-                  </Button>
+                    Pagar ahora con Stripe
+                  </button>
                 </>
               )}
             </div>
@@ -692,6 +673,7 @@ export const ClientePedidosPage = () => {
         )}
       </Modal>
 
+      {/* Cancellation Confirmation Modal */}
       <Modal
         open={!!orderIdToCancel}
         title="Cancelar Pedido"
@@ -703,24 +685,23 @@ export const ClientePedidosPage = () => {
               <Trash2 className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">
+              <p className="text-base font-bold text-slate-955 dark:text-white">
                 ¿Está seguro de que desea cancelar este pedido?
               </p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+              <p className="text-sm text-slate-955 dark:text-white mt-1 leading-relaxed">
                 Esta acción no se puede deshacer y cancelará el pedido permanentemente.
               </p>
             </div>
           </div>
           <div className="flex justify-end gap-3">
-            <Button
+            <button
               type="button"
-              variant="outline"
               onClick={() => setOrderIdToCancel(null)}
-              className="text-xs font-bold"
+              className="rounded-lg border border-slate-200 dark:border-neutral-800 px-4 py-2 text-xs font-bold text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 transition cursor-pointer"
             >
               Cancelar
-            </Button>
-            <Button
+            </button>
+            <button
               type="button"
               onClick={async () => {
                 if (orderIdToCancel) {
@@ -729,10 +710,10 @@ export const ClientePedidosPage = () => {
                   await handleCancelOrder(id);
                 }
               }}
-              className="bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs"
+              className="rounded-lg bg-rose-500 hover:bg-rose-600 text-white font-bold px-4 py-2 transition text-xs shadow-sm cursor-pointer"
             >
               Aceptar
-            </Button>
+            </button>
           </div>
         </div>
       </Modal>

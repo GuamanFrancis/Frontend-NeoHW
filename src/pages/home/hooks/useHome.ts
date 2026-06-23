@@ -5,21 +5,21 @@ import type { CatalogComponent } from '../../../types/catalog';
 import { useCart } from '../../../context/CartContext';
 import { getStoredSession } from '../../../services/session';
 import { roleHomeRoutes } from '../../../services/authService';
-
-const categories = [
-  { name: 'Procesadores', slug: 'procesadores' },
-  { name: 'Tarjetas gráficas', slug: 'tarjetas-graficas' },
-  { name: 'Placas base', slug: 'placas-madre' },
-  { name: 'Memorias RAM', slug: 'memorias-ram' },
-  { name: 'Almacenamiento', slug: 'almacenamiento' },
-  { name: 'Fuentes de poder', slug: 'fuentes-de-poder' },
-];
+import { getCategories, getLeafCategories } from '../../../services/categoryService';
 
 export const useHome = () => {
   const { addToCart } = useCart();
   const session = getStoredSession();
   const navigate = useNavigate();
 
+  const [categories, setCategories] = useState<{ id?: string; name: string; slug: string }[]>([
+    { name: 'Procesadores', slug: 'procesadores' },
+    { name: 'Tarjetas gráficas', slug: 'tarjetas-graficas' },
+    { name: 'Placas base', slug: 'placas-madre' },
+    { name: 'Memorias RAM', slug: 'memorias-ram' },
+    { name: 'Almacenamiento', slug: 'almacenamiento' },
+    { name: 'Fuentes de poder', slug: 'fuentes-de-poder' },
+  ]);
   const [categoryProducts, setCategoryProducts] = useState<Record<string, CatalogComponent[]>>({});
   const [loading, setLoading] = useState(true);
   const [cartSuccessMessage] = useState<string | null>(null);
@@ -36,6 +36,39 @@ export const useHome = () => {
     return () => {
       if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadCategories = async () => {
+      try {
+        const backendCats = await getCategories();
+        if (!isMounted) return;
+        const leafCats = getLeafCategories(backendCats);
+        const mappedCats = leafCats.map((cat) => ({
+          id: cat.id,
+          name: cat.name,
+          slug: cat.slug,
+        }));
+        const uniqueMappedCats: typeof mappedCats = [];
+        const seenSlugs = new Set<string>();
+        for (const cat of mappedCats) {
+          if (!seenSlugs.has(cat.slug)) {
+            seenSlugs.add(cat.slug);
+            uniqueMappedCats.push(cat);
+          }
+        }
+        if (uniqueMappedCats.length > 0) {
+          setCategories(uniqueMappedCats);
+        }
+      } catch (error) {
+        console.error('Error al cargar categorías en useHome:', error);
+      }
+    };
+    void loadCategories();
+    return () => {
+      isMounted = false;
     };
   }, []);
 
@@ -92,6 +125,7 @@ export const useHome = () => {
   }, [triggerType]);
 
   useEffect(() => {
+    if (categories.length === 0) return;
     const fetchAllCategoriesProducts = async () => {
       setLoading(true);
       const tempProducts: Record<string, CatalogComponent[]> = {};
@@ -113,9 +147,10 @@ export const useHome = () => {
       }
     };
     void fetchAllCategoriesProducts();
-  }, []);
+  }, [categories]);
 
   useEffect(() => {
+    if (loading) return;
     const scrollToSection = sessionStorage.getItem('scroll-to-section');
     if (scrollToSection) {
       sessionStorage.removeItem('scroll-to-section');
@@ -126,7 +161,7 @@ export const useHome = () => {
         }
       }, 150);
     }
-  }, []);
+  }, [loading]);
 
   const handleAddToCart = useCallback((product: CatalogComponent) => {
     addToCart(product);
@@ -151,6 +186,7 @@ export const useHome = () => {
   const dashboardPath = session ? roleHomeRoutes[session.user.role] : '/login';
 
   return {
+    categories,
     categoryProducts,
     loading,
     cartSuccessMessage,

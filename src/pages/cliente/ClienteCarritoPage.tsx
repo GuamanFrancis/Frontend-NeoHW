@@ -12,7 +12,6 @@ import {
 import { useCart } from '../../context/CartContext';
 import { createOrderFromCart } from '../../services/ordersService';
 import { Modal } from '../../components/ui/Modal';
-import { Button } from '../../components/ui/Button';
 import { FormInput } from '../../components/ui/FormInput';
 import { getStoredSession } from '../../services/session';
 import type { CatalogComponent } from '../../types/catalog';
@@ -65,7 +64,6 @@ export const ClienteCarritoPage = () => {
     }
   }, [syncCart]);
 
-  const [wishlistedIds, setWishlistedIds] = useState<Record<string, boolean>>({});
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [street, setStreet] = useState('');
   const [city, setCity] = useState('');
@@ -95,10 +93,6 @@ export const ClienteCarritoPage = () => {
   const handleOpenDetail = (product: CatalogComponent) => {
     setSelectedProduct(product);
     setIsDetailOpen(true);
-  };
-
-  const toggleWishlist = (id: string) => {
-    setWishlistedIds((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const handleOpenCheckout = () => {
@@ -200,27 +194,19 @@ export const ClienteCarritoPage = () => {
 
   if (cartItems.length === 0) {
     return (
-      <div className="mx-auto max-w-7xl pb-16 text-slate-900 dark:text-neutral-100">
-        <div className="mb-8 border-b border-slate-100 dark:border-neutral-900 pb-6">
-          <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white leading-none">
-            Carrito de compras
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-neutral-400 mt-2 font-medium">
-            Revisa los productos que agregaste, actualiza cantidades y continúa para finalizar tu compra.
-          </p>
-        </div>
+      <div className="mx-auto max-w-[95rem] pt-4 pb-16 text-slate-800 dark:text-neutral-200">
         <div className="flex h-96 flex-col items-center justify-between rounded-2xl border border-dashed border-slate-200 dark:border-neutral-800 bg-white/50 p-8 text-center dark:bg-neutral-900/10 max-w-2xl mx-auto py-16">
-          <ShoppingCart className="h-16 w-16 text-slate-300 dark:text-neutral-700" />
+          <ShoppingCart className="h-16 w-16 text-slate-800 dark:text-neutral-200 opacity-40" />
           <div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-4">Tu carrito está vacío</h3>
-            <p className="text-sm text-slate-400 dark:text-neutral-500 mt-2 max-w-md">
+            <h3 className="text-xl font-semibold text-slate-800 dark:text-neutral-200 mt-4">Tu carrito está vacío</h3>
+            <p className="text-sm font-normal text-slate-600 dark:text-neutral-400 mt-2 max-w-md">
               Aún no has agregado ningún componente a tu carrito. Explora nuestro catálogo de hardware para comenzar a armar tu PC.
             </p>
           </div>
           <button
             type="button"
             onClick={() => navigate('/cliente/catalogo')}
-            className="flex items-center justify-center gap-2 rounded-lg bg-teal-500 hover:bg-teal-600 text-white font-bold px-6 py-3 transition shadow-sm mt-6 text-sm"
+            className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-neutral-800 bg-transparent text-slate-700 dark:text-neutral-300 font-medium px-6 py-2.5 transition mt-6 text-sm hover:bg-slate-50 dark:hover:bg-neutral-900/50"
           >
             <ArrowLeft className="h-4 w-4" />
             Explorar catálogo
@@ -231,21 +217,13 @@ export const ClienteCarritoPage = () => {
   }
 
   return (
-    <div className="mx-auto max-w-7xl pb-16 text-slate-900 dark:text-neutral-100">
-      <div className="mb-6 border-b border-slate-100 dark:border-neutral-900 pb-6">
-        <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white leading-none">
-          Carrito de compras
-        </h1>
-        <p className="text-sm text-slate-500 dark:text-neutral-400 mt-2 font-medium">
-          Revisa los productos que agregaste, actualiza cantidades y continúa para finalizar tu compra.
-        </p>
-      </div>
+    <div className="mx-auto max-w-[95rem] pt-4 pb-16 text-slate-800 dark:text-neutral-200">
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
         <div className="lg:col-span-8 space-y-6">
           <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white dark:border-neutral-900 dark:bg-neutral-950/20 shadow-sm">
-            <table className="w-full border-collapse text-left text-xs">
+            <table className="w-full border-collapse text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-100 dark:border-neutral-900 text-[10px] font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-wider">
+                <tr className="border-b border-slate-200 dark:border-neutral-900 text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider">
                   <th className="py-4 px-4">Producto</th>
                   <th className="py-4 px-4 text-right">Precio unitario</th>
                   <th className="py-4 px-4 text-center">Cantidad</th>
@@ -254,69 +232,72 @@ export const ClienteCarritoPage = () => {
                   <th className="py-4 px-4"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-150 dark:divide-neutral-900">
+              <tbody className="divide-y divide-slate-100 dark:divide-neutral-900">
                 {cartItems.map(({ product, quantity }) => {
                   const itemSubtotal = product.price * quantity;
                   return (
                     <tr key={product.id} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-colors">
                       <td className="py-4 px-4 min-w-[200px]">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-4">
                           <div
-                            className="h-16 w-16 shrink-0 flex items-center justify-center rounded-lg border border-slate-100 bg-slate-50 dark:border-neutral-900 dark:bg-neutral-900/50 p-1.5 cursor-pointer hover:opacity-80 transition"
+                            className="h-20 w-20 shrink-0 flex items-center justify-center rounded-lg border border-slate-200 bg-white dark:border-neutral-800 p-0 overflow-hidden cursor-pointer hover:opacity-80 transition"
                             onClick={() => handleOpenDetail(product)}
                             title="Ver detalles"
                           >
                             <img
-                              src={product.imageUrl || ''}
+                              src={product.imageUrl || '/favicon.jpg'}
                               alt={product.name}
-                              className="max-h-full max-w-full object-contain"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = '/favicon.jpg';
+                              }}
                             />
                           </div>
                           <div className="min-w-0">
                             <h4
-                              className="font-extrabold text-slate-900 dark:text-white truncate max-w-[200px] cursor-pointer hover:text-teal-500 hover:underline transition"
+                              className="font-semibold text-sm text-slate-800 dark:text-neutral-200 cursor-pointer hover:underline transition"
                               title={product.name}
                               onClick={() => handleOpenDetail(product)}
                             >
                               {product.name}
                             </h4>
                             {product.category && product.category !== 'Sin categoria' && product.category !== 'Sin categoría' && (
-                              <div className="text-[10px] text-slate-400 dark:text-neutral-500 font-bold mt-0.5 uppercase tracking-wider">
+                              <div className="text-[11px] text-slate-600 dark:text-neutral-300 font-semibold uppercase tracking-wider mt-0.5">
                                 {product.category}
                               </div>
                             )}
                             {product.sku && (
-                              <div className="text-[10px] text-slate-400 dark:text-neutral-500 font-medium mt-1">
+                              <div className="text-xs text-slate-500 dark:text-neutral-400 font-normal mt-0.5">
                                 SKU: {product.sku}
                               </div>
                             )}
                           </div>
                         </div>
                       </td>
-                      <td className="py-4 px-4 text-right font-bold text-slate-800 dark:text-neutral-200 whitespace-nowrap">
+                      <td className="py-4 px-4 text-right font-medium text-sm text-slate-700 dark:text-neutral-300 whitespace-nowrap">
                         <div>${product.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                        <div className="text-[9px] text-slate-400 dark:text-neutral-500 font-medium mt-0.5">USD</div>
+                        <div className="text-[10px] text-slate-500 dark:text-neutral-400 font-normal mt-0.5">USD</div>
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex justify-center">
-                          <div className="flex items-center rounded-lg border border-slate-200 dark:border-neutral-850 overflow-hidden bg-slate-50 dark:bg-neutral-900 h-9 p-0.5">
+                          <div className="flex items-center rounded-lg border border-slate-200 dark:border-neutral-800 overflow-hidden bg-slate-50 dark:bg-neutral-900 h-9 p-0.5">
                             <button
                               type="button"
                               onClick={() => updateQuantity(product.id, quantity - 1)}
                               disabled={quantity <= 1}
-                              className="flex h-8 w-8 items-center justify-center text-slate-500 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                              className="flex h-8 w-8 items-center justify-center text-slate-600 dark:text-neutral-300 hover:text-slate-800 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition"
                               aria-label="Disminuir cantidad"
                             >
                               <Minus className="h-3.5 w-3.5" />
                             </button>
-                            <span className="w-9 text-center font-extrabold text-xs text-slate-800 dark:text-neutral-100">
+                            <span className="w-9 text-center font-medium text-sm text-slate-700 dark:text-neutral-300">
                               {quantity}
                             </span>
                             <button
                               type="button"
                               onClick={() => updateQuantity(product.id, quantity + 1)}
                               disabled={quantity >= product.stock}
-                              className="flex h-8 w-8 items-center justify-center text-slate-500 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                              className="flex h-8 w-8 items-center justify-center text-slate-600 dark:text-neutral-300 hover:text-slate-800 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition"
                               aria-label="Aumentar cantidad"
                             >
                               <Plus className="h-3.5 w-3.5" />
@@ -326,39 +307,28 @@ export const ClienteCarritoPage = () => {
                       </td>
                       <td className="py-4 px-4 text-center whitespace-nowrap">
                         <div className="flex flex-col items-center justify-center gap-0.5">
-                          <div className="flex items-center gap-1.5 font-bold">
+                          <div className="flex items-center gap-1.5 font-semibold text-xs">
                             <span className={`h-1.5 w-1.5 rounded-full fill-current bg-current ${statusColors[product.status]}`} />
                             <span className={statusColors[product.status]}>{statusLabels[product.status]}</span>
                           </div>
-                          <div className="text-[10px] text-slate-400 dark:text-neutral-500 font-medium">
+                          <div className="text-xs text-slate-700 dark:text-neutral-300 font-normal">
                             Stock: {product.stock}
                           </div>
                         </div>
                       </td>
-                      <td className="py-4 px-4 text-right font-black text-slate-900 dark:text-white whitespace-nowrap">
+                      <td className="py-4 px-4 text-right font-semibold text-sm text-slate-800 dark:text-neutral-200 whitespace-nowrap">
                         <div>${itemSubtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                        <div className="text-[9px] text-slate-400 dark:text-neutral-500 font-medium mt-0.5">USD</div>
+                        <div className="text-[10px] text-slate-500 dark:text-neutral-400 font-normal mt-0.5">USD</div>
                       </td>
-                      <td className="py-4 px-4 min-w-[80px]">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            type="button"
-                            onClick={() => toggleWishlist(product.id)}
-                            className={`flex h-8 w-8 items-center justify-center rounded-lg border border-transparent hover:bg-slate-50 dark:hover:bg-neutral-900 transition ${
-                              wishlistedIds[product.id]
-                                ? 'text-rose-500'
-                                : 'text-slate-400 hover:text-slate-600 dark:text-neutral-500'
-                            }`}
-                            aria-label="Añadir a deseos"
-                          >
-                          </button>
+                      <td className="py-4 px-4 min-w-[50px]">
+                        <div className="flex items-center justify-end">
                           <button
                             type="button"
                             onClick={() => removeFromCart(product.id)}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-slate-400 hover:text-rose-500 hover:bg-rose-50/50 dark:text-neutral-500 dark:hover:bg-rose-950/20 transition"
+                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-transparent text-slate-600 hover:text-rose-600 dark:text-neutral-300 dark:hover:text-rose-400 hover:bg-slate-50 dark:hover:bg-neutral-900 transition"
                             aria-label="Quitar del carrito"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4.5 w-4.5" />
                           </button>
                         </div>
                       </td>
@@ -372,7 +342,7 @@ export const ClienteCarritoPage = () => {
             <button
               type="button"
               onClick={() => navigate('/cliente/catalogo')}
-              className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-neutral-850 px-5 py-2.5 text-xs font-bold hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-neutral-900 dark:text-neutral-200 transition"
+              className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-neutral-800 px-5 py-2 text-sm font-medium text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-900/50 transition"
             >
               <ArrowLeft className="h-4 w-4" />
               Seguir comprando
@@ -380,7 +350,7 @@ export const ClienteCarritoPage = () => {
             <button
               type="button"
               onClick={() => clearCart()}
-              className="flex items-center justify-center gap-2 rounded-lg border border-rose-500/30 text-rose-500 dark:border-rose-500/20 dark:hover:bg-rose-950/10 px-5 py-2.5 text-xs font-bold hover:bg-rose-50 transition"
+              className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-neutral-800 px-5 py-2 text-sm font-medium text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-900/50 transition"
             >
               <Trash2 className="h-4 w-4" />
               Vaciar carrito
@@ -389,29 +359,32 @@ export const ClienteCarritoPage = () => {
         </div>
         <div className="lg:col-span-4 space-y-6">
           <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-neutral-900 dark:bg-neutral-950/20">
-            <h3 className="font-black text-slate-900 dark:text-white text-xs uppercase tracking-wider border-b border-slate-100 dark:border-neutral-900 pb-3">
+            <h3 className="font-semibold text-slate-900 dark:text-white text-sm uppercase tracking-wider border-b border-slate-200 dark:border-neutral-900 pb-3">
               Resumen antes de confirmar compra
             </h3>
-            <div className="mt-4 space-y-3">
+            <div className="mt-4 space-y-4">
               {cartItems.map(({ product, quantity }) => (
-                <div key={product.id} className="flex items-center justify-between gap-3 text-xs">
+                <div key={product.id} className="flex items-center justify-between gap-3 text-sm">
                   <div
-                    className="flex items-center gap-2.5 min-w-0 cursor-pointer hover:text-teal-500 transition group"
+                    className="flex items-center gap-3 min-w-0 cursor-pointer hover:underline transition group"
                     onClick={() => handleOpenDetail(product)}
                     title="Ver detalles"
                   >
-                    <div className="h-8 w-8 shrink-0 flex items-center justify-center rounded border border-slate-100 bg-slate-50 dark:border-neutral-900 p-0.5 group-hover:opacity-85 transition">
+                    <div className="h-10 w-10 shrink-0 flex items-center justify-center rounded-lg border border-slate-200 dark:border-neutral-800 p-0 overflow-hidden group-hover:opacity-85 transition">
                       <img
-                        src={product.imageUrl || ''}
+                        src={product.imageUrl || '/favicon.jpg'}
                         alt={product.name}
-                        className="max-h-full max-w-full object-contain"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = '/favicon.jpg';
+                        }}
                       />
                     </div>
-                    <span className="font-bold text-slate-700 dark:text-neutral-300 truncate max-w-[180px] group-hover:underline">
+                    <span className="font-semibold text-slate-800 dark:text-neutral-200">
                       {product.name}
                     </span>
                   </div>
-                  <span className="font-extrabold text-slate-400 dark:text-neutral-500 shrink-0">
+                  <span className="font-medium text-slate-700 dark:text-neutral-300 shrink-0">
                     x{quantity}
                   </span>
                 </div>
@@ -420,42 +393,42 @@ export const ClienteCarritoPage = () => {
           </div>
 
           <div className="rounded-xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-neutral-900 dark:bg-neutral-950/20">
-            <h3 className="flex items-center justify-between font-black text-slate-900 dark:text-white border-b border-slate-100 dark:border-neutral-900 pb-4">
+            <h3 className="flex items-center justify-between font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-neutral-900 pb-4">
               <span>Resumen del pedido</span>
-              <span className="text-xs font-bold text-slate-400 dark:text-neutral-500">
+              <span className="text-sm font-medium text-slate-600 dark:text-neutral-400">
                 {itemCount} {itemCount === 1 ? 'producto' : 'productos'}
               </span>
             </h3>
-            <div className="space-y-3.5 py-4 border-b border-slate-100 dark:border-neutral-900 text-xs font-semibold text-slate-500 dark:text-neutral-400">
+            <div className="space-y-3.5 py-4 border-b border-slate-200 dark:border-neutral-900 text-sm font-medium text-slate-700 dark:text-neutral-300">
               <div className="flex justify-between">
                 <span>Subtotal ({itemCount} {itemCount === 1 ? 'producto' : 'productos'})</span>
-                <span className="text-slate-900 dark:text-neutral-200">
+                <span className="text-slate-800 dark:text-neutral-200 font-medium">
                   ${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span>Envío estándar</span>
-                <span className="flex items-center gap-1.5 text-emerald-500 font-bold">
+                <span className="flex items-center gap-1.5 text-teal-600 dark:text-teal-400 font-semibold">
                   $0.00
-                  <span className="bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded text-[10px] uppercase font-black">
+                  <span className="bg-teal-500/10 text-teal-600 dark:bg-teal-500/20 dark:text-teal-400 px-1.5 py-0.5 rounded text-[10px] uppercase font-semibold">
                     Gratis
                   </span>
                 </span>
               </div>
               <div className="flex justify-between">
                 <span>Impuestos (IVA 15%)</span>
-                <span className="text-slate-900 dark:text-neutral-200">
+                <span className="text-slate-800 dark:text-neutral-200 font-medium">
                   ${taxes.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
             </div>
             <div className="py-4 flex justify-between items-baseline">
-              <span className="text-sm font-bold text-slate-800 dark:text-neutral-300">Total</span>
+              <span className="text-sm font-semibold text-slate-900 dark:text-white">Total</span>
               <div className="text-right">
-                <span className="text-2xl font-black text-teal-500 dark:text-teal-400 block leading-none">
+                <span className="text-sm font-semibold text-teal-600 dark:text-teal-400 block leading-none">
                   ${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
-                <span className="text-[10px] font-bold text-slate-400 dark:text-neutral-500 mt-1 inline-block">
+                <span className="text-[10px] font-medium text-slate-500 dark:text-neutral-400 mt-0.5 inline-block">
                   USD
                 </span>
               </div>
@@ -463,16 +436,12 @@ export const ClienteCarritoPage = () => {
             <button
               type="button"
               onClick={handleOpenCheckout}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-500 hover:bg-teal-600 text-white font-extrabold px-6 py-3.5 shadow transition mt-2 text-sm"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-neutral-800 bg-transparent text-slate-700 dark:text-neutral-300 font-semibold px-6 py-3 hover:bg-slate-50 dark:hover:bg-neutral-900/50 transition mt-2 text-sm"
             >
-              <Lock className="h-4 w-4" />
+              <Lock className="h-4.5 w-4.5" />
               Completar Datos de Envío y Pagar
               <span className="font-light ml-1">→</span>
             </button>
-            <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-400 dark:text-neutral-500 font-bold mt-4">
-              <Lock className="h-3 w-3" />
-              <span>Pago 100% seguro y cifrado</span>
-            </div>
           </div>
         </div>
       </div>
@@ -482,7 +451,7 @@ export const ClienteCarritoPage = () => {
         onClose={() => setIsCheckoutOpen(false)}
       >
         <form onSubmit={handleCheckoutSubmit} className="space-y-4">
-          <p className="text-xs text-slate-500 dark:text-neutral-400">
+          <p className="text-sm font-medium text-slate-700 dark:text-neutral-300">
             Ingresa la dirección de envío para completar tu pedido y proceder a la pasarela de pago seguro con Stripe.
           </p>
           {checkoutError && (
@@ -534,10 +503,10 @@ export const ClienteCarritoPage = () => {
             </div>
             <div>
               <label className="block">
-                <span className="text-sm font-semibold text-slate-950 dark:text-white">
+                <span className="text-sm font-semibold text-slate-900 dark:text-white">
                   Estado / Provincia
                 </span>
-                <span className="mt-1.5 flex h-12 items-center rounded-lg border bg-white px-3.5 text-slate-500 transition focus-within:ring-2 dark:bg-neutral-950/50 dark:text-neutral-300 border-slate-300 focus-within:border-teal-500 focus-within:ring-teal-400/20 dark:border-neutral-700 dark:focus-within:border-teal-400">
+                <span className="mt-1.5 flex h-12 items-center rounded-lg border bg-white px-3.5 text-slate-700 transition focus-within:ring-2 dark:bg-neutral-950/50 dark:text-white border-slate-300 focus-within:border-teal-500 focus-within:ring-teal-400/20 dark:border-neutral-700 dark:focus-within:border-teal-400">
                   <select
                     value={stateName}
                     onChange={(e) => handleProvinceChange(e.target.value)}
@@ -555,10 +524,10 @@ export const ClienteCarritoPage = () => {
             </div>
             <div>
               <label className="block">
-                <span className="text-sm font-semibold text-slate-950 dark:text-white">
+                <span className="text-sm font-semibold text-slate-900 dark:text-white">
                   Ciudad
                 </span>
-                <span className="mt-1.5 flex h-12 items-center rounded-lg border bg-white px-3.5 text-slate-500 transition focus-within:ring-2 dark:bg-neutral-950/50 dark:text-neutral-300 border-slate-300 focus-within:border-teal-500 focus-within:ring-teal-400/20 dark:border-neutral-700 dark:focus-within:border-teal-400">
+                <span className="mt-1.5 flex h-12 items-center rounded-lg border bg-white px-3.5 text-slate-700 transition focus-within:ring-2 dark:bg-neutral-950/50 dark:text-white border-slate-300 focus-within:border-teal-500 focus-within:ring-teal-400/20 dark:border-neutral-700 dark:focus-within:border-teal-400">
                   <select
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
@@ -586,10 +555,10 @@ export const ClienteCarritoPage = () => {
             </div>
             <div>
               <label className="block">
-                <span className="text-sm font-semibold text-slate-950 dark:text-white">
+                <span className="text-sm font-semibold text-slate-900 dark:text-white">
                   País
                 </span>
-                <span className="mt-1.5 flex h-12 items-center rounded-lg border bg-white px-3.5 text-slate-500 dark:bg-neutral-950/50 dark:text-neutral-300 border-slate-300 dark:border-neutral-700">
+                <span className="mt-1.5 flex h-12 items-center rounded-lg border bg-white px-3.5 text-slate-700 dark:bg-neutral-950/50 dark:text-white border-slate-300 dark:border-neutral-700">
                   <select
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
@@ -602,26 +571,26 @@ export const ClienteCarritoPage = () => {
               </label>
             </div>
           </div>
-          <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-neutral-900">
-            <Button
+          <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-neutral-800">
+            <button
               type="button"
-              variant="ghost"
               onClick={() => setIsCheckoutOpen(false)}
               disabled={loadingCheckout}
+              className="border border-slate-200 dark:border-neutral-800 text-slate-700 dark:text-neutral-300 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-neutral-900/50 h-10 px-4 rounded-lg flex items-center justify-center transition"
             >
               Cancelar
-            </Button>
-            <Button
+            </button>
+            <button
               type="submit"
               disabled={loadingCheckout}
-              className="bg-teal-500 hover:bg-teal-600 text-white min-w-[140px]"
+              className="border border-slate-200 dark:border-neutral-800 bg-transparent hover:bg-slate-50 dark:hover:bg-neutral-900/50 text-slate-700 dark:text-neutral-300 min-w-[140px] font-semibold text-sm h-10 px-4 rounded-lg flex items-center justify-center transition"
             >
               {loadingCheckout ? (
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-500 border-t-transparent" />
               ) : (
                 "Proceder al Pago con Stripe"
               )}
-            </Button>
+            </button>
           </div>
         </form>
       </Modal>
