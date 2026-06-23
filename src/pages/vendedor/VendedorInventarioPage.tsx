@@ -13,10 +13,10 @@ const statusLabel: Record<CatalogStockStatus, string> = {
   agotado: 'Agotado',
 };
 
-const statusStyle: Record<CatalogStockStatus, string> = {
-  disponible: 'bg-emerald-400/10 text-emerald-700 ring-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-200',
-  'stock-bajo': 'bg-amber-400/10 text-amber-700 ring-amber-500/20 dark:bg-amber-500/15 dark:text-amber-200',
-  agotado: 'bg-rose-400/10 text-rose-700 ring-rose-500/20 dark:bg-rose-500/15 dark:text-rose-200',
+const statusTextStyle: Record<CatalogStockStatus, string> = {
+  disponible: 'text-emerald-600 dark:text-emerald-400 font-medium',
+  'stock-bajo': 'text-amber-600 dark:text-amber-400 font-medium',
+  agotado: 'text-rose-600 dark:text-rose-400 font-medium',
 };
 
 const formatCurrency = (value: number) =>
@@ -98,8 +98,6 @@ export const VendedorInventarioPage = () => {
 
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const pageItems = filteredItems;
-  const firstResult = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-  const lastResult = Math.min(currentPage * pageSize, totalItems);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -115,22 +113,12 @@ export const VendedorInventarioPage = () => {
   };
 
   return (
-    <PageCard
-      title="Inventario de componentes"
-      text="Consulta stock disponible y especificaciones técnicas de los componentes del hardware."
-      icon={<Boxes className="h-6 w-6" />}
-    >
+    <PageCard>
       {pageError && (
         <div className="mb-4 rounded-lg border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-200">
           {pageError}
         </div>
       )}
-
-      <div className="mb-4 flex items-center justify-between">
-        <span className="text-sm font-semibold text-slate-550 dark:text-neutral-400">
-          Mostrando {firstResult}-{lastResult} de {totalItems} componentes
-        </span>
-      </div>
 
       <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
         <div className="grid gap-3 lg:grid-cols-[1.2fr_180px_180px_auto]">
@@ -185,8 +173,8 @@ export const VendedorInventarioPage = () => {
 
         <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[960px] text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:bg-white/[0.03] dark:text-neutral-400">
+            <table className="w-full min-w-[960px] text-left text-base">
+              <thead className="bg-slate-50 text-sm uppercase tracking-wider text-slate-955 dark:bg-white/[0.03] dark:text-white">
                 <tr>
                   <th className="px-4 py-3 font-bold">Componente</th>
                   <th className="px-4 py-3 font-bold">Categoria</th>
@@ -229,27 +217,27 @@ export const VendedorInventarioPage = () => {
                             )}
                           </div>
                           <div className="min-w-0">
-                            <span className="block font-bold text-slate-900 dark:text-white truncate max-w-[240px]">
+                            <span className="block font-normal text-base text-slate-900 dark:text-white truncate max-w-[240px]">
                               {item.name}
                             </span>
-                            <span className="block text-[10px] text-slate-400 dark:text-neutral-500">
+                            <span className="block text-sm font-normal text-slate-500 dark:text-neutral-400">
                               ID: {item.id.slice(0, 8)}...
                             </span>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 font-semibold text-slate-600 dark:text-neutral-300">
+                      <td className="px-4 py-3 font-normal text-base text-slate-900 dark:text-white">
                         {item.category}
                       </td>
 
-                      <td className="px-4 py-3 font-bold text-slate-900 dark:text-white">
+                      <td className="px-4 py-3 font-normal text-base text-slate-900 dark:text-white">
                         {formatCurrency(item.price)}
                       </td>
-                      <td className="px-4 py-3 font-extrabold text-slate-800 dark:text-neutral-100">
+                      <td className="px-4 py-3 font-normal text-base text-slate-900 dark:text-white">
                         {item.stock} uds
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold ${statusStyle[item.status]}`}>
+                        <span className={`text-base font-normal ${statusTextStyle[item.status]}`}>
                           {statusLabel[item.status]}
                         </span>
                       </td>
@@ -272,10 +260,7 @@ export const VendedorInventarioPage = () => {
             </table>
           </div>
 
-          <div className="flex flex-col gap-4 border-t border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between dark:border-neutral-800">
-            <span className="text-xs text-slate-500 dark:text-neutral-400">
-              Página {currentPage} de {totalPages}
-            </span>
+          <div className="flex flex-col gap-4 border-t border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-end dark:border-neutral-800">
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -338,9 +323,9 @@ export const VendedorInventarioPage = () => {
           onClose={() => setSelectedComponent(null)}
           title={`Detalles de Componente: ${selectedComponent.name}`}
         >
-          <div className="space-y-6 text-slate-800 dark:text-neutral-200">
+          <div className="space-y-6 text-slate-900 dark:text-white max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin">
             <div className="flex flex-col gap-4 sm:flex-row items-center sm:items-start gap-6">
-              <div className="h-28 w-28 shrink-0 flex items-center justify-center rounded-xl border border-slate-100 bg-slate-50 p-2 dark:border-neutral-800 dark:bg-neutral-900/60">
+              <div className="h-28 w-28 shrink-0 flex items-center justify-center rounded-xl border border-slate-150 bg-slate-50 p-2 dark:border-neutral-800 dark:bg-neutral-900/60">
                 {selectedComponent.imageUrl ? (
                   <img
                     src={selectedComponent.imageUrl}
@@ -348,65 +333,77 @@ export const VendedorInventarioPage = () => {
                     className="max-h-full max-w-full object-contain"
                   />
                 ) : (
-                  <Boxes className="h-12 w-12 text-slate-300 dark:text-neutral-600" />
+                  <Boxes className="h-12 w-12 text-teal-600 dark:text-teal-400" />
                 )}
               </div>
               <div className="flex-1 w-full space-y-2">
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                   <div>
-                    <span className="block text-[10px] uppercase font-bold text-slate-400">Categoría</span>
-                    <span className="font-bold text-slate-900 dark:text-white">{selectedComponent.category}</span>
-                  </div>
-
-                  <div>
-                    <span className="block text-[10px] uppercase font-bold text-slate-400">Modelo</span>
-                    <span className="font-bold text-slate-900 dark:text-white">{selectedComponent.model || 'N/A'}</span>
+                    <span className="block font-semibold text-slate-900 dark:text-white text-base">Categoría</span>
+                    <span className="block font-normal text-slate-955 dark:text-white text-base mt-0.5">{selectedComponent.category}</span>
                   </div>
                   <div>
-                    <span className="block text-[10px] uppercase font-bold text-slate-400">SKU</span>
-                    <span className="font-mono font-bold text-slate-900 dark:text-white">{selectedComponent.sku || 'N/A'}</span>
-                  </div>
-                </div>
-                <div className="pt-2 border-t border-slate-100 dark:border-neutral-900 flex items-center justify-between">
-                  <div>
-                    <span className="block text-[10px] uppercase font-bold text-slate-400">Precio</span>
-                    <span className="text-lg font-black text-slate-950 dark:text-white">{formatCurrency(selectedComponent.price)}</span>
+                    <span className="block font-semibold text-slate-900 dark:text-white text-base">Modelo</span>
+                    <span className="block font-normal text-slate-955 dark:text-white text-base mt-0.5">{selectedComponent.model || 'N/A'}</span>
                   </div>
                   <div>
-                    <span className="block text-[10px] uppercase font-bold text-slate-400">Stock actual</span>
-                    <span className="text-sm font-extrabold text-slate-900 dark:text-white">{selectedComponent.stock} unidades</span>
+                    <span className="block font-semibold text-slate-900 dark:text-white text-base">SKU</span>
+                    <span className="block font-mono font-normal text-slate-955 dark:text-white text-base mt-0.5">{selectedComponent.sku || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="block font-semibold text-slate-900 dark:text-white text-base">Stock actual</span>
+                    <span className="block font-normal text-slate-955 dark:text-white text-base mt-0.5">{selectedComponent.stock} unidades</span>
                   </div>
                 </div>
               </div>
             </div>
 
+            <div className="border-t border-slate-150 dark:border-neutral-800" />
+
             <div>
-              <span className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Descripción</span>
-              <p className="text-xs text-slate-600 dark:text-neutral-400 leading-relaxed font-medium">
-                {selectedComponent.description}
+              <span className="block font-bold uppercase tracking-wider text-slate-955 dark:text-white text-sm">Descripción</span>
+              <p className="text-base text-slate-955 dark:text-white leading-relaxed font-normal mt-2">
+                {selectedComponent.description || 'Sin descripción'}
               </p>
             </div>
 
+            <div className="border-t border-slate-150 dark:border-neutral-800" />
+
             <div>
-              <span className="block text-[10px] uppercase font-bold text-slate-400 mb-2">Especificaciones Técnicas</span>
+              <span className="block font-bold uppercase tracking-wider text-slate-955 dark:text-white text-sm">Especificaciones Principales</span>
               {selectedComponent.attributes && selectedComponent.attributes.length > 0 ? (
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-4 mt-3">
                   {selectedComponent.attributes.map((attr, idx) => (
-                    <div key={idx} className="rounded-lg border border-slate-100 bg-slate-50 p-2.5 dark:border-neutral-800 dark:bg-neutral-900/40">
-                      <span className="block text-[9px] uppercase font-bold text-slate-400 dark:text-neutral-500">{attr.name}</span>
-                      <span className="text-xs font-bold text-slate-800 dark:text-neutral-200">{attr.value}</span>
+                    <div key={idx}>
+                      <span className="block font-semibold text-slate-900 dark:text-white text-base">{attr.name}</span>
+                      <span className="block font-normal text-slate-955 dark:text-white text-base mt-0.5">{attr.value}</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs font-semibold text-slate-400 dark:text-neutral-500">
-                  Sin especificaciones técnicas dinámicas registradas.
+                <p className="text-base font-normal text-slate-955 dark:text-white mt-2">
+                  Sin especificaciones principales registradas.
                 </p>
               )}
             </div>
 
+            <div className="border-t border-slate-150 dark:border-neutral-800" />
+
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="block font-bold uppercase tracking-wider text-slate-955 dark:text-white text-sm">Precio</span>
+                <span className="block text-2xl font-semibold text-slate-955 dark:text-white mt-1">{formatCurrency(selectedComponent.price)}</span>
+              </div>
+              <div className="text-right">
+                <span className="block font-bold uppercase tracking-wider text-slate-955 dark:text-white text-sm">Estado</span>
+                <span className={`block text-lg font-semibold mt-1 ${statusTextStyle[selectedComponent.status]}`}>
+                  {statusLabel[selectedComponent.status]}
+                </span>
+              </div>
+            </div>
+
             <div className="flex justify-end pt-2">
-              <Button type="button" onClick={() => setSelectedComponent(null)} className="h-10 px-6 font-bold text-xs bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-neutral-800 dark:text-white dark:hover:bg-neutral-700 border-0 shadow-none">
+              <Button type="button" onClick={() => setSelectedComponent(null)} className="h-11 px-6 font-bold text-sm bg-teal-500 hover:bg-teal-600 text-white rounded-lg transition-all active:scale-95 shadow-sm shadow-teal-500/20 border-0">
                 Cerrar
               </Button>
             </div>

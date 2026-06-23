@@ -93,10 +93,10 @@ export const RulesTab = ({
                           {rule.ruleType}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-slate-655 dark:text-neutral-350">
+                      <td className="px-4 py-3 text-slate-655 dark:text-neutral-300">
                         {rule.sourceAttributeName || 'Atributo origen'}
                       </td>
-                      <td className="px-4 py-3 text-slate-655 dark:text-neutral-350">
+                      <td className="px-4 py-3 text-slate-655 dark:text-neutral-300">
                         {rule.targetAttributeName || 'Atributo destino'}
                       </td>
                       <td className="px-4 py-3 font-medium text-slate-600 dark:text-neutral-400">

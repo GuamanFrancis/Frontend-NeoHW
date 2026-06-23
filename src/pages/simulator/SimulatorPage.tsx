@@ -157,7 +157,7 @@ export const SimulatorPage = () => {
                 </div>
   
                 {!isCaseSelected && (
-                  <div className="absolute inset-0 bg-neutral-955/90 backdrop-blur-sm flex flex-col items-center justify-center text-center p-6 z-35">
+                  <div className="absolute inset-0 bg-slate-955/90 backdrop-blur-sm flex flex-col items-center justify-center text-center p-6 z-35">
                     <div className="w-16 h-16 rounded-full bg-teal-500/10 text-teal-400 flex items-center justify-center mb-4 border border-teal-500/25"><Wrench className="h-8 w-8 animate-pulse" /></div>
                     <h3 className="text-lg font-bold text-white uppercase tracking-wider mb-2">Simulador bloqueado</h3>
                     <p className="text-sm text-neutral-200 max-w-xs leading-relaxed">Debes escoger un gabinete en el panel izquierdo para comenzar.</p>

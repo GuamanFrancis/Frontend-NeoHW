@@ -78,7 +78,7 @@ export const CategoriesTab = ({
                       <td className="px-4 py-3 text-slate-500 dark:text-neutral-400">
                         {cat.slug}
                       </td>
-                      <td className="px-4 py-3 text-slate-650 dark:text-neutral-350">
+                      <td className="px-4 py-3 text-slate-650 dark:text-neutral-300">
                         {cat.description || 'Sin descripción'}
                       </td>
                       <td className="px-4 py-3 text-slate-655 dark:text-neutral-450 font-medium">

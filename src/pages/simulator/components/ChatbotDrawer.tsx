@@ -46,7 +46,7 @@ export const ChatbotDrawer: React.FC<ChatbotDrawerProps> = ({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50 dark:bg-neutral-955/10 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50 dark:bg-slate-955/10 scrollbar-hide">
         {messages.map((msg, i) => (
           <div
             key={i}

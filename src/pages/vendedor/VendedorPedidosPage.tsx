@@ -27,7 +27,7 @@ const backendStatusToUi: Record<string, SellerOrderStatus> = {
 };
 
 const actionButtonClass =
-  'flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-teal-500/60 hover:bg-teal-50 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-teal-400/60 dark:hover:bg-teal-400/10 dark:hover:text-teal-200';
+  'flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-700 transition hover:border-teal-500/60 hover:bg-teal-50 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-teal-400/60 dark:hover:bg-teal-400/10 dark:hover:text-teal-200 cursor-pointer';
 
 const fieldClass =
   'h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-teal-500 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200 dark:placeholder:text-neutral-500 dark:focus:border-teal-400 dark:disabled:bg-neutral-900';
@@ -377,10 +377,7 @@ export const VendedorPedidosPage = () => {
   };
 
   return (
-    <PageCard
-      title="Atender pedidos de clientes"
-      text="Visualiza y atiende pedidos en una sola vista."
-    >
+    <PageCard>
       <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
         <div className="grid gap-3 lg:grid-cols-[1fr_190px_190px_auto]">
           <label className="relative">
@@ -436,14 +433,14 @@ export const VendedorPedidosPage = () => {
         <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[920px] text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:bg-white/[0.03] dark:text-neutral-400">
+              <thead className="bg-slate-50 text-sm uppercase tracking-wider text-slate-900 dark:bg-white/[0.02] dark:text-white border-b border-slate-200 dark:border-neutral-800">
                 <tr>
-                  <th className="px-4 py-3 font-bold">Pedido</th>
-                  <th className="px-4 py-3 font-bold">Cliente</th>
-                  <th className="px-4 py-3 font-bold">Fecha</th>
-                  <th className="px-4 py-3 font-bold">Total</th>
-                  <th className="px-4 py-3 font-bold">Estado</th>
-                  <th className="px-4 py-3 text-right font-bold">Acciones</th>
+                  <th className="px-5 py-4 font-bold">Pedido</th>
+                  <th className="px-5 py-4 font-bold">Cliente</th>
+                  <th className="px-5 py-4 font-bold">Fecha</th>
+                  <th className="px-5 py-4 font-bold">Total</th>
+                  <th className="px-5 py-4 font-bold">Estado</th>
+                  <th className="px-5 py-4 text-right font-bold">Acciones</th>
                 </tr>
               </thead>
 
@@ -453,24 +450,24 @@ export const VendedorPedidosPage = () => {
 
                   return (
                     <tr key={order.id} className="transition hover:bg-slate-50 dark:hover:bg-white/[0.03]">
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-4">
                         <p className="font-semibold text-slate-950 dark:text-white">{order.id}</p>
-                        <p className="mt-0.5 text-xs text-slate-500 dark:text-neutral-400">
+                        <p className="mt-1 text-xs text-slate-500 dark:text-neutral-400 font-medium">
                           {order.itemsCount} {order.itemsCount === 1 ? 'producto' : 'productos'}
                         </p>
                         {order.items && order.items.length > 0 && (
                           <div className="mt-1.5 space-y-0.5 max-w-xs">
                             {order.items.map((item, idx) => (
-                              <p key={item.id || idx} className="text-[11px] font-semibold text-teal-600 dark:text-teal-400 leading-tight">
-                                • {item.product?.name || `Componente ID: ${item.productId}`} <span className="text-slate-400 dark:text-neutral-500 font-bold">x{item.quantity}</span>
+                              <p key={item.id || idx} className="text-xs font-normal text-slate-700 dark:text-neutral-350 leading-tight">
+                                {item.product?.name || `Componente ID: ${item.productId}`} <span className="text-slate-500 dark:text-neutral-500 font-bold">x{item.quantity}</span>
                               </p>
                             ))}
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-4">
                         <div className="flex items-baseline gap-1.5">
-                          <p className="font-medium text-slate-800 dark:text-neutral-200">{order.clientName}</p>
+                          <p className="text-sm font-bold text-slate-950 dark:text-white">{order.clientName}</p>
                           {new Date(order.createdAt).getTime() > Date.now() - 24 * 60 * 60 * 1000 && (
                             <span className="relative flex h-2 w-2 shrink-0">
                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -478,35 +475,35 @@ export const VendedorPedidosPage = () => {
                             </span>
                           )}
                         </div>
-                        <p className="mt-0.5 text-xs text-slate-500 dark:text-neutral-400">{order.clientEmail}</p>
-                        <p className="mt-0.5 text-xs text-slate-500 dark:text-neutral-400">
+                        <p className="mt-1 text-xs text-slate-500 dark:text-neutral-400 font-normal">{order.clientEmail}</p>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-neutral-400 font-normal">
                           <span className="font-semibold text-slate-700 dark:text-neutral-350">Teléf: </span>
                           {order.clientPhone || 'No registrado'}
                         </p>
-                        <p className="mt-1 text-xs text-slate-500 dark:text-neutral-400 leading-relaxed max-w-[280px]">
+                        <p className="mt-1.5 text-xs text-slate-500 dark:text-neutral-400 leading-relaxed max-w-[280px] font-normal">
                           <span className="font-semibold text-slate-700 dark:text-neutral-300">Dirección: </span>
                           {order.addressStr}
                         </p>
                       </td>
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-slate-700 dark:text-neutral-300">{formattedDate.day}</p>
-                        <p className="mt-0.5 text-xs text-slate-500 dark:text-neutral-400">{formattedDate.time}</p>
+                      <td className="px-5 py-4">
+                        <p className="text-xs font-bold text-slate-750 dark:text-neutral-300">{formattedDate.day}</p>
+                        <p className="mt-1 text-[11px] text-slate-500 dark:text-neutral-400 font-normal">{formattedDate.time}</p>
                       </td>
-                      <td className="px-4 py-3 font-semibold text-teal-700 dark:text-teal-300">{formatCurrency(order.total)}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${statusStyles[order.status as SellerOrderStatus]}`}>
+                      <td className="px-5 py-4 font-bold text-sm text-slate-955 dark:text-white">{formatCurrency(order.total)}</td>
+                      <td className="px-5 py-4">
+                        <span className={`text-sm font-semibold ${statusStyles[order.status as SellerOrderStatus]}`}>
                           {order.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-end gap-2">
+                      <td className="px-5 py-4">
+                        <div className="flex justify-end gap-2.5">
                           <button
                             type="button"
                             className={actionButtonClass}
                             onClick={() => openViewModal(order)}
                             aria-label={`Ver ${order.id}`}
                           >
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-5.5 w-5.5 text-slate-700 dark:text-slate-200" />
                           </button>
                           <button
                             type="button"
@@ -516,7 +513,7 @@ export const VendedorPedidosPage = () => {
                             title="Preparar Envío"
                             aria-label={`Despachar ${order.id}`}
                           >
-                            <Truck className="h-4 w-4" />
+                            <Truck className="h-5.5 w-5.5 text-blue-600 dark:text-blue-400" />
                           </button>
                           <button
                             type="button"
@@ -526,7 +523,7 @@ export const VendedorPedidosPage = () => {
                             title="Registrar Entrega"
                             aria-label={`Entregar ${order.id}`}
                           >
-                            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                            <CheckCircle2 className="h-5.5 w-5.5 text-emerald-500" />
                           </button>
                           <button
                             type="button"
@@ -536,7 +533,7 @@ export const VendedorPedidosPage = () => {
                             title="Cancelar Pedido"
                             aria-label={`Cancelar ${order.id}`}
                           >
-                            <XCircle className="h-4 w-4 text-rose-500" />
+                            <XCircle className="h-5.5 w-5.5 text-rose-500" />
                           </button>
                         </div>
                       </td>
@@ -624,85 +621,103 @@ export const VendedorPedidosPage = () => {
       <Modal
         open={modalMode === 'view' && Boolean(selectedOrder)}
         title="Detalles del Pedido"
-        text="Detalle completo de los componentes, total y dirección de envío."
         onClose={() => setModalMode(null)}
-        footer={
-          <Button type="button" onClick={() => setModalMode(null)}>
-            Cerrar
-          </Button>
-        }
       >
         {selectedOrder && (
-          <div className="space-y-4 text-sm">
-            <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-6 text-slate-900 dark:text-white max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
               <div>
-                <p className="text-xs font-semibold text-slate-400 dark:text-neutral-500 uppercase tracking-wide">ID de Pedido</p>
-                <p className="font-bold text-slate-900 dark:text-white mt-0.5">{selectedOrder.id}</p>
+                <span className="block font-semibold text-slate-900 dark:text-white text-base">ID de Pedido</span>
+                <span className="block font-mono font-normal text-slate-955 dark:text-white text-base mt-0.5">{selectedOrder.id}</span>
               </div>
               <div>
-                <p className="text-xs font-semibold text-slate-400 dark:text-neutral-500 uppercase tracking-wide">Estado</p>
-                <span className={`inline-flex rounded-full px-2.5 py-0.5 mt-1 text-xs font-bold ring-1 ${statusStyles[selectedOrder.status as SellerOrderStatus]}`}>
-                  {selectedOrder.status}
+                <span className="block font-semibold text-slate-900 dark:text-white text-base">Fecha de Creación</span>
+                <span className="block font-normal text-slate-955 dark:text-white text-base mt-0.5">
+                  {formatOrderDate(selectedOrder.createdAt).day} a las {formatOrderDate(selectedOrder.createdAt).time}
                 </span>
               </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-400 dark:text-neutral-500 uppercase tracking-wide">Fecha de Creación</p>
-                <p className="text-slate-700 dark:text-neutral-300 mt-0.5">
-                  {formatOrderDate(selectedOrder.createdAt).day} a las {formatOrderDate(selectedOrder.createdAt).time}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-400 dark:text-neutral-500 uppercase tracking-wide">Total del Pedido</p>
-                <p className="font-semibold text-teal-600 dark:text-teal-400 mt-0.5">{formatCurrency(selectedOrder.total)}</p>
-              </div>
             </div>
 
-            <div className="border-t border-slate-100 dark:border-neutral-800 pt-3">
-              <p className="text-xs font-semibold text-slate-400 dark:text-neutral-500 uppercase tracking-wide">Información del Cliente</p>
-              <p className="font-medium text-slate-900 dark:text-white mt-1">{selectedOrder.clientName}</p>
-              <p className="text-slate-500 dark:text-neutral-400 mt-0.5 text-xs">{selectedOrder.clientEmail}</p>
-              <p className="text-slate-500 dark:text-neutral-400 mt-0.5 text-xs">
-                <span className="font-semibold text-slate-700 dark:text-neutral-350">Teléfono: </span>
-                {selectedOrder.clientPhone || 'No registrado'}
-              </p>
-            </div>
+            <div className="border-t border-slate-150 dark:border-neutral-800" />
 
-            <div className="border-t border-slate-100 dark:border-neutral-800 pt-3">
-              <p className="text-xs font-semibold text-slate-400 dark:text-neutral-500 uppercase tracking-wide">Dirección de Envío</p>
-              <p className="text-slate-700 dark:text-neutral-300 mt-1">{selectedOrder.addressStr || 'No provista'}</p>
+            <div>
+              <span className="block font-bold uppercase tracking-wider text-slate-955 dark:text-white text-sm">Información del Cliente</span>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-3">
+                <div>
+                  <span className="block font-semibold text-slate-900 dark:text-white text-base">Cliente</span>
+                  <span className="block font-normal text-slate-955 dark:text-white text-base mt-0.5">{selectedOrder.clientName}</span>
+                </div>
+                <div>
+                  <span className="block font-semibold text-slate-900 dark:text-white text-base">Email</span>
+                  <span className="block font-normal text-slate-955 dark:text-white text-base mt-0.5">{selectedOrder.clientEmail}</span>
+                </div>
+                <div>
+                  <span className="block font-semibold text-slate-900 dark:text-white text-base">Teléfono</span>
+                  <span className="block font-normal text-slate-955 dark:text-white text-base mt-0.5">{selectedOrder.clientPhone || 'No registrado'}</span>
+                </div>
+                <div>
+                  <span className="block font-semibold text-slate-900 dark:text-white text-base">Dirección de Envío</span>
+                  <span className="block font-normal text-slate-955 dark:text-white text-base mt-0.5">{selectedOrder.addressStr || 'No provista'}</span>
+                </div>
+              </div>
             </div>
 
             {selectedOrder.items && selectedOrder.items.length > 0 && (
-              <div className="border-t border-slate-100 dark:border-neutral-800 pt-3">
-                <p className="text-xs font-semibold text-slate-400 dark:text-neutral-500 uppercase tracking-wide mb-2">Componentes Comprados</p>
-                <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-neutral-800">
-                  <table className="w-full min-w-full text-left text-xs">
-                    <thead className="bg-slate-50 text-slate-500 dark:bg-white/[0.02] dark:text-neutral-400">
-                      <tr>
-                        <th className="px-3 py-2 font-semibold">Producto</th>
-                        <th className="px-3 py-2 text-center font-semibold">Cant.</th>
-                        <th className="px-3 py-2 text-right font-semibold">Precio Unit.</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-neutral-800">
-                      {selectedOrder.items.map((item, idx) => (
-                        <tr key={item.id || idx}>
-                          <td className="px-3 py-2 font-medium text-slate-800 dark:text-neutral-200">
-                            {item.product?.name || `Componente ID: ${item.productId}`}
-                          </td>
-                          <td className="px-3 py-2 text-center text-slate-600 dark:text-neutral-300">
-                            {item.quantity}
-                          </td>
-                          <td className="px-3 py-2 text-right text-slate-600 dark:text-neutral-300">
-                            {formatCurrency(Number(item.priceAtTime))}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              <>
+                <div className="border-t border-slate-150 dark:border-neutral-800" />
+                <div>
+                  <span className="block font-bold uppercase tracking-wider text-slate-955 dark:text-white text-sm mb-3">Componentes Comprados</span>
+                  <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-neutral-800">
+                    <div className="max-h-[160px] overflow-y-auto scrollbar-thin">
+                      <table className="w-full min-w-full text-left text-base">
+                        <thead className="bg-slate-50 text-slate-955 dark:bg-white/[0.02] dark:text-white border-b border-slate-200 dark:border-neutral-800 sticky top-0">
+                          <tr>
+                            <th className="px-3 py-2.5 font-bold">Producto</th>
+                            <th className="px-3 py-2.5 text-center font-bold">Cant.</th>
+                            <th className="px-3 py-2.5 text-right font-bold">Precio Unit.</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-150 dark:divide-neutral-900/50">
+                          {selectedOrder.items.map((item, idx) => (
+                            <tr key={item.id || idx}>
+                              <td className="px-3 py-2.5 font-normal text-slate-900 dark:text-white">
+                                {item.product?.name || `Componente ID: ${item.productId}`}
+                              </td>
+                              <td className="px-3 py-2.5 text-center font-normal text-slate-900 dark:text-white">
+                                {item.quantity}
+                              </td>
+                              <td className="px-3 py-2.5 text-right font-normal text-slate-900 dark:text-white">
+                                {formatCurrency(Number(item.priceAtTime))}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
+              </>            )}
+
+            <div className="border-t border-slate-150 dark:border-neutral-800" />
+
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="block font-bold uppercase tracking-wider text-slate-955 dark:text-white text-sm">Total del Pedido</span>
+                <span className="block text-2xl font-semibold text-slate-955 dark:text-white mt-1">{formatCurrency(selectedOrder.total)}</span>
               </div>
-            )}
+              <div className="text-right">
+                <span className="block font-bold uppercase tracking-wider text-slate-955 dark:text-white text-sm">Estado</span>
+                <span className={`block text-lg font-semibold mt-1 ${statusStyles[selectedOrder.status as SellerOrderStatus]}`}>
+                  {selectedOrder.status}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button type="button" onClick={() => setModalMode(null)} className="h-11 px-6 font-bold text-sm bg-teal-500 hover:bg-teal-600 text-white rounded-lg transition-all active:scale-95 shadow-sm shadow-teal-500/20 border-0">
+                Cerrar
+              </Button>
+            </div>
           </div>
         )}
       </Modal>

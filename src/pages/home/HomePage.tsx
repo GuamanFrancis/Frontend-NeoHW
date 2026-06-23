@@ -227,7 +227,7 @@ export const HomePage = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="relative w-full border-b border-slate-100 dark:border-neutral-900 bg-transparent dark:bg-neutral-955 py-20 overflow-hidden"
+          className="relative w-full border-b border-slate-100 dark:border-neutral-900 bg-transparent dark:bg-slate-955 py-20 overflow-hidden"
         >
           <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-96 h-96 rounded-full bg-rose-500/10 blur-[100px] pointer-events-none" />
           <div className="mx-auto max-w-[95rem] px-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 relative z-10">
@@ -277,7 +277,7 @@ export const HomePage = () => {
                   <Link
                     to="/catalogo#productos-catalogo"
                     state={{ categorySlug: category.slug }}
-                    className="inline-flex h-11 items-center justify-center rounded-lg bg-teal-500 hover:bg-teal-600 text-neutral-955 font-medium px-6 text-sm transition uppercase tracking-wider"
+                    className="inline-flex h-11 items-center justify-center rounded-lg bg-teal-500 hover:bg-teal-600 text-slate-955 font-medium px-6 text-sm transition uppercase tracking-wider"
                   >
                     Ver más
                   </Link>
