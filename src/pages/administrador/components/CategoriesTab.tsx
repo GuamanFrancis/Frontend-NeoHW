@@ -108,7 +108,6 @@ export const CategoriesTab = ({
       <Modal
         open={catModalMode === 'create'}
         title="Nueva Categoría de Hardware"
-        text="Define las propiedades de la nueva categoría para clasificar el hardware de la tienda."
         onClose={() => setCatModalMode(null)}
         footer={
           <>
@@ -121,6 +120,9 @@ export const CategoriesTab = ({
           </>
         }
       >
+        <p className="text-sm font-normal text-slate-500 dark:text-neutral-400 mb-4">
+          Define las propiedades de la nueva categoría para clasificar el hardware de la tienda.
+        </p>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
             <FormInput
@@ -168,10 +170,10 @@ export const CategoriesTab = ({
               <AlertTriangle className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-sm font-extrabold text-slate-900 dark:text-white">
+              <p className="text-base font-bold text-slate-900 dark:text-white">
                 ¿Estás seguro de que deseas desactivar esta categoría?
               </p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">
+              <p className="text-sm font-normal text-slate-500 dark:text-neutral-400 mt-1.5 leading-relaxed">
                 Esta acción ocultará la categoría del catálogo. Los productos asociados seguirán existiendo pero no se listarán bajo esta categoría. La categoría "{catToDelete?.name}" se desactivará temporalmente.
               </p>
             </div>
@@ -187,7 +189,7 @@ export const CategoriesTab = ({
             <button
               type="button"
               onClick={() => void handleConfirmDeleteCategory()}
-              className="rounded-lg bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 transition text-xs shadow-sm"
+              className="rounded-lg bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2.5 transition text-sm shadow-sm"
             >
               Sí, desactivar
             </button>

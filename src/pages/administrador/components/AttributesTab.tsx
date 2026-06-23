@@ -202,7 +202,6 @@ export const AttributesTab = ({
       <Modal
         open={attrModalMode !== null}
         title={attrModalMode === 'create' ? 'Nuevo Atributo Técnico' : 'Editar Atributo Técnico'}
-        text="Define las propiedades del atributo técnico global."
         onClose={() => setAttrModalMode(null)}
         footer={
           <>
@@ -215,6 +214,9 @@ export const AttributesTab = ({
           </>
         }
       >
+        <p className="text-sm font-normal text-slate-500 dark:text-neutral-400 mb-4">
+          Define las propiedades del atributo técnico global.
+        </p>
         <div className="grid gap-4 md:grid-cols-2">
           <FormInput
             label="Nombre del atributo"
@@ -273,10 +275,10 @@ export const AttributesTab = ({
               <AlertTriangle className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-sm font-extrabold text-slate-900 dark:text-white">
+              <p className="text-base font-bold text-slate-900 dark:text-white">
                 ¿Estás seguro de que deseas eliminar este atributo global?
               </p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">
+              <p className="text-sm font-normal text-slate-500 dark:text-neutral-400 mt-1.5 leading-relaxed">
                 Esta acción no se puede deshacer y desvinculará este atributo de todas las categorías y componentes que lo utilicen. El atributo "{attrToDelete?.name}" se borrará permanentemente.
               </p>
             </div>
@@ -311,10 +313,10 @@ export const AttributesTab = ({
               <AlertTriangle className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-sm font-extrabold text-slate-900 dark:text-white">
+              <p className="text-base font-bold text-slate-900 dark:text-white">
                 ¿Estás seguro de que deseas desasociar este atributo?
               </p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">
+              <p className="text-sm font-normal text-slate-500 dark:text-neutral-400 mt-1.5 leading-relaxed">
                 El atributo "{attrToDisassociate?.name}" dejará de estar disponible para rellenar en los componentes de esta categoría. Los valores existentes en los productos no se verán afectados.
               </p>
             </div>
@@ -330,7 +332,7 @@ export const AttributesTab = ({
             <button
               type="button"
               onClick={() => void handleConfirmDisassociateAttribute()}
-              className="rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2 transition text-xs shadow-sm"
+              className="rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2.5 transition text-sm shadow-sm"
             >
               Sí, desasociar
             </button>

@@ -126,7 +126,6 @@ export const RulesTab = ({
       <Modal
         open={ruleModalMode === 'create'}
         title="Nueva Regla de Compatibilidad"
-        text="Crea una regla lógica de compatibilidad de hardware para el simulador."
         onClose={() => setRuleModalMode(null)}
         footer={
           <>
@@ -139,6 +138,9 @@ export const RulesTab = ({
           </>
         }
       >
+        <p className="text-sm font-normal text-slate-500 dark:text-neutral-400 mb-4">
+          Crea una regla lógica de compatibilidad de hardware para el simulador.
+        </p>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
             <FormInput
@@ -214,10 +216,10 @@ export const RulesTab = ({
               <AlertTriangle className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-sm font-extrabold text-slate-900 dark:text-white">
+              <p className="text-base font-bold text-slate-900 dark:text-white">
                 ¿Estás seguro de que deseas desactivar esta regla?
               </p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">
+              <p className="text-sm font-normal text-slate-500 dark:text-neutral-400 mt-1.5 leading-relaxed">
                 Esta acción evitará que el Simulador 3D valide esta restricción de hardware en tiempo real. La regla "{ruleToDelete?.name}" se removerá del motor de validaciones.
               </p>
             </div>
@@ -233,7 +235,7 @@ export const RulesTab = ({
             <button
               type="button"
               onClick={() => void handleConfirmDeleteRule()}
-              className="rounded-lg bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 transition text-xs shadow-sm"
+              className="rounded-lg bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2.5 transition text-sm shadow-sm"
             >
               Sí, desactivar
             </button>

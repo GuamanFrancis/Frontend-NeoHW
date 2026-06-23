@@ -1,4 +1,4 @@
-import { Eye, PackageSearch, Pencil, Trash2 } from 'lucide-react';
+import { Eye, PackageSearch, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { FormInput } from '../../../components/ui/FormInput';
 import { FormSelect } from '../../../components/ui/FormSelect';
@@ -11,6 +11,12 @@ import {
   type ModalMode,
 } from '../hooks/useAdminCatalog';
 import type { BackendAttribute } from '../../../services/attributesService';
+
+const statusTextStyles: Record<CatalogStockStatus, string> = {
+  disponible: 'text-emerald-600 dark:text-emerald-400',
+  'stock-bajo': 'text-amber-600 dark:text-amber-400',
+  agotado: 'text-rose-600 dark:text-rose-400',
+};
 
 type CatalogTabProps = {
   search: string;
@@ -65,7 +71,7 @@ const fieldClass =
   'h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-teal-500 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200 dark:placeholder:text-neutral-500 dark:focus:border-teal-400 dark:disabled:bg-neutral-900';
 
 const actionButtonClass =
-  'flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-teal-500/60 hover:bg-teal-50 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-teal-400/60 dark:hover:bg-teal-400/10 dark:hover:text-teal-200';
+  'flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-700 transition hover:border-teal-500/60 hover:bg-teal-50 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-teal-400/60 dark:hover:bg-teal-400/10 dark:hover:text-teal-200 cursor-pointer';
 
 export const CatalogTab = ({
   search,
@@ -162,20 +168,20 @@ export const CatalogTab = ({
         <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[980px] text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:bg-white/[0.03] dark:text-neutral-400">
+              <thead className="bg-slate-50 text-sm uppercase tracking-wider text-slate-900 dark:bg-white/[0.02] dark:text-white border-b border-slate-200 dark:border-neutral-800">
                 <tr>
-                  <th className="px-4 py-3 font-bold">Producto</th>
-                  <th className="px-4 py-3 font-bold">Categoría</th>
-                  <th className="px-4 py-3 font-bold">Precio</th>
-                  <th className="px-4 py-3 font-bold">Stock</th>
-                  <th className="px-4 py-3 font-bold">Estado</th>
-                  <th className="px-4 py-3 text-right font-bold">Acciones</th>
+                  <th className="px-5 py-4 font-bold">Producto</th>
+                  <th className="px-5 py-4 font-bold">Categoría</th>
+                  <th className="px-5 py-4 font-bold">Precio</th>
+                  <th className="px-5 py-4 font-bold">Stock</th>
+                  <th className="px-5 py-4 font-bold">Estado</th>
+                  <th className="px-5 py-4 text-right font-bold">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-neutral-800">
                 {pageComponents.map((component) => (
                   <tr key={component.id} className="transition hover:bg-slate-50 dark:hover:bg-white/[0.03]">
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-slate-100 dark:border-neutral-700 dark:bg-neutral-900">
                           {component.imageUrl ? (
@@ -185,30 +191,30 @@ export const CatalogTab = ({
                           )}
                         </div>
                         <div>
-                          <p className="font-semibold text-slate-950 dark:text-white">{component.name}</p>
+                          <p className="text-sm font-bold text-slate-950 dark:text-white">{component.name}</p>
                           <p className="mt-0.5 text-xs text-slate-500 dark:text-neutral-400">{component.description}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-neutral-300">{component.category}</td>
-                    <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{formatPrice(component.price)}</td>
-                    <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">
+                    <td className="px-5 py-4 text-xs font-normal text-slate-600 dark:text-neutral-300">{component.category}</td>
+                    <td className="px-5 py-4 font-bold text-sm text-slate-955 dark:text-white">{formatPrice(component.price)}</td>
+                    <td className="px-5 py-4 font-normal text-sm text-slate-955 dark:text-white">
                       {component.stock}
                     </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${statusMeta[component.status].className}`}>
+                    <td className="px-5 py-4">
+                      <span className={`text-sm font-semibold ${statusTextStyles[component.status]}`}>
                         {statusMeta[component.status].label}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-2">
+                    <td className="px-5 py-4">
+                      <div className="flex justify-end gap-2.5">
                         <button
                           type="button"
                           className={actionButtonClass}
                           onClick={() => void openEditModal(component)}
                           aria-label="Editar componente"
                         >
-                          <Pencil className="h-4 w-4" />
+                          <Pencil className="h-5.5 w-5.5 text-slate-700 dark:text-slate-200" />
                         </button>
                         <button
                           type="button"
@@ -216,15 +222,15 @@ export const CatalogTab = ({
                           onClick={() => openViewModal(component)}
                           aria-label="Ver componente"
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-5.5 w-5.5 text-slate-700 dark:text-slate-200" />
                         </button>
                         <button
                           type="button"
-                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-300 text-red-600 transition hover:border-red-500 hover:bg-red-50 hover:text-red-700 dark:border-red-500/35 dark:text-red-300 dark:hover:border-red-400 dark:hover:bg-red-500/10 dark:hover:text-red-200"
+                          className="flex h-10 w-10 items-center justify-center rounded-lg border border-red-300 text-red-600 transition hover:border-red-500 hover:bg-red-50 hover:text-red-700 dark:border-red-500/35 dark:text-red-300 dark:hover:border-red-400 dark:hover:bg-red-500/10 dark:hover:text-red-200 cursor-pointer"
                           onClick={() => openDeleteModal(component)}
                           aria-label="Eliminar componente"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-5.5 w-5.5" />
                         </button>
                       </div>
                     </td>
@@ -251,9 +257,8 @@ export const CatalogTab = ({
           </div>
 
           <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-500 dark:border-neutral-800 dark:text-neutral-400 md:flex-row md:items-center md:justify-between">
-            <p>
-              Mostrando {firstResult} a {lastResult} de {filteredComponents.length} componentes
-            </p>
+            <div className="hidden" data-results={`${firstResult}-${lastResult}-${filteredComponents.length}`} />
+
 
             <div className="flex flex-wrap items-center gap-2">
               <button
@@ -317,7 +322,6 @@ export const CatalogTab = ({
       <Modal
         open={modalMode === 'create' || modalMode === 'edit'}
         title={modalMode === 'create' ? 'Nuevo componente' : 'Editar componente'}
-        text="Completa la informacion principal del producto para gestionarlo en el catalogo."
         onClose={closeModal}
         footer={
           <>
@@ -340,6 +344,9 @@ export const CatalogTab = ({
           }
         `}</style>
         <div className="max-h-[60vh] overflow-y-auto pr-2 scrollbar-none">
+          <p className="text-sm font-normal text-slate-500 dark:text-neutral-400 mb-4">
+            Completa la información principal del producto para gestionarlo en el catálogo.
+          </p>
           <div className="grid gap-4 md:grid-cols-2">
             <FormInput
               label="Nombre del producto"
@@ -463,74 +470,136 @@ export const CatalogTab = ({
 
       <Modal
         open={modalMode === 'view' && Boolean(selectedComponent)}
-        title="Detalle del componente"
-        text="Informacion actual del producto en el catalogo."
+        title="Detalles de Componente"
         onClose={closeModal}
-        footer={
-          <Button type="button" variant="ghost" onClick={closeModal}>
-            Cerrar
-          </Button>
-        }
       >
         {selectedComponent && (
-          <div className="space-y-4 text-sm">
-            <div className="grid gap-3 md:grid-cols-2">
-              <p><span className="font-semibold">Producto:</span> {selectedComponent.name}</p>
-              <p><span className="font-semibold">Categoria:</span> {selectedComponent.category}</p>
-              <p><span className="font-semibold">Precio:</span> {formatPrice(selectedComponent.price)}</p>
-              <p><span className="font-semibold">Stock:</span> {selectedComponent.stock}</p>
-              <p><span className="font-semibold">Estado:</span> {statusMeta[selectedComponent.status].label}</p>
+          <div className="space-y-6 text-slate-900 dark:text-white max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin">
+            <div className="flex flex-col gap-4 sm:flex-row items-center sm:items-start gap-6">
+              <div className="h-28 w-28 shrink-0 flex items-center justify-center rounded-xl border border-slate-150 bg-slate-50 p-2 dark:border-neutral-800 dark:bg-neutral-900/60">
+                {selectedComponent.imageUrl ? (
+                  <img
+                    src={selectedComponent.imageUrl}
+                    alt={selectedComponent.name}
+                    className="max-h-full max-w-full object-contain"
+                  />
+                ) : (
+                  <PackageSearch className="h-12 w-12 text-teal-600 dark:text-teal-400" />
+                )}
+              </div>
+              <div className="flex-1 w-full space-y-2">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                  <div>
+                    <span className="block font-semibold text-slate-900 dark:text-white text-base">Categoría</span>
+                    <span className="block font-normal text-slate-955 dark:text-white text-base mt-0.5">{selectedComponent.category}</span>
+                  </div>
+                  <div>
+                    <span className="block font-semibold text-slate-900 dark:text-white text-base">Modelo</span>
+                    <span className="block font-normal text-slate-955 dark:text-white text-base mt-0.5">{selectedComponent.model || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="block font-semibold text-slate-900 dark:text-white text-base">SKU</span>
+                    <span className="block font-mono font-normal text-slate-955 dark:text-white text-base mt-0.5">{selectedComponent.sku || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="block font-semibold text-slate-900 dark:text-white text-base">Stock actual</span>
+                    <span className="block font-normal text-slate-955 dark:text-white text-base mt-0.5">{selectedComponent.stock} unidades</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <p><span className="font-semibold">Descripcion:</span> {selectedComponent.description}</p>
-            {selectedComponent.attributes && selectedComponent.attributes.length > 0 && (
-              <div className="border-t border-slate-100 dark:border-neutral-800 pt-3">
-                <p className="font-semibold mb-1">Especificaciones Técnicas:</p>
-                <div className="grid gap-2 grid-cols-2 text-xs bg-slate-50 dark:bg-neutral-900/40 p-2.5 rounded-lg border border-slate-100 dark:border-neutral-800">
+
+            <div className="border-t border-slate-150 dark:border-neutral-800" />
+
+            <div>
+              <span className="block font-bold uppercase tracking-wider text-slate-955 dark:text-white text-sm">Especificaciones Principales</span>
+              {selectedComponent.attributes && selectedComponent.attributes.length > 0 ? (
+                <div className="grid grid-cols-2 gap-x-6 gap-y-4 mt-3">
                   {selectedComponent.attributes.map((attr, idx) => (
-                    <div key={idx} className="flex justify-between border-b border-slate-200/50 dark:border-neutral-800/50 pb-1">
-                      <span className="text-slate-500 dark:text-neutral-400">{attr.name}</span>
-                      <span className="font-bold text-slate-800 dark:text-neutral-200">{attr.value} {attr.unit || ''}</span>
+                    <div key={idx}>
+                      <span className="block font-semibold text-slate-900 dark:text-white text-base">{attr.name}</span>
+                      <span className="block font-normal text-slate-955 dark:text-white text-base mt-0.5">{attr.value}</span>
                     </div>
                   ))}
                 </div>
+              ) : (
+                <p className="text-base font-normal text-slate-955 dark:text-white mt-2">
+                  Sin especificaciones principales registradas.
+                </p>
+              )}
+            </div>
+
+            <div className="border-t border-slate-150 dark:border-neutral-800" />
+
+            <div>
+              <span className="block font-bold uppercase tracking-wider text-slate-955 dark:text-white text-sm">Descripción</span>
+              <p className="text-base text-slate-955 dark:text-white leading-relaxed font-normal mt-2">
+                {selectedComponent.description || 'Sin descripción'}
+              </p>
+            </div>
+
+            <div className="border-t border-slate-150 dark:border-neutral-800" />
+
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="block font-bold uppercase tracking-wider text-slate-955 dark:text-white text-sm">Precio</span>
+                <span className="block text-2xl font-semibold text-slate-955 dark:text-white mt-1">{formatPrice(selectedComponent.price)}</span>
               </div>
-            )}
-            {selectedComponent.imageUrl && (
-              <img
-                src={selectedComponent.imageUrl}
-                alt={selectedComponent.name}
-                className="h-44 w-full rounded-lg border border-slate-200 object-cover dark:border-neutral-700"
-              />
-            )}
+              <div className="text-right">
+                <span className="block font-bold uppercase tracking-wider text-slate-955 dark:text-white text-sm">Estado</span>
+                <span className={`block text-lg font-semibold mt-1 ${statusTextStyles[selectedComponent.status]}`}>
+                  {statusMeta[selectedComponent.status].label}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button type="button" onClick={closeModal} className="h-11 px-6 font-bold text-sm bg-teal-500 hover:bg-teal-600 text-white rounded-lg transition-all active:scale-95 shadow-sm shadow-teal-500/20 border-0">
+                Cerrar
+              </Button>
+            </div>
           </div>
         )}
       </Modal>
 
       <Modal
         open={modalMode === 'delete' && Boolean(selectedComponent)}
-        title="Eliminar componente"
-        text="Esta accion eliminara el componente del catalogo."
+        title="¿Eliminar Componente?"
         onClose={closeModal}
-        footer={
-          <>
-            <Button type="button" variant="ghost" onClick={closeModal}>
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-red-500/10 text-red-500 shrink-0">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-base font-bold text-slate-900 dark:text-white">
+                ¿Estás seguro de que deseas eliminar este componente del catálogo?
+              </p>
+              <p className="text-sm font-normal text-slate-500 dark:text-neutral-400 mt-1.5 leading-relaxed">
+                Esta acción es permanente y retirará el producto "{selectedComponent?.name}" de la tienda y del catálogo general de componentes.
+              </p>
+            </div>
+          </div>
+          {modalError && (
+            <div className="mt-2 rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-200">
+              {modalError}
+            </div>
+          )}
+          <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-neutral-900">
+            <Button type="button" variant="outline" onClick={closeModal}>
               Cancelar
             </Button>
-            <Button type="button" onClick={() => void removeComponent()} disabled={isSaving}>
-              {isSaving ? 'Eliminando...' : 'Eliminar'}
-            </Button>
-          </>
-        }
-      >
-        <p className="text-sm text-slate-600 dark:text-neutral-300">
-          ¿Seguro que deseas eliminar <span className="font-semibold">{selectedComponent?.name}</span>?
-        </p>
-
-        {modalError && (
-          <div className="mt-4 rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-200">
-            {modalError}
+            <button
+              type="button"
+              onClick={() => void removeComponent()}
+              className="rounded-lg bg-red-500 hover:bg-red-650 text-white font-bold px-4 py-2.5 transition text-sm shadow-sm"
+              disabled={isSaving}
+            >
+              {isSaving ? 'Eliminando...' : 'Sí, eliminar'}
+            </button>
           </div>
-        )}
+        </div>
       </Modal>
     </>
   );
