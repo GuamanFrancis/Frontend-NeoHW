@@ -212,7 +212,7 @@ export const ClienteProyectosPage = () => {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[95rem] pb-16 text-slate-900 dark:text-neutral-100 pt-5">
+      <div className="w-full pb-16 text-slate-900 dark:text-neutral-100 pt-5">
         <div className="flex flex-col items-center justify-center py-20 text-center border border-slate-200 rounded-xl bg-white dark:border-neutral-900 dark:bg-neutral-950/20 animate-pulse">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-teal-500 border-t-transparent mb-4" />
           <h3 className="text-sm font-bold text-slate-700 dark:text-neutral-300">Cargando tus proyectos...</h3>
@@ -223,7 +223,7 @@ export const ClienteProyectosPage = () => {
 
   if (projects.length === 0) {
     return (
-      <div className="mx-auto max-w-[95rem] pb-16 text-slate-900 dark:text-neutral-100 pt-2">
+      <div className="w-full pb-16 text-slate-900 dark:text-neutral-100 pt-2">
         <div className="flex h-96 flex-col items-center justify-between rounded-2xl border border-dashed border-slate-200 dark:border-neutral-800 bg-white/50 p-8 text-center dark:bg-neutral-900/10 max-w-2xl mx-auto py-16">
           <FolderHeart className="h-16 w-16 text-teal-500" />
           <div>
@@ -247,7 +247,7 @@ export const ClienteProyectosPage = () => {
   }
 
   return (
-    <div className="mx-auto max-w-[95rem] pb-16 text-slate-900 dark:text-neutral-100 pt-2">
+    <div className="w-full pb-16 text-slate-900 dark:text-neutral-100 pt-2">
       {toastMessage && (
         <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-xl border border-teal-500/30 bg-neutral-900 px-4 py-3 shadow-2xl animate-fade-in-up">
           <CheckCircle2 className="h-4 w-4 text-teal-400" />

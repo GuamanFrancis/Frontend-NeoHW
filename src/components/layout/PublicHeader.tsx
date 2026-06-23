@@ -67,7 +67,7 @@ export const PublicHeader = () => {
 
   return (
     <header className="border-b border-slate-200 bg-white dark:border-neutral-900 dark:bg-neutral-950">
-      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5">
+      <nav className="mx-auto flex h-16 max-w-[95rem] items-center justify-between px-5">
         <Link to="/" className="flex items-center gap-3">
           <img src="/favicon.jpg" alt="Logo NeoHW" className="h-9 w-9 object-cover rounded-lg" />
           <span className="text-3xl font-extrabold text-slate-900 dark:text-white">

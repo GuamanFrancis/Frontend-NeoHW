@@ -9,13 +9,13 @@ export const PublicCatalogoPage = () => {
   const dashboardPath = session ? roleHomeRoutes[session.user.role] : '/login';
 
   return (
-    <main className="min-h-screen bg-[#EBFFDC] text-slate-900 dark:bg-neutral-950 dark:text-neutral-50 overflow-x-hidden">
+    <main className="min-h-screen bg-[#eef4fa] text-slate-900 dark:bg-neutral-950 dark:text-neutral-50 overflow-x-hidden">
       <PublicHeader />
       <div className="mx-auto max-w-[95rem] p-5 sm:p-6 pb-12">
         <ClienteCatalogoPage />
       </div>
       <footer className="bg-white dark:bg-neutral-950 px-5 py-16 border-t border-slate-200 dark:border-neutral-900">
-        <div className="mx-auto grid max-w-7xl gap-8 text-base text-slate-955 dark:text-white md:grid-cols-[1.3fr_1fr_1fr_1fr]">
+        <div className="mx-auto grid max-w-[95rem] gap-8 text-base text-slate-955 dark:text-white md:grid-cols-[1.3fr_1fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-2">
               <img src="/favicon.jpg" alt="Logo NeoHW" className="h-8 w-8 object-cover rounded-lg" />

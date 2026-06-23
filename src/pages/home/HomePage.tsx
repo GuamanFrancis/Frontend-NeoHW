@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   Cpu,
@@ -7,19 +8,27 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { Link } from 'react-router';
-import videoGif from '../../assets/video/video public.gif';
+import videoWebm from '../../assets/video/video public.webm';
+import procesadorImg from '../../assets/images/procesador.webp';
+import tarjetaGraficaImg from '../../assets/images/tarjeta grafica.webp';
+import placaMadreImg from '../../assets/images/placa madre.webp';
+import ramImg from '../../assets/images/ram.webp';
+import almacenamientoImg from '../../assets/images/ssd.webp';
+import fuentesDePoderImg from '../../assets/images/fuente de poder.webp';
+import gabinetesImg from '../../assets/images/case.webp';
+import refrigeracionImg from '../../assets/images/refrigeracion.webp';
 import { PublicHeader } from '../../components/layout/PublicHeader';
 import { useHome } from './hooks/useHome';
 
 const CATEGORY_IMAGES: Record<string, string> = {
-  'procesadores': 'https://images.unsplash.com/photo-1591453089816-0fbb971b454c?q=80&w=600&auto=format&fit=crop',
-  'tarjetas-graficas': 'https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=600&auto=format&fit=crop',
-  'placas-madre': 'https://images.unsplash.com/photo-1562976540-1502c2145186?q=80&w=600&auto=format&fit=crop',
-  'memorias-ram': 'https://images.unsplash.com/photo-1541029071515-84cc54f84dc5?q=80&w=600&auto=format&fit=crop',
-  'almacenamiento': 'https://images.unsplash.com/photo-1531497865144-0464ef8fb9a9?q=80&w=600&auto=format&fit=crop',
-  'fuentes-de-poder': 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?q=80&w=600&auto=format&fit=crop',
-  'gabinetes': 'https://images.unsplash.com/photo-1587202372666-4e5549045b4c?q=80&w=600&auto=format&fit=crop',
-  'refrigeracion': 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?q=80&w=600&auto=format&fit=crop'
+  'procesadores': procesadorImg,
+  'tarjetas-graficas': tarjetaGraficaImg,
+  'placas-madre': placaMadreImg,
+  'memorias-ram': ramImg,
+  'almacenamiento': almacenamientoImg,
+  'fuentes-de-poder': fuentesDePoderImg,
+  'gabinetes': gabinetesImg,
+  'refrigeracion': refrigeracionImg
 };
 
 const CATEGORY_DETAILS: Record<string, { tag: string; title: string }> = {
@@ -66,8 +75,32 @@ export const HomePage = () => {
     session,
   } = useHome();
 
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const videoEl = videoRef.current;
+    if (!videoEl) return;
+
+    videoEl.play().catch(() => {});
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          videoEl.play().catch(() => {});
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(videoEl);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   return (
-    <main className="min-h-screen bg-[#EBFFDC] text-slate-900 dark:bg-neutral-950 dark:text-neutral-50 overflow-x-hidden">
+    <main className="min-h-screen bg-[#eef4fa] text-slate-900 dark:bg-neutral-950 dark:text-neutral-50 overflow-x-hidden">
 
 
       <PublicHeader />
@@ -88,16 +121,20 @@ export const HomePage = () => {
           }}
           className="pointer-events-none select-none"
         >
-          <img
-            src={videoGif}
-            alt=""
-            aria-hidden="true"
+          <video
+            ref={videoRef}
+            autoPlay
+            loop
+            muted
+            playsInline
             className="absolute inset-0 w-full h-full object-cover"
-          />
+          >
+            <source src={videoWebm} type="video/webm" />
+          </video>
           <div className="absolute inset-0 bg-black/60 z-10" />
         </div>
 
-        <div className="relative z-10 mx-auto max-w-7xl px-5 py-24 w-full">
+        <div className="relative z-10 mx-auto max-w-[95rem] px-5 py-24 w-full">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
@@ -142,7 +179,7 @@ export const HomePage = () => {
         </div>
       </section>
 
-      <section id="simulador" className="relative z-10 mx-auto max-w-7xl px-5 pt-16 pb-8">
+      <section id="simulador" className="relative z-10 mx-auto max-w-[95rem] px-5 pt-16 pb-8">
         <div className="rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/60 p-8 md:p-12 shadow-xl backdrop-blur-md">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="max-w-3xl">
@@ -171,7 +208,7 @@ export const HomePage = () => {
           className="relative w-full border-t border-b border-slate-100 dark:border-neutral-900 bg-transparent dark:bg-neutral-950 py-20 overflow-hidden"
         >
           <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-96 h-96 rounded-full bg-emerald-500/10 blur-[100px] pointer-events-none" />
-          <div className="mx-auto max-w-7xl px-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 relative z-10">
+          <div className="mx-auto max-w-[95rem] px-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 relative z-10">
             <div className="flex items-start gap-6">
               <div className="text-7xl font-light text-emerald-500/30 dark:text-emerald-500/20 select-none tracking-tight">01</div>
               <div>
@@ -193,7 +230,7 @@ export const HomePage = () => {
           className="relative w-full border-b border-slate-100 dark:border-neutral-900 bg-transparent dark:bg-neutral-955 py-20 overflow-hidden"
         >
           <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-96 h-96 rounded-full bg-rose-500/10 blur-[100px] pointer-events-none" />
-          <div className="mx-auto max-w-7xl px-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 relative z-10">
+          <div className="mx-auto max-w-[95rem] px-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 relative z-10">
             <div className="flex items-start gap-6">
               <div className="text-7xl font-light text-rose-500/30 dark:text-rose-500/20 select-none tracking-tight">02</div>
               <div>
@@ -208,7 +245,7 @@ export const HomePage = () => {
         </motion.div>
       </section>
 
-      <section id="catalogo" className="relative z-10 mx-auto max-w-7xl px-5 py-14">
+      <section id="catalogo" className="relative z-10 mx-auto max-w-[95rem] px-5 py-14">
         <div className="mb-10 flex items-end justify-between gap-4">
           <div>
             <p className="text-lg font-semibold text-slate-955 dark:text-white uppercase tracking-wider">Categorías</p>
@@ -259,11 +296,11 @@ export const HomePage = () => {
       </section>
 
       <section id="beneficios" className="border-t border-b border-slate-200 dark:border-neutral-800 bg-transparent dark:bg-neutral-950 py-20 relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-7xl h-full pointer-events-none opacity-40">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[95rem] h-full pointer-events-none opacity-40">
           <div className="absolute top-10 left-10 w-96 h-96 rounded-full bg-teal-500/5 blur-3xl" />
           <div className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-indigo-500/5 blur-3xl" />
         </div>
-        <div className="mx-auto max-w-7xl px-5 relative z-10">
+        <div className="mx-auto max-w-[95rem] px-5 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             
             <div className="relative group overflow-hidden rounded-2xl border border-slate-200/60 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/40 p-8 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.04)] dark:hover:shadow-[0_20px_40px_rgba(0,0,0,0.4)] hover:border-slate-350 dark:hover:border-neutral-700 transition-all duration-300 flex flex-col items-center text-center">
@@ -323,7 +360,7 @@ export const HomePage = () => {
       </section>
 
       <footer className="bg-white dark:bg-neutral-950 px-5 py-16 border-t border-slate-200 dark:border-neutral-900">
-        <div className="mx-auto grid max-w-7xl gap-8 text-base text-slate-950 dark:text-white md:grid-cols-[1.3fr_1fr_1fr_1fr]">
+        <div className="mx-auto grid max-w-[95rem] gap-8 text-base text-slate-955 dark:text-white md:grid-cols-[1.3fr_1fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-2">
               <img src="/favicon.jpg" alt="Logo NeoHW" className="h-8 w-8 object-cover rounded-lg" />

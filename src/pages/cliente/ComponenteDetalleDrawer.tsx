@@ -133,8 +133,8 @@ export const ComponenteDetalleDrawer = ({
   }
 
   const containerClassName = useFloating
-    ? 'fixed z-50 border border-slate-200 bg-[#EBFFDC] p-5 shadow-[0_0_40px_rgba(0,0,0,0.08)] transition-all duration-200 ease-out text-slate-900 overflow-y-auto rounded-2xl ring-1 ring-teal-500/5 dark:border-neutral-800 dark:bg-neutral-950 dark:shadow-[0_0_40px_rgba(0,0,0,0.8)] dark:text-neutral-100 dark:ring-teal-500/10'
-    : 'fixed left-1/2 top-1/2 z-50 w-full max-w-[480px] max-h-[85vh] -translate-x-1/2 -translate-y-1/2 border border-slate-200 bg-[#EBFFDC] p-6 shadow-[0_0_50px_rgba(0,0,0,0.06)] transition-all duration-300 ease-out text-slate-900 overflow-y-auto rounded-2xl ring-1 ring-teal-500/5 dark:border-neutral-800 dark:bg-neutral-950 dark:shadow-[0_0_50px_rgba(0,0,0,0.7)] dark:text-neutral-100 dark:ring-teal-500/10';
+    ? 'fixed z-50 border border-slate-200 bg-white p-5 shadow-[0_0_40px_rgba(0,0,0,0.08)] transition-all duration-200 ease-out text-slate-900 overflow-y-auto rounded-2xl ring-1 ring-teal-500/5 dark:border-neutral-800 dark:bg-neutral-950 dark:shadow-[0_0_40px_rgba(0,0,0,0.8)] dark:text-neutral-100 dark:ring-teal-500/10'
+    : 'fixed left-1/2 top-1/2 z-50 w-full max-w-[480px] max-h-[85vh] -translate-x-1/2 -translate-y-1/2 border border-slate-200 bg-white p-6 shadow-[0_0_50px_rgba(0,0,0,0.06)] transition-all duration-300 ease-out text-slate-900 overflow-y-auto rounded-2xl ring-1 ring-teal-500/5 dark:border-neutral-800 dark:bg-neutral-950 dark:shadow-[0_0_50px_rgba(0,0,0,0.7)] dark:text-neutral-100 dark:ring-teal-500/10';
 
   return (
     <>

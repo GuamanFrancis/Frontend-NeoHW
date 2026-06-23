@@ -13,7 +13,11 @@ import {
 } from 'lucide-react';
 import type { CatalogComponent } from '../../types/catalog';
 import { ComponenteDetalleDrawer } from './ComponenteDetalleDrawer';
-import heroBackgroundImage from '../../assets/images/imagen estatica login.jpg';
+import carrusel1 from '../../assets/images/carrusel 1.webp';
+import carrusel2 from '../../assets/images/carrusel 2.webp';
+import carrusel3 from '../../assets/images/carrusel 3.webp';
+import carrusel4 from '../../assets/images/carrusel 4.webp';
+import carrusel5 from '../../assets/images/carrusel 5.webp';
 import {
   useClienteCatalog,
   statusBadges,
@@ -21,11 +25,11 @@ import {
 } from './hooks/useClienteCatalog';
 
 const bannerImages = [
-  heroBackgroundImage,
-  '/favicon.jpg',
-  heroBackgroundImage,
-  '/favicon.jpg',
-  heroBackgroundImage,
+  carrusel1,
+  carrusel2,
+  carrusel3,
+  carrusel4,
+  carrusel5,
 ];
 
 interface ProductCardProps {
@@ -260,7 +264,7 @@ export const ClienteCatalogoPage = () => {
           <span className="text-sm font-medium">{catalog.cartSuccessMessage}</span>
         </div>
       )}
-      <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen bg-neutral-950 h-40 sm:h-56 md:h-68 lg:h-80 xl:h-96 overflow-hidden -mt-5 sm:-mt-6 mb-8 group/banner">
+      <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen bg-neutral-950 h-56 sm:h-72 md:h-88 lg:h-[26rem] xl:h-[32rem] overflow-hidden -mt-5 sm:-mt-6 mb-8 group/banner">
         {bannerImages.map((img, idx) => (
           <div
             key={idx}
@@ -317,7 +321,7 @@ export const ClienteCatalogoPage = () => {
 
       <div
         id="productos-catalogo"
-        className="sticky top-0 z-20 bg-white dark:bg-black pb-3 pt-3 border-b border-slate-200/60 dark:border-neutral-900 mb-8 flex gap-2 overflow-x-auto scrollbar-none"
+        className="sticky top-0 z-20 bg-white dark:bg-black pb-3 pt-3 border-b border-slate-200/60 dark:border-neutral-900 mb-8 flex gap-2 overflow-x-auto scrollbar-hide"
         onMouseEnter={catalog.handleCloseDrawer}
       >
         {catalog.categories.map((cat) => {

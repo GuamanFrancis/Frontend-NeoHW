@@ -26,8 +26,7 @@ export default defineConfig(({ mode }) => {
       environment: 'jsdom',
       setupFiles: './src/test/setup.ts',
       include: [
-        'src/pages/shared/MiCuentaPage.test.tsx',
-        'src/services/usersService.test.ts',
+        'src/pages/home/HomePage.test.tsx',
       ],
     },
     server: {

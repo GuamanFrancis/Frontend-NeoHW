@@ -271,7 +271,7 @@ export const ClientePedidosPage = () => {
       return dateStr;
     }
   };  return (
-    <div className="mx-auto max-w-[95rem] pb-16 text-slate-900 dark:text-neutral-100 pt-2">
+    <div className="w-full pb-16 text-slate-900 dark:text-neutral-100 pt-2">
       <div className="flex flex-col lg:flex-row gap-6 mt-4">
         {/* Left Column: Filters (Sidebar style) */}
         <div className="w-full lg:w-[280px] shrink-0">

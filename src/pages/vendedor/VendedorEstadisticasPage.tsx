@@ -351,11 +351,15 @@ export const VendedorEstadisticasPage = () => {
       <PageCard
         title="Estadísticas de ventas"
         text="Cargando resumen de pedidos, facturación y rendimiento..."
-        icon={<BarChart3 className="h-6 w-6" />}
+        icon={<BarChart3 className="h-6 w-6 text-teal-500" />}
       >
-        <div className="flex h-64 items-center justify-center">
-          <div className="text-sm font-semibold text-slate-500 dark:text-neutral-400">
-            Cargando estadísticas...
+        <div className="flex h-80 flex-col items-center justify-center gap-4">
+          <div className="relative flex h-12 w-12 items-center justify-center">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-20"></span>
+            <div className="h-4 w-4 rounded-full bg-teal-500 animate-pulse"></div>
+          </div>
+          <div className="text-sm font-semibold text-slate-500 dark:text-neutral-455">
+            Cargando estadísticas en tiempo real...
           </div>
         </div>
       </PageCard>
@@ -366,63 +370,62 @@ export const VendedorEstadisticasPage = () => {
     <PageCard
       title="Estadísticas de ventas"
       text={isAdmin ? "Panel de administración y métricas globales de la tienda." : "Resumen de tus ventas, pedidos y estadísticas generales."}
-      icon={<BarChart3 className="h-6 w-6" />}
+      icon={<BarChart3 className="h-6 w-6 text-teal-500" />}
     >
-      <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-teal-500" />
-            <span className="text-sm font-bold text-slate-700 dark:text-neutral-300">Historial de Ventas</span>
+      {/* Control bar */}
+      <div className="mb-8 rounded-2xl border border-slate-200/60 dark:border-neutral-800/80 bg-white/70 dark:bg-neutral-950/60 p-5 shadow-sm backdrop-blur-md">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-lg bg-teal-500/10 flex items-center justify-center text-teal-600 dark:text-teal-400">
+              <Calendar className="h-4 w-4" />
+            </div>
+            <div>
+              <span className="text-sm font-bold text-slate-900 dark:text-white block">Historial & Proyecciones</span>
+              <span className="text-[10px] text-slate-400 dark:text-neutral-500 font-medium">Filtra y visualiza el rendimiento comercial</span>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex rounded-lg bg-slate-100 p-0.5 dark:bg-neutral-900">
-              <button
-                onClick={() => setPeriod('diario')}
-                className={`rounded-md px-3 py-1 text-xs font-semibold transition ${period === 'diario' ? 'bg-white text-slate-900 shadow dark:bg-neutral-800 dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white'}`}
-              >
-                Diario
-              </button>
-              <button
-                onClick={() => setPeriod('semanal')}
-                className={`rounded-md px-3 py-1 text-xs font-semibold transition ${period === 'semanal' ? 'bg-white text-slate-900 shadow dark:bg-neutral-800 dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white'}`}
-              >
-                Semanal
-              </button>
-              <button
-                onClick={() => setPeriod('mensual')}
-                className={`rounded-md px-3 py-1 text-xs font-semibold transition ${period === 'mensual' ? 'bg-white text-slate-900 shadow dark:bg-neutral-800 dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white'}`}
-              >
-                Mensual
-              </button>
+            {/* Period selector */}
+            <div className="flex rounded-xl bg-slate-100/80 p-1 dark:bg-neutral-900/60">
+              {(['diario', 'semanal', 'mensual'] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  className={`rounded-lg px-4 py-1.5 text-xs font-bold transition-all duration-200 ${
+                    period === p
+                      ? 'bg-white text-slate-900 shadow-sm dark:bg-neutral-800 dark:text-white'
+                      : 'text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white'
+                  }`}
+                >
+                  {p.charAt(0).toUpperCase() + p.slice(1)}
+                </button>
+              ))}
             </div>
 
-            <div className="flex rounded-lg bg-slate-100 p-0.5 dark:bg-neutral-900">
-              <button
-                onClick={() => setChartType('linea')}
-                className={`rounded-md px-3 py-1 text-xs font-semibold transition ${chartType === 'linea' ? 'bg-white text-slate-900 shadow dark:bg-neutral-800 dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white'}`}
-              >
-                Línea
-              </button>
-              <button
-                onClick={() => setChartType('barras')}
-                className={`rounded-md px-3 py-1 text-xs font-semibold transition ${chartType === 'barras' ? 'bg-white text-slate-900 shadow dark:bg-neutral-800 dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white'}`}
-              >
-                Barras
-              </button>
-              <button
-                onClick={() => setChartType('pastel')}
-                className={`rounded-md px-3 py-1 text-xs font-semibold transition ${chartType === 'pastel' ? 'bg-white text-slate-900 shadow dark:bg-neutral-800 dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white'}`}
-              >
-                Pastel
-              </button>
+            {/* Chart type selector */}
+            <div className="flex rounded-xl bg-slate-100/80 p-1 dark:bg-neutral-900/60">
+              {(['linea', 'barras', 'pastel'] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setChartType(t)}
+                  className={`rounded-lg px-4 py-1.5 text-xs font-bold transition-all duration-200 ${
+                    chartType === t
+                      ? 'bg-white text-slate-900 shadow-sm dark:bg-neutral-800 dark:text-white'
+                      : 'text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white'
+                  }`}
+                >
+                  {t === 'linea' ? 'Línea' : t.charAt(0).toUpperCase() + t.slice(1)}
+                </button>
+              ))}
             </div>
 
-            <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-1 dark:border-neutral-800 dark:bg-neutral-950">
-              <Sliders className="h-3.5 w-3.5 text-slate-400" />
+            {/* Limit selector */}
+            <div className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white/80 px-3 py-1.5 shadow-sm focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/20 dark:border-neutral-800 dark:bg-neutral-900/40">
+              <Sliders className="h-3.5 w-3.5 text-slate-400 dark:text-neutral-500" />
               <select
                 value={ordersLimit}
                 onChange={(e) => setOrdersLimit(Number(e.target.value))}
-                className="bg-transparent text-xs font-semibold text-slate-700 outline-none dark:text-neutral-300 cursor-pointer"
+                className="bg-transparent text-xs font-bold text-slate-700 outline-none dark:text-neutral-300 cursor-pointer pr-1"
               >
                 <option value={20} className="dark:bg-neutral-950">Últimos 20 pedidos</option>
                 <option value={50} className="dark:bg-neutral-950">Últimos 50 pedidos</option>
@@ -434,96 +437,127 @@ export const VendedorEstadisticasPage = () => {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {/* KPI Cards Grid */}
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         {isAdmin && globalStats ? (
           <>
-            <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
+            <div className="group relative rounded-2xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/50 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 dark:border-neutral-800/80 dark:from-neutral-900/60 dark:to-neutral-950/40">
               <div className="flex items-center justify-between">
-                <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-neutral-400">Ventas totales</p>
-                <DollarSign className="h-4 w-4 text-emerald-500" />
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-450 dark:text-neutral-500">Ventas totales</span>
+                <div className="h-9 w-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform duration-300">
+                  <DollarSign className="h-5 w-5" />
+                </div>
               </div>
-              <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(globalStats.overview.totalRevenue)}</p>
-              <p className="mt-2 text-xs text-slate-500 dark:text-neutral-400">Ingresos acumulados (pedidos entregados)</p>
+              <p className="mt-3 text-3xl font-extrabold text-slate-955 dark:text-white tracking-tight">{formatCurrency(globalStats.overview.totalRevenue)}</p>
+              <p className="mt-2 text-[10px] text-slate-400 dark:text-neutral-500 font-medium">Ingresos acumulados (pedidos entregados)</p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
+
+            <div className="group relative rounded-2xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/50 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 dark:border-neutral-800/80 dark:from-neutral-900/60 dark:to-neutral-950/40">
               <div className="flex items-center justify-between">
-                <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-neutral-400">Pedidos totales</p>
-                <ShoppingCart className="h-4 w-4 text-blue-500" />
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-450 dark:text-neutral-500">Pedidos totales</span>
+                <div className="h-9 w-9 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform duration-300">
+                  <ShoppingCart className="h-5 w-5" />
+                </div>
               </div>
-              <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{globalStats.overview.totalOrders}</p>
-              <p className="mt-2 text-xs text-slate-500 dark:text-neutral-400">Total histórico de pedidos</p>
+              <p className="mt-3 text-3xl font-extrabold text-slate-955 dark:text-white tracking-tight">{globalStats.overview.totalOrders}</p>
+              <p className="mt-2 text-[10px] text-slate-400 dark:text-neutral-500 font-medium">Total histórico de pedidos</p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
+
+            <div className="group relative rounded-2xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/50 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 dark:border-neutral-800/80 dark:from-neutral-900/60 dark:to-neutral-950/40">
               <div className="flex items-center justify-between">
-                <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-neutral-400">Clientes registrados</p>
-                <Users className="h-4 w-4 text-indigo-500" />
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-450 dark:text-neutral-500">Clientes registrados</span>
+                <div className="h-9 w-9 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform duration-300">
+                  <Users className="h-5 w-5" />
+                </div>
               </div>
-              <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{globalStats.overview.totalUsers}</p>
-              <p className="mt-2 text-xs text-slate-500 dark:text-neutral-400">Usuarios con rol cliente</p>
+              <p className="mt-3 text-3xl font-extrabold text-slate-955 dark:text-white tracking-tight">{globalStats.overview.totalUsers}</p>
+              <p className="mt-2 text-[10px] text-slate-400 dark:text-neutral-500 font-medium">Usuarios con rol cliente</p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
+
+            <div className="group relative rounded-2xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/50 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 dark:border-neutral-800/80 dark:from-neutral-900/60 dark:to-neutral-950/40">
               <div className="flex items-center justify-between">
-                <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-neutral-400">Catálogo activo</p>
-                <Package className="h-4 w-4 text-cyan-500" />
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-450 dark:text-neutral-500">Catálogo activo</span>
+                <div className="h-9 w-9 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-500 group-hover:scale-110 transition-transform duration-300">
+                  <Package className="h-5 w-5" />
+                </div>
               </div>
-              <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{globalStats.overview.totalProducts}</p>
-              <p className="mt-2 text-xs text-slate-500 dark:text-neutral-400">Componentes de hardware activos</p>
+              <p className="mt-3 text-3xl font-extrabold text-slate-955 dark:text-white tracking-tight">{globalStats.overview.totalProducts}</p>
+              <p className="mt-2 text-[10px] text-slate-400 dark:text-neutral-500 font-medium">Componentes de hardware activos</p>
             </div>
           </>
         ) : activeSellerStats ? (
           <>
-            <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
+            <div className="group relative rounded-2xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/50 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 dark:border-neutral-800/80 dark:from-neutral-900/60 dark:to-neutral-950/40">
               <div className="flex items-center justify-between">
-                <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-neutral-400">Ventas totales</p>
-                <DollarSign className="h-4 w-4 text-emerald-500" />
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-450 dark:text-neutral-500">Ventas totales</span>
+                <div className="h-9 w-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform duration-300">
+                  <DollarSign className="h-5 w-5" />
+                </div>
               </div>
-              <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(activeSellerStats.totalRevenue)}</p>
-              <p className="mt-2 text-xs text-slate-500 dark:text-neutral-400">Ingresos personales (pedidos entregados)</p>
+              <p className="mt-3 text-3xl font-extrabold text-slate-955 dark:text-white tracking-tight">{formatCurrency(activeSellerStats.totalRevenue)}</p>
+              <p className="mt-2 text-[10px] text-slate-400 dark:text-neutral-500 font-medium">Ingresos personales (pedidos entregados)</p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
+
+            <div className="group relative rounded-2xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/50 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 dark:border-neutral-800/80 dark:from-neutral-900/60 dark:to-neutral-950/40">
               <div className="flex items-center justify-between">
-                <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-neutral-400">Pedidos asignados</p>
-                <ShoppingCart className="h-4 w-4 text-blue-500" />
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-450 dark:text-neutral-500">Pedidos asignados</span>
+                <div className="h-9 w-9 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform duration-300">
+                  <ShoppingCart className="h-5 w-5" />
+                </div>
               </div>
-              <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{activeSellerStats.totalOrdersAssigned}</p>
-              <p className="mt-2 text-xs text-slate-500 dark:text-neutral-400">Pedidos asignados a tu cuenta</p>
+              <p className="mt-3 text-3xl font-extrabold text-slate-955 dark:text-white tracking-tight">{activeSellerStats.totalOrdersAssigned}</p>
+              <p className="mt-2 text-[10px] text-slate-400 dark:text-neutral-500 font-medium">Pedidos asignados a tu cuenta</p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
+
+            <div className="group relative rounded-2xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/50 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 dark:border-neutral-800/80 dark:from-neutral-900/60 dark:to-neutral-950/40">
               <div className="flex items-center justify-between">
-                <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-neutral-400">Pendientes de atención</p>
-                <Clock3 className="h-4 w-4 text-violet-500" />
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-450 dark:text-neutral-500">Pendientes de atención</span>
+                <div className="h-9 w-9 rounded-xl bg-violet-500/10 flex items-center justify-center text-violet-500 group-hover:scale-110 transition-transform duration-300">
+                  <Clock3 className="h-5 w-5" />
+                </div>
               </div>
-              <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{activeSellerStats.pendingOrders}</p>
-              <p className="mt-2 text-xs text-slate-500 dark:text-neutral-400">Pedidos en estado de procesamiento</p>
+              <p className="mt-3 text-3xl font-extrabold text-slate-955 dark:text-white tracking-tight">{activeSellerStats.pendingOrders}</p>
+              <p className="mt-2 text-[10px] text-slate-400 dark:text-neutral-500 font-medium">Pedidos en estado de procesamiento</p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
+
+            <div className="group relative rounded-2xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/50 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 dark:border-neutral-800/80 dark:from-neutral-900/60 dark:to-neutral-950/40">
               <div className="flex items-center justify-between">
-                <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-neutral-400">Monto Promedio</p>
-                <CheckCircle2 className="h-4 w-4 text-cyan-500" />
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-450 dark:text-neutral-500">Monto Promedio</span>
+                <div className="h-9 w-9 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-500 group-hover:scale-110 transition-transform duration-300">
+                  <CheckCircle2 className="h-5 w-5" />
+                </div>
               </div>
-              <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">
+              <p className="mt-3 text-3xl font-extrabold text-slate-955 dark:text-white tracking-tight">
                 {formatCurrency(activeSellerStats.totalDelivered > 0 ? activeSellerStats.totalRevenue / activeSellerStats.totalDelivered : 0)}
               </p>
-              <p className="mt-2 text-xs text-slate-500 dark:text-neutral-400">Monto medio facturado por pedido entregado</p>
+              <p className="mt-2 text-[10px] text-slate-400 dark:text-neutral-500 font-medium">Monto medio facturado por pedido entregado</p>
             </div>
           </>
         ) : null}
       </div>
 
-      <div className="mt-5 grid gap-4 lg:grid-cols-[1.3fr_1fr]">
-        <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-950 dark:text-white">
-              Análisis de ventas - {period === 'diario' ? 'Diario (7d)' : period === 'semanal' ? 'Semanal (4s)' : 'Mensual (6m)'}
-            </h2>
-            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-              Total: {formatCurrency(totalPeriodRevenue)}
-            </span>
+      {/* Charts Grid */}
+      <div className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+        {/* Main Chart card */}
+        <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm dark:border-neutral-800/80 dark:bg-neutral-950/60 backdrop-blur-md flex flex-col justify-between">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-neutral-900 pb-4">
+            <div>
+              <h2 className="text-lg font-bold text-slate-950 dark:text-white">
+                Análisis de ventas - {period === 'diario' ? 'Diario (Últimos 7 días)' : period === 'semanal' ? 'Semanal (Últimas 4 semanas)' : 'Mensual (Últimos 6 meses)'}
+              </h2>
+              <p className="text-[10px] font-semibold text-slate-400 dark:text-neutral-500 mt-0.5">Ingresos históricos representados visualmente</p>
+            </div>
+            <div className="text-right">
+              <span className="text-xs font-medium text-slate-400 dark:text-neutral-500 block">Total período</span>
+              <span className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400 block -mt-0.5">
+                {formatCurrency(totalPeriodRevenue)}
+              </span>
+            </div>
           </div>
 
-          <div className="relative mt-6 flex-1 flex items-center justify-center">
+          <div className="relative mt-8 flex-1 flex items-center justify-center min-h-[220px]">
             {totalPeriodRevenue === 0 && chartType === 'pastel' ? (
-              <div className="flex flex-col items-center justify-center h-48 text-center">
+              <div className="flex flex-col items-center justify-center text-center">
                 <p className="text-xs font-semibold text-slate-400 dark:text-neutral-500">
                   Sin ventas registradas en este período
                 </p>
@@ -538,13 +572,14 @@ export const VendedorEstadisticasPage = () => {
                   <svg viewBox="0 0 500 180" className="w-full h-auto overflow-visible">
                     <defs>
                       <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.3" />
+                        <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.25" />
                         <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.0" />
                       </linearGradient>
                     </defs>
-                    <line x1="50" y1="20" x2="480" y2="20" stroke="#e2e8f0" strokeDasharray="3 3" className="dark:stroke-neutral-800" />
-                    <line x1="50" y1="82.5" x2="480" y2="82.5" stroke="#e2e8f0" strokeDasharray="3 3" className="dark:stroke-neutral-800" />
-                    <line x1="50" y1="145" x2="480" y2="145" stroke="#cbd5e1" className="dark:stroke-neutral-800" />
+                    {/* Grid lines */}
+                    <line x1="50" y1="20" x2="480" y2="20" stroke="#f1f5f9" strokeDasharray="3 3" className="dark:stroke-neutral-900/60" />
+                    <line x1="50" y1="82.5" x2="480" y2="82.5" stroke="#f1f5f9" strokeDasharray="3 3" className="dark:stroke-neutral-900/60" />
+                    <line x1="50" y1="145" x2="480" y2="145" stroke="#e2e8f0" className="dark:stroke-neutral-900" strokeWidth="1.5" />
 
                     {areaPath && <path d={areaPath} fill="url(#areaGradient)" />}
                     {linePath && (
@@ -552,7 +587,8 @@ export const VendedorEstadisticasPage = () => {
                         d={linePath}
                         fill="none"
                         stroke="#06b6d4"
-                        strokeWidth="3"
+                        strokeWidth="3.5"
+                        strokeLinecap="round"
                         initial={{ pathLength: 0 }}
                         animate={{ pathLength: 1 }}
                         transition={{ duration: 1.2, ease: 'easeOut' }}
@@ -564,23 +600,23 @@ export const VendedorEstadisticasPage = () => {
                         <motion.circle
                           cx={pt.x}
                           cy={pt.y}
-                          r={hoveredPointIndex === idx ? 6 : 4}
+                          r={hoveredPointIndex === idx ? 7 : 4.5}
                           fill={hoveredPointIndex === idx ? '#0891b2' : '#22d3ee'}
                           stroke="#ffffff"
                           strokeWidth="2"
-                          className="cursor-pointer dark:stroke-neutral-950"
+                          className="cursor-pointer dark:stroke-neutral-950 transition-all duration-150"
                           onMouseEnter={() => setHoveredPointIndex(idx)}
                           onMouseLeave={() => setHoveredPointIndex(null)}
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
-                          transition={{ delay: idx * 0.05 }}
+                          transition={{ delay: idx * 0.04 }}
                         />
                         <text
                           x={pt.x}
                           y="165"
                           textAnchor="middle"
-                          fontSize="9"
-                          className="fill-slate-500 font-semibold dark:fill-neutral-400"
+                          fontSize="9.5"
+                          className="fill-slate-400 font-bold dark:fill-neutral-500"
                         >
                           {pt.label}
                         </text>
@@ -597,9 +633,9 @@ export const VendedorEstadisticasPage = () => {
                         <stop offset="100%" stopColor="#3b82f6" />
                       </linearGradient>
                     </defs>
-                    <line x1="50" y1="20" x2="480" y2="20" stroke="#e2e8f0" strokeDasharray="3 3" className="dark:stroke-neutral-800" />
-                    <line x1="50" y1="82.5" x2="480" y2="82.5" stroke="#e2e8f0" strokeDasharray="3 3" className="dark:stroke-neutral-800" />
-                    <line x1="50" y1="145" x2="480" y2="145" stroke="#cbd5e1" className="dark:stroke-neutral-800" />
+                    <line x1="50" y1="20" x2="480" y2="20" stroke="#f1f5f9" strokeDasharray="3 3" className="dark:stroke-neutral-900/60" />
+                    <line x1="50" y1="82.5" x2="480" y2="82.5" stroke="#f1f5f9" strokeDasharray="3 3" className="dark:stroke-neutral-900/60" />
+                    <line x1="50" y1="145" x2="480" y2="145" stroke="#e2e8f0" className="dark:stroke-neutral-900" strokeWidth="1.5" />
 
                     {barPoints.map((bar, idx) => (
                       <g key={bar.label}>
@@ -609,21 +645,21 @@ export const VendedorEstadisticasPage = () => {
                           width={bar.width}
                           height={bar.height}
                           fill="url(#barGradient)"
-                          rx="3"
-                          ry="3"
-                          className="cursor-pointer hover:opacity-85"
+                          rx="4"
+                          ry="4"
+                          className="cursor-pointer hover:opacity-85 transition-opacity duration-150"
                           onMouseEnter={() => setHoveredPointIndex(idx)}
                           onMouseLeave={() => setHoveredPointIndex(null)}
                           initial={{ scaleY: 0, originY: 1 }}
                           animate={{ scaleY: 1 }}
-                          transition={{ duration: 0.8, delay: idx * 0.05, ease: 'easeOut' }}
+                          transition={{ duration: 0.8, delay: idx * 0.04, ease: 'easeOut' }}
                         />
                         <text
                           x={bar.x + bar.width / 2}
                           y="165"
                           textAnchor="middle"
-                          fontSize="9"
-                          className="fill-slate-500 font-semibold dark:fill-neutral-400"
+                          fontSize="9.5"
+                          className="fill-slate-400 font-bold dark:fill-neutral-500"
                         >
                           {bar.label}
                         </text>
@@ -633,17 +669,17 @@ export const VendedorEstadisticasPage = () => {
                 )}
 
                 {chartType === 'pastel' && (
-                  <div className="flex flex-col sm:flex-row items-center justify-around gap-6 py-2">
-                    <div className="relative flex items-center justify-center w-36 h-36">
+                  <div className="flex flex-col sm:flex-row items-center justify-around gap-8 py-2">
+                    <div className="relative flex items-center justify-center w-40 h-40">
                       <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
                         <circle
                           cx="50"
                           cy="50"
                           r="35"
                           fill="transparent"
-                          stroke="#f1f5f9"
-                          className="dark:stroke-neutral-900"
-                          strokeWidth="10"
+                          stroke="#f8fafc"
+                          className="dark:stroke-neutral-900/60"
+                          strokeWidth="9"
                         />
                         {pieSlices.map((slice, idx) => (
                           <motion.circle
@@ -653,46 +689,50 @@ export const VendedorEstadisticasPage = () => {
                             r="35"
                             fill="transparent"
                             stroke={slice.color}
-                            strokeWidth={hoveredPointIndex === idx ? 12 : 10}
+                            strokeWidth={hoveredPointIndex === idx ? 12 : 9}
                             strokeDasharray={slice.strokeDasharray}
                             strokeDashoffset={slice.strokeDashoffset}
                             strokeLinecap="round"
                             onMouseEnter={() => setHoveredPointIndex(idx)}
                             onMouseLeave={() => setHoveredPointIndex(null)}
-                            className="cursor-pointer"
+                            className="cursor-pointer transition-all duration-150"
                             initial={{ strokeDasharray: `0 ${2 * Math.PI * 35}` }}
                             animate={{ strokeDasharray: slice.strokeDasharray }}
                             transition={{ duration: 1.2, ease: 'easeOut' }}
                           />
                         ))}
                       </svg>
-                      <div className="absolute flex flex-col items-center justify-center text-center">
-                        <span className="text-xs font-extrabold text-slate-950 dark:text-white">
+                      <div className="absolute flex flex-col items-center justify-center text-center p-3 rounded-full shadow-md backdrop-blur-sm bg-white/40 dark:bg-black/40 border border-slate-100/50 dark:border-neutral-800/50 w-24 h-24">
+                        <span className="text-xs font-black text-slate-950 dark:text-white leading-tight">
                           {hoveredPointIndex !== null && pieSlices[hoveredPointIndex]
                             ? formatCurrency(pieSlices[hoveredPointIndex].revenue)
                             : formatCurrency(totalPeriodRevenue)}
                         </span>
-                        <span className="text-[8px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 max-w-[85px] truncate">
+                        <span className="text-[8px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-450 mt-1 max-w-[80px] truncate block text-center">
                           {hoveredPointIndex !== null && pieSlices[hoveredPointIndex]
                             ? pieSlices[hoveredPointIndex].label
-                            : 'Ventas del Período'}
+                            : 'Ventas Período'}
                         </span>
                       </div>
                     </div>
 
-                    <div className="space-y-1.5 w-full sm:w-auto max-h-[140px] overflow-y-auto px-2">
+                    <div className="space-y-2 w-full sm:w-auto max-h-[160px] overflow-y-auto pr-1 scrollbar-thin">
                       {pieSlices.map((slice, idx) => (
                         <div
                           key={slice.key}
-                          className={`flex items-center gap-3 rounded-lg p-1.5 transition-colors cursor-pointer ${hoveredPointIndex === idx ? 'bg-slate-50 dark:bg-neutral-900' : ''}`}
+                          className={`flex items-center gap-3 rounded-xl px-3 py-2 transition-colors cursor-pointer border border-transparent ${
+                            hoveredPointIndex === idx
+                              ? 'bg-slate-50 border-slate-100 dark:bg-neutral-900/50 dark:border-neutral-800/60'
+                              : 'hover:bg-slate-50/50 dark:hover:bg-neutral-900/20'
+                          }`}
                           onMouseEnter={() => setHoveredPointIndex(idx)}
                           onMouseLeave={() => setHoveredPointIndex(null)}
                         >
-                          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: slice.color }} />
-                          <span className="text-[11px] font-semibold text-slate-700 dark:text-neutral-300">
+                          <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: slice.color }} />
+                          <span className="text-[11px] font-bold text-slate-700 dark:text-neutral-350">
                             {slice.label}
                           </span>
-                          <span className="ml-auto text-[11px] font-bold text-slate-900 dark:text-white">
+                          <span className="ml-auto text-[11px] font-extrabold text-slate-955 dark:text-white pl-4">
                             {formatCurrency(slice.revenue)}
                           </span>
                         </div>
@@ -701,30 +741,32 @@ export const VendedorEstadisticasPage = () => {
                   </div>
                 )}
 
+                {/* Animated Tooltips */}
                 <AnimatePresence>
                   {hoveredPointIndex !== null && chartType !== 'pastel' && periodData[hoveredPointIndex] && (
                     <motion.div
-                      className="absolute z-10 rounded-lg border border-slate-200 bg-white p-2.5 shadow-lg dark:border-neutral-800 dark:bg-neutral-900 pointer-events-none"
+                      className="absolute z-10 rounded-xl border border-slate-200/80 bg-white/95 p-3 shadow-xl backdrop-blur-sm dark:border-neutral-800 dark:bg-neutral-900/95 pointer-events-none min-w-[120px]"
                       style={{
                         left: `${chartType === 'linea'
                           ? (chartPoints[hoveredPointIndex].x / 500) * 100
                           : ((barPoints[hoveredPointIndex].x + barPoints[hoveredPointIndex].width / 2) / 500) * 100}%`,
                         top: `${chartType === 'linea'
-                          ? (chartPoints[hoveredPointIndex].y / 180) * 100 - 32
-                          : (barPoints[hoveredPointIndex].y / 180) * 100 - 32}%`,
+                          ? (chartPoints[hoveredPointIndex].y / 180) * 100 - 36
+                          : (barPoints[hoveredPointIndex].y / 180) * 100 - 36}%`,
                         transform: 'translateX(-50%)',
                       }}
-                      initial={{ opacity: 0, scale: 0.9, y: 5 }}
+                      initial={{ opacity: 0, scale: 0.9, y: 8 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0 }}
                     >
-                      <p className="text-[9px] font-bold text-slate-500 dark:text-neutral-400">
+                      <p className="text-[9px] font-extrabold text-slate-450 dark:text-neutral-500 uppercase tracking-wider">
                         {periodData[hoveredPointIndex].fullLabel}
                       </p>
-                      <p className="text-xs font-black text-slate-950 dark:text-white">
+                      <p className="text-sm font-black text-slate-950 dark:text-white mt-0.5">
                         {formatCurrency(periodData[hoveredPointIndex].revenue)}
                       </p>
-                      <p className="text-[9px] font-semibold text-slate-400">
+                      <p className="text-[9px] font-semibold text-slate-500 dark:text-neutral-455 mt-0.5 flex items-center gap-1">
+                        <span className="h-1.5 w-1.5 rounded-full bg-teal-500 inline-block"></span>
                         {periodData[hoveredPointIndex].ordersCount} {periodData[hoveredPointIndex].ordersCount === 1 ? 'pedido' : 'pedidos'}
                       </p>
                     </motion.div>
@@ -735,8 +777,13 @@ export const VendedorEstadisticasPage = () => {
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950 flex flex-col justify-between">
-          <h2 className="text-lg font-bold text-slate-950 dark:text-white">Estado de pedidos</h2>
+        {/* Order Status Donut Card */}
+        <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm dark:border-neutral-800/80 dark:bg-neutral-950/60 backdrop-blur-md flex flex-col justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-slate-950 dark:text-white">Estado de pedidos</h2>
+            <p className="text-[10px] font-semibold text-slate-400 dark:text-neutral-500 mt-0.5">Distribución porcentual de los estados de pedidos</p>
+          </div>
+
           {donutTotal === 0 ? (
             <div className="flex h-48 items-center justify-center">
               <p className="text-xs font-semibold text-slate-400 dark:text-neutral-500">
@@ -744,7 +791,7 @@ export const VendedorEstadisticasPage = () => {
               </p>
             </div>
           ) : (
-            <div className="flex flex-col sm:flex-row items-center justify-around gap-4 mt-4">
+            <div className="flex flex-col sm:flex-row items-center justify-around gap-6 mt-6">
               <div className="relative flex items-center justify-center w-36 h-36">
                 <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
                   <circle
@@ -752,9 +799,9 @@ export const VendedorEstadisticasPage = () => {
                     cy="50"
                     r="35"
                     fill="transparent"
-                    stroke="#f1f5f9"
-                    className="dark:stroke-neutral-900"
-                    strokeWidth="10"
+                    stroke="#f8fafc"
+                    className="dark:stroke-neutral-900/60"
+                    strokeWidth="9"
                   />
                   {donutData.map((item, idx) => (
                     <motion.circle
@@ -764,24 +811,24 @@ export const VendedorEstadisticasPage = () => {
                       r="35"
                       fill="transparent"
                       stroke={item.color}
-                      strokeWidth={hoveredStatusIndex === idx ? 12 : 10}
+                      strokeWidth={hoveredStatusIndex === idx ? 12 : 9}
                       strokeDasharray={item.strokeDasharray}
                       strokeDashoffset={item.strokeDashoffset}
                       strokeLinecap="round"
                       onMouseEnter={() => setHoveredStatusIndex(idx)}
                       onMouseLeave={() => setHoveredStatusIndex(null)}
-                      className="cursor-pointer"
+                      className="cursor-pointer transition-all duration-150"
                       initial={{ strokeDasharray: `0 ${2 * Math.PI * 35}` }}
                       animate={{ strokeDasharray: item.strokeDasharray }}
                       transition={{ duration: 1.2, ease: 'easeOut' }}
                     />
                   ))}
                 </svg>
-                <div className="absolute flex flex-col items-center justify-center text-center">
-                  <span className="text-2xl font-extrabold text-slate-950 dark:text-white">
+                <div className="absolute flex flex-col items-center justify-center text-center p-3 rounded-full shadow-md backdrop-blur-sm bg-white/40 dark:bg-black/40 border border-slate-100/50 dark:border-neutral-800/50 w-24 h-24">
+                  <span className="text-2xl font-black text-slate-955 dark:text-white leading-none">
                     {hoveredStatusIndex !== null ? donutData[hoveredStatusIndex].count : donutTotal}
                   </span>
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 max-w-[80px] truncate">
+                  <span className="text-[8px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-450 mt-1 max-w-[80px] truncate block leading-tight">
                     {hoveredStatusIndex !== null ? donutData[hoveredStatusIndex].label : 'Total Pedidos'}
                   </span>
                 </div>
@@ -791,15 +838,19 @@ export const VendedorEstadisticasPage = () => {
                 {donutData.map((item, idx) => (
                   <div
                     key={item.key}
-                    className={`flex items-center gap-2 rounded-lg p-1 transition-colors ${hoveredStatusIndex === idx ? 'bg-slate-50 dark:bg-neutral-900' : ''}`}
+                    className={`flex items-center gap-3 rounded-xl px-3 py-1.5 transition-colors cursor-pointer border border-transparent ${
+                      hoveredStatusIndex === idx
+                        ? 'bg-slate-50 border-slate-100 dark:bg-neutral-900/50 dark:border-neutral-800/60'
+                        : 'hover:bg-slate-50/50 dark:hover:bg-neutral-900/20'
+                    }`}
                     onMouseEnter={() => setHoveredStatusIndex(idx)}
                     onMouseLeave={() => setHoveredStatusIndex(null)}
                   >
-                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="text-xs font-semibold text-slate-700 dark:text-neutral-300">
+                    <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                    <span className="text-xs font-bold text-slate-700 dark:text-neutral-350">
                       {item.label}
                     </span>
-                    <span className="ml-auto text-xs font-bold text-slate-900 dark:text-white">
+                    <span className="ml-auto text-xs font-extrabold text-slate-950 dark:text-white pl-4">
                       {item.count}
                     </span>
                   </div>
@@ -810,29 +861,33 @@ export const VendedorEstadisticasPage = () => {
         </div>
       </div>
 
-      <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400">
-          Detalle del Período Seleccionado
-        </h3>
-        <div className="mt-4 overflow-x-auto">
+      {/* Details Table */}
+      <div className="mt-6 rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm dark:border-neutral-800/80 dark:bg-neutral-950/60">
+        <div>
+          <h3 className="text-sm font-extrabold uppercase tracking-widest text-slate-500 dark:text-neutral-400">
+            Detalle del Período Seleccionado
+          </h3>
+          <p className="text-[10px] text-slate-400 dark:text-neutral-500 mt-0.5">Valores numéricos consolidados correspondientes al filtro activo</p>
+        </div>
+        <div className="mt-5 overflow-x-auto rounded-xl border border-slate-100 dark:border-neutral-900">
           <table className="w-full border-collapse text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-100 text-slate-400 dark:border-neutral-900">
-                <th className="py-2.5 font-semibold">Intervalo</th>
-                <th className="py-2.5 font-semibold text-right">Ventas Totales</th>
-                <th className="py-2.5 font-semibold text-right">Pedidos</th>
-                <th className="py-2.5 font-semibold text-right">Monto Promedio</th>
+              <tr className="border-b border-slate-100 bg-slate-50/80 text-slate-455 dark:border-neutral-900 dark:bg-neutral-900/30">
+                <th className="py-3 px-4 font-bold uppercase tracking-wider text-[10px]">Intervalo</th>
+                <th className="py-3 px-4 font-bold uppercase tracking-wider text-[10px] text-right">Ventas Totales</th>
+                <th className="py-3 px-4 font-bold uppercase tracking-wider text-[10px] text-right">Pedidos</th>
+                <th className="py-3 px-4 font-bold uppercase tracking-wider text-[10px] text-right">Monto Promedio</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-neutral-900">
               {periodData.map((item) => (
-                <tr key={item.key} className="text-slate-700 dark:text-neutral-300 hover:bg-slate-50/50 dark:hover:bg-neutral-900/50">
-                  <td className="py-3.5 font-medium">{item.fullLabel}</td>
-                  <td className="py-3.5 text-right font-bold text-slate-900 dark:text-white">
+                <tr key={item.key} className="text-slate-700 dark:text-neutral-350 hover:bg-slate-50/50 dark:hover:bg-neutral-900/50 transition-colors">
+                  <td className="py-3.5 px-4 font-semibold">{item.fullLabel}</td>
+                  <td className="py-3.5 px-4 text-right font-black text-slate-900 dark:text-white">
                     {formatCurrency(item.revenue)}
                   </td>
-                  <td className="py-3.5 text-right font-medium">{item.ordersCount}</td>
-                  <td className="py-3.5 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                  <td className="py-3.5 px-4 text-right font-medium">{item.ordersCount}</td>
+                  <td className="py-3.5 px-4 text-right font-bold text-emerald-600 dark:text-emerald-400">
                     {formatCurrency(item.ordersCount > 0 ? item.revenue / item.ordersCount : 0)}
                   </td>
                 </tr>
@@ -842,45 +897,50 @@ export const VendedorEstadisticasPage = () => {
         </div>
       </div>
 
+      {/* Admin specific widgets */}
       {isAdmin && globalStats && (
-        <div className="mt-5 grid gap-4 lg:grid-cols-2">
-          <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
-            <h2 className="text-lg font-bold text-slate-950 dark:text-white flex items-center justify-between">
-              <span>Productos más vendidos</span>
-              <ArrowUpRight className="h-4 w-4 text-slate-400" />
-            </h2>
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          {/* Top Products */}
+          <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm dark:border-neutral-800/80 dark:bg-neutral-950/60">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-neutral-900 pb-3">
+              <div>
+                <h2 className="text-base font-extrabold text-slate-955 dark:text-white">Productos más vendidos</h2>
+                <p className="text-[10px] text-slate-400 dark:text-neutral-500 mt-0.5">Componentes con mayor cantidad de unidades facturadas</p>
+              </div>
+              <ArrowUpRight className="h-5 w-5 text-slate-400" />
+            </div>
             {globalStats.topProducts.length === 0 ? (
               <p className="mt-4 text-xs font-semibold text-slate-400 dark:text-neutral-500">
                 No hay productos vendidos en el registro de órdenes.
               </p>
             ) : (
-              <div className="mt-4 divide-y divide-slate-100 dark:divide-neutral-900">
+              <div className="mt-3 divide-y divide-slate-100 dark:divide-neutral-900">
                 {globalStats.topProducts.map(({ product, totalSold }) => (
-                  <div key={product.id} className="flex items-center justify-between py-3">
+                  <div key={product.id} className="flex items-center justify-between py-3.5 hover:bg-slate-50/30 dark:hover:bg-neutral-900/10 px-1 rounded-xl transition-colors">
                     <div className="flex items-center gap-3">
                       {product.imageUrl ? (
                         <img
                           src={product.imageUrl}
                           alt={product.name}
-                          className="h-10 w-10 rounded-lg object-cover border border-slate-100 dark:border-neutral-800"
+                          className="h-11 w-11 rounded-xl object-cover border border-slate-150 dark:border-neutral-800 shadow-sm"
                         />
                       ) : (
-                        <div className="h-10 w-10 rounded-lg bg-slate-100 dark:bg-neutral-800 flex items-center justify-center">
+                        <div className="h-11 w-11 rounded-xl bg-slate-100 dark:bg-neutral-900 flex items-center justify-center">
                           <Package className="h-5 w-5 text-slate-400" />
                         </div>
                       )}
                       <div>
-                        <p className="text-sm font-bold text-slate-950 dark:text-white max-w-[200px] truncate">
+                        <p className="text-sm font-bold text-slate-950 dark:text-white max-w-[220px] truncate leading-tight">
                           {product.name}
                         </p>
-                        <p className="text-[10px] text-slate-500 dark:text-neutral-400">
-                          SKU: {product.sku || 'N/A'} • {formatCurrency(Number(product.price))}
-                        </p>
+                        <span className="inline-flex items-center gap-1 text-[10px] text-slate-400 dark:text-neutral-500 font-medium mt-1">
+                          SKU: <span className="font-bold text-slate-550 dark:text-neutral-400">{product.sku || 'N/A'}</span> • {formatCurrency(Number(product.price))}
+                        </span>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-black text-teal-600 dark:text-teal-400">{totalSold} unds</p>
-                      <p className="text-[10px] text-slate-400">vendidos</p>
+                      <p className="text-[9px] text-slate-455 dark:text-neutral-500 uppercase tracking-wider font-bold">vendidos</p>
                     </div>
                   </div>
                 ))}
@@ -888,25 +948,29 @@ export const VendedorEstadisticasPage = () => {
             )}
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
-            <h2 className="text-lg font-bold text-slate-950 dark:text-white">Rendimiento por vendedor</h2>
+          {/* Seller performance */}
+          <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm dark:border-neutral-800/80 dark:bg-neutral-950/60">
+            <div className="border-b border-slate-100 dark:border-neutral-900 pb-3">
+              <h2 className="text-base font-extrabold text-slate-955 dark:text-white">Rendimiento por vendedor</h2>
+              <p className="text-[10px] text-slate-400 dark:text-neutral-500 mt-0.5">Ingresos acumulados y volumen de despacho por vendedor asignado</p>
+            </div>
             {globalStats.sellerPerformance.length === 0 ? (
               <p className="mt-4 text-xs font-semibold text-slate-400 dark:text-neutral-500">
                 No hay rendimiento de vendedores registrado aún.
               </p>
             ) : (
-              <div className="mt-4 space-y-4">
+              <div className="mt-5 space-y-5">
                 {globalStats.sellerPerformance.map(({ seller, ordersDelivered, totalRevenue }) => (
-                  <div key={seller.id} className="space-y-1">
+                  <div key={seller.id} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-neutral-300">
-                      <span>{seller.firstName} {seller.lastName}</span>
-                      <span className="text-slate-900 dark:text-white">
-                        {formatCurrency(totalRevenue)} ({ordersDelivered} {ordersDelivered === 1 ? 'pedido' : 'pedidos'})
+                      <span className="font-bold">{seller.firstName} {seller.lastName}</span>
+                      <span className="text-slate-950 dark:text-white font-extrabold">
+                        {formatCurrency(totalRevenue)} <span className="text-[10px] font-normal text-slate-400">({ordersDelivered} {ordersDelivered === 1 ? 'pedido' : 'pedidos'})</span>
                       </span>
                     </div>
-                    <div className="h-2.5 rounded-full bg-slate-100 dark:bg-neutral-800 overflow-hidden">
+                    <div className="h-3 rounded-full bg-slate-100 dark:bg-neutral-900 overflow-hidden shadow-inner">
                       <motion.div
-                        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-500"
+                        className="h-full rounded-full bg-gradient-to-r from-blue-500 via-cyan-500 to-teal-400"
                         initial={{ width: 0 }}
                         animate={{ width: `${(totalRevenue / maxSellerRevenue) * 100}%` }}
                         transition={{ duration: 1.2, ease: 'easeOut' }}
@@ -920,16 +984,17 @@ export const VendedorEstadisticasPage = () => {
         </div>
       )}
 
+      {/* Seller dispatch performance summary */}
       {!isAdmin && activeSellerStats && (
-        <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
-              <Package className="h-5 w-5" />
+        <div className="mt-6 rounded-2xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/50 p-5 shadow-sm dark:border-neutral-800/80 dark:from-neutral-900/60 dark:to-neutral-950/40">
+          <div className="flex items-center gap-3.5">
+            <div className="h-11 w-11 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-600 dark:text-cyan-400 shrink-0">
+              <Package className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-950 dark:text-white">Rendimiento de despacho</p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400">
-                Has despachado <span className="font-bold text-slate-950 dark:text-white">{activeSellerStats.totalDelivered}</span> de tus <span className="font-bold text-slate-950 dark:text-white">{activeSellerStats.totalOrdersAssigned}</span> pedidos totales asignados (con <span className="font-bold text-slate-950 dark:text-white">{totalItemsSold}</span> productos vendidos).
+              <p className="text-sm font-extrabold text-slate-955 dark:text-white">Rendimiento de despacho</p>
+              <p className="text-xs text-slate-550 dark:text-neutral-400 leading-relaxed mt-0.5">
+                Has completado y despachado <span className="font-bold text-slate-955 dark:text-white">{activeSellerStats.totalDelivered}</span> de tus <span className="font-bold text-slate-955 dark:text-white">{activeSellerStats.totalOrdersAssigned}</span> pedidos asignados. Esto representa un total de <span className="font-bold text-teal-600 dark:text-teal-450">{totalItemsSold}</span> componentes físicos de hardware suministrados.
               </p>
             </div>
           </div>

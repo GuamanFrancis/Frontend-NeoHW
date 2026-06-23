@@ -194,7 +194,7 @@ export const ClienteCarritoPage = () => {
 
   if (cartItems.length === 0) {
     return (
-      <div className="mx-auto max-w-[95rem] pt-4 pb-16 text-slate-800 dark:text-neutral-200">
+      <div className="w-full pt-4 pb-16 text-slate-800 dark:text-neutral-200">
         <div className="flex h-96 flex-col items-center justify-between rounded-2xl border border-dashed border-slate-200 dark:border-neutral-800 bg-white/50 p-8 text-center dark:bg-neutral-900/10 max-w-2xl mx-auto py-16">
           <ShoppingCart className="h-16 w-16 text-slate-800 dark:text-neutral-200 opacity-40" />
           <div>
@@ -217,7 +217,7 @@ export const ClienteCarritoPage = () => {
   }
 
   return (
-    <div className="mx-auto max-w-[95rem] pt-4 pb-16 text-slate-800 dark:text-neutral-200">
+    <div className="w-full pt-4 pb-16 text-slate-800 dark:text-neutral-200">
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
         <div className="lg:col-span-8 space-y-6">
           <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white dark:border-neutral-900 dark:bg-neutral-950/20 shadow-sm">
