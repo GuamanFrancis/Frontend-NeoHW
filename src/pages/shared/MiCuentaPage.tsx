@@ -100,7 +100,7 @@ export const MiCuentaPage = () => {
           </div>
           <div>
             <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Mi cuenta</h1>
-            <p className="text-base text-slate-800 dark:text-neutral-250 mt-1 font-medium">Revisa y actualiza tu informacion personal.</p>
+            <p className="text-base text-slate-600 dark:text-neutral-400 mt-1 font-medium">Revisa y actualiza tu informacion personal.</p>
           </div>
         </div>
       </div>
@@ -209,7 +209,7 @@ export const MiCuentaPage = () => {
               <div className={`rounded-lg border px-4 py-3 text-sm font-medium ${
                 formError
                   ? 'border-red-500/20 bg-red-500/10 text-red-400'
-                  : 'border-emerald-500/25 bg-emerald-500/10 text-emerald-450 dark:text-emerald-400'
+                  : 'border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
               }`}
               >
                 {formError || formMessage}
@@ -243,7 +243,7 @@ export const MiCuentaPage = () => {
             <p className="mt-2 text-sm text-slate-700 dark:text-neutral-300 font-medium leading-relaxed">
               Esta acción es irreversible y se eliminarán todos los datos asociados a tu perfil.
             </p>
-            <p className="mt-4 text-sm font-medium text-slate-800 dark:text-neutral-250">
+            <p className="mt-4 text-sm font-medium text-slate-600 dark:text-neutral-400">
               Para confirmar, por favor escribe <span className="text-red-500 font-semibold">ELIMINAR</span> a continuación:
             </p>
             <input

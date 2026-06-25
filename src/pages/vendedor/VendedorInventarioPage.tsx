@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Boxes, Search, Filter, Eye } from 'lucide-react';
+import { Search, Filter, Eye } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { PageCard } from '../../components/ui/PageCard';
 import { Modal } from '../../components/ui/Modal';
@@ -37,6 +37,7 @@ export const VendedorInventarioPage = () => {
   const [categories, setCategories] = useState<BackendCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [pageError, setPageError] = useState('');
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('todos');
@@ -206,15 +207,16 @@ export const VendedorInventarioPage = () => {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 shrink-0 flex items-center justify-center rounded-lg border border-slate-100 bg-slate-50 p-1 dark:border-neutral-800 dark:bg-neutral-900/50">
-                            {item.imageUrl ? (
-                              <img
-                                src={item.imageUrl}
-                                alt={item.name}
-                                className="max-h-full max-w-full object-contain"
-                              />
-                            ) : (
-                              <Boxes className="h-5 w-5 text-slate-350 dark:text-neutral-600" />
-                            )}
+                            <img
+                              src={(!failedImages[item.id] && item.imageUrl) ? item.imageUrl : '/favicon.jpg'}
+                              alt={item.name}
+                              className="max-h-full max-w-full object-contain"
+                              onError={() => {
+                                if (item.imageUrl && item.imageUrl !== '/favicon.jpg') {
+                                  setFailedImages((prev) => ({ ...prev, [item.id]: true }));
+                                }
+                              }}
+                            />
                           </div>
                           <div className="min-w-0">
                             <span className="block font-normal text-base text-slate-900 dark:text-white truncate max-w-[240px]">
@@ -326,15 +328,16 @@ export const VendedorInventarioPage = () => {
           <div className="space-y-6 text-slate-900 dark:text-white max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin">
             <div className="flex flex-col gap-4 sm:flex-row items-center sm:items-start gap-6">
               <div className="h-28 w-28 shrink-0 flex items-center justify-center rounded-xl border border-slate-150 bg-slate-50 p-2 dark:border-neutral-800 dark:bg-neutral-900/60">
-                {selectedComponent.imageUrl ? (
-                  <img
-                    src={selectedComponent.imageUrl}
-                    alt={selectedComponent.name}
-                    className="max-h-full max-w-full object-contain"
-                  />
-                ) : (
-                  <Boxes className="h-12 w-12 text-teal-600 dark:text-teal-400" />
-                )}
+                <img
+                  src={(!failedImages[selectedComponent.id] && selectedComponent.imageUrl) ? selectedComponent.imageUrl : '/favicon.jpg'}
+                  alt={selectedComponent.name}
+                  className="max-h-full max-w-full object-contain"
+                  onError={() => {
+                    if (selectedComponent.imageUrl && selectedComponent.imageUrl !== '/favicon.jpg') {
+                      setFailedImages((prev) => ({ ...prev, [selectedComponent.id]: true }));
+                    }
+                  }}
+                />
               </div>
               <div className="flex-1 w-full space-y-2">
                 <div className="grid grid-cols-2 gap-x-6 gap-y-3">

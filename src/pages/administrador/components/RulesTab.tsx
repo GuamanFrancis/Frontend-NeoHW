@@ -55,14 +55,14 @@ export const RulesTab = ({
     <>
       <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
         <div className="mb-4">
-          <h3 className="text-lg font-bold text-slate-950 dark:text-white leading-none">Reglas de Compatibilidad</h3>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 font-medium">Gestiona las reglas de hardware que usa el Simulador 3D para evitar ensambles incompatibles.</p>
+          <h3 className="text-lg font-bold text-slate-955 dark:text-white leading-none">Reglas de Compatibilidad</h3>
+          <p className="text-sm text-slate-955 dark:text-white mt-1 font-normal">Gestiona las reglas de hardware que usa el Simulador 3D para evitar ensambles incompatibles.</p>
         </div>
 
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-neutral-800 dark:bg-neutral-950 mt-4">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[800px] text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:bg-white/[0.03] dark:text-neutral-400">
+              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-955 dark:bg-white/[0.03] dark:text-white">
                 <tr>
                   <th className="px-4 py-3 font-bold">Regla</th>
                   <th className="px-4 py-3 font-bold">Tipo</th>
@@ -75,7 +75,7 @@ export const RulesTab = ({
               <tbody className="divide-y divide-slate-100 dark:divide-neutral-800">
                 {compatibilityRulesList.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-slate-500 dark:text-neutral-400">
+                    <td colSpan={6} className="px-4 py-8 text-center text-slate-955 dark:text-white">
                       No hay reglas de compatibilidad registradas en la base de datos.
                     </td>
                   </tr>
@@ -83,9 +83,9 @@ export const RulesTab = ({
                   compatibilityRulesList.map((rule) => (
                     <tr key={rule.id} className="transition hover:bg-slate-50 dark:hover:bg-white/[0.03]">
                       <td className="px-4 py-3">
-                        <p className="font-semibold text-slate-950 dark:text-white">{rule.name}</p>
+                        <p className="font-semibold text-slate-955 dark:text-white">{rule.name}</p>
                         {rule.description && (
-                          <p className="mt-0.5 text-xs text-slate-500 dark:text-neutral-400">{rule.description}</p>
+                          <p className="mt-0.5 text-xs text-slate-955 dark:text-white">{rule.description}</p>
                         )}
                       </td>
                       <td className="px-4 py-3">
@@ -93,13 +93,13 @@ export const RulesTab = ({
                           {rule.ruleType}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-slate-655 dark:text-neutral-300">
+                      <td className="px-4 py-3 text-slate-955 dark:text-white">
                         {rule.sourceAttributeName || 'Atributo origen'}
                       </td>
-                      <td className="px-4 py-3 text-slate-655 dark:text-neutral-300">
+                      <td className="px-4 py-3 text-slate-955 dark:text-white">
                         {rule.targetAttributeName || 'Atributo destino'}
                       </td>
-                      <td className="px-4 py-3 font-medium text-slate-600 dark:text-neutral-400">
+                      <td className="px-4 py-3 font-medium text-slate-955 dark:text-white">
                         {rule.comparisonOperator || 'Igualdad'}
                       </td>
                       <td className="px-4 py-3">
@@ -138,7 +138,7 @@ export const RulesTab = ({
           </>
         }
       >
-        <p className="text-sm font-normal text-slate-500 dark:text-neutral-400 mb-4">
+        <p className="text-sm font-normal text-slate-955 dark:text-white mb-4">
           Crea una regla lógica de compatibilidad de hardware para el simulador.
         </p>
         <div className="grid gap-4 md:grid-cols-2">
@@ -219,7 +219,7 @@ export const RulesTab = ({
               <p className="text-base font-bold text-slate-900 dark:text-white">
                 ¿Estás seguro de que deseas desactivar esta regla?
               </p>
-              <p className="text-sm font-normal text-slate-500 dark:text-neutral-400 mt-1.5 leading-relaxed">
+              <p className="text-sm font-normal text-slate-955 dark:text-white mt-1.5 leading-relaxed">
                 Esta acción evitará que el Simulador 3D valide esta restricción de hardware en tiempo real. La regla "{ruleToDelete?.name}" se removerá del motor de validaciones.
               </p>
             </div>

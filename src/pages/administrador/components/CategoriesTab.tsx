@@ -47,13 +47,13 @@ export const CategoriesTab = ({
       <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
         <div className="mb-4">
           <h3 className="text-lg font-bold text-slate-950 dark:text-white leading-none">Categorías de Hardware</h3>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 font-medium">Gestiona la clasificación del hardware en la tienda (Procesadores, Memorias RAM, etc.).</p>
+          <p className="text-sm text-slate-955 dark:text-white mt-1 font-normal">Gestiona la clasificación del hardware en la tienda (Procesadores, Memorias RAM, etc.).</p>
         </div>
 
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-neutral-800 dark:bg-neutral-950 mt-4">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[700px] text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:bg-white/[0.03] dark:text-neutral-400">
+              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-955 dark:bg-white/[0.03] dark:text-white">
                 <tr>
                   <th className="px-4 py-3 font-bold">Categoría</th>
                   <th className="px-4 py-3 font-bold">Slug</th>
@@ -65,7 +65,7 @@ export const CategoriesTab = ({
               <tbody className="divide-y divide-slate-100 dark:divide-neutral-800">
                 {categories.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-slate-500 dark:text-neutral-400">
+                    <td colSpan={5} className="px-4 py-8 text-center text-slate-955 dark:text-white">
                       No hay categorías registradas en la base de datos.
                     </td>
                   </tr>
@@ -75,13 +75,13 @@ export const CategoriesTab = ({
                       <td className="px-4 py-3 font-semibold text-slate-950 dark:text-white">
                         {cat.name}
                       </td>
-                      <td className="px-4 py-3 text-slate-500 dark:text-neutral-400">
+                      <td className="px-4 py-3 text-slate-955 dark:text-white">
                         {cat.slug}
                       </td>
-                      <td className="px-4 py-3 text-slate-650 dark:text-neutral-300">
+                      <td className="px-4 py-3 text-slate-955 dark:text-white">
                         {cat.description || 'Sin descripción'}
                       </td>
-                      <td className="px-4 py-3 text-slate-655 dark:text-neutral-450 font-medium">
+                      <td className="px-4 py-3 text-slate-955 dark:text-white font-medium">
                         {cat.parentId ? categories.find(c => c.id === cat.parentId)?.name || 'Categoría superior' : 'Ninguna'}
                       </td>
                       <td className="px-4 py-3">
@@ -120,7 +120,7 @@ export const CategoriesTab = ({
           </>
         }
       >
-        <p className="text-sm font-normal text-slate-500 dark:text-neutral-400 mb-4">
+        <p className="text-sm font-normal text-slate-955 dark:text-white mb-4">
           Define las propiedades de la nueva categoría para clasificar el hardware de la tienda.
         </p>
         <div className="grid gap-4 md:grid-cols-2">
@@ -173,7 +173,7 @@ export const CategoriesTab = ({
               <p className="text-base font-bold text-slate-900 dark:text-white">
                 ¿Estás seguro de que deseas desactivar esta categoría?
               </p>
-              <p className="text-sm font-normal text-slate-500 dark:text-neutral-400 mt-1.5 leading-relaxed">
+              <p className="text-sm font-normal text-slate-955 dark:text-white mt-1.5 leading-relaxed">
                 Esta acción ocultará la categoría del catálogo. Los productos asociados seguirán existiendo pero no se listarán bajo esta categoría. La categoría "{catToDelete?.name}" se desactivará temporalmente.
               </p>
             </div>

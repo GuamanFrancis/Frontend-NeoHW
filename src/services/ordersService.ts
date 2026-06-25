@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, getProductImageUrl } from './api';
 
 export type CreateOrderPayload = {
   items: {
@@ -100,6 +100,17 @@ export const getOrders = async (
   const { data } = await api.get<OrdersResponse>('/orders', {
     params: { status, page, limit },
   });
+  if (data && Array.isArray(data.data)) {
+    data.data.forEach(order => {
+      if (order.items && Array.isArray(order.items)) {
+        order.items.forEach(item => {
+          if (item.product) {
+            item.product.imageUrl = getProductImageUrl(item.product.imageUrl);
+          }
+        });
+      }
+    });
+  }
   return data;
 };
 
@@ -110,6 +121,17 @@ export const getMyOrders = async (
   const { data } = await api.get<OrdersResponse>('/orders/my-orders', {
     params: { page, limit },
   });
+  if (data && Array.isArray(data.data)) {
+    data.data.forEach(order => {
+      if (order.items && Array.isArray(order.items)) {
+        order.items.forEach(item => {
+          if (item.product) {
+            item.product.imageUrl = getProductImageUrl(item.product.imageUrl);
+          }
+        });
+      }
+    });
+  }
   return data;
 };
 
@@ -121,6 +143,13 @@ export const updateOrderStatus = async (
     `/orders/${id}/status`,
     { status }
   );
+  if (data?.order?.items && Array.isArray(data.order.items)) {
+    data.order.items.forEach(item => {
+      if (item.product) {
+        item.product.imageUrl = getProductImageUrl(item.product.imageUrl);
+      }
+    });
+  }
   return data;
 };
 

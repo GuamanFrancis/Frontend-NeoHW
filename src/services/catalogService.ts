@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, getProductImageUrl } from './api';
 import type {
   BackendProduct,
   CatalogComponent,
@@ -38,7 +38,7 @@ export const normalizeProduct = (product: BackendProduct): CatalogComponent => (
   price: product.price,
   stock: product.stock,
   status: stockToStatus(product.stock),
-  imageUrl: product.imageUrl,
+  imageUrl: getProductImageUrl(product.imageUrl),
   model: product.model || null,
   sku: product.sku || null,
   attributes: product.attributes || [],

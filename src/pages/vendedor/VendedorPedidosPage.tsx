@@ -452,14 +452,14 @@ export const VendedorPedidosPage = () => {
                     <tr key={order.id} className="transition hover:bg-slate-50 dark:hover:bg-white/[0.03]">
                       <td className="px-5 py-4">
                         <p className="font-semibold text-slate-950 dark:text-white">{order.id}</p>
-                        <p className="mt-1 text-xs text-slate-500 dark:text-neutral-400 font-medium">
+                        <p className="mt-1 text-xs text-slate-955 dark:text-white font-medium">
                           {order.itemsCount} {order.itemsCount === 1 ? 'producto' : 'productos'}
                         </p>
                         {order.items && order.items.length > 0 && (
                           <div className="mt-1.5 space-y-0.5 max-w-xs">
                             {order.items.map((item, idx) => (
-                              <p key={item.id || idx} className="text-xs font-normal text-slate-700 dark:text-neutral-350 leading-tight">
-                                {item.product?.name || `Componente ID: ${item.productId}`} <span className="text-slate-500 dark:text-neutral-500 font-bold">x{item.quantity}</span>
+                              <p key={item.id || idx} className="text-xs font-normal text-slate-950 dark:text-white leading-tight">
+                                {item.product?.name || `Componente ID: ${item.productId}`} <span className="text-slate-950 dark:text-white font-bold">x{item.quantity}</span>
                               </p>
                             ))}
                           </div>
@@ -475,19 +475,19 @@ export const VendedorPedidosPage = () => {
                             </span>
                           )}
                         </div>
-                        <p className="mt-1 text-xs text-slate-500 dark:text-neutral-400 font-normal">{order.clientEmail}</p>
-                        <p className="mt-1 text-xs text-slate-500 dark:text-neutral-400 font-normal">
-                          <span className="font-semibold text-slate-700 dark:text-neutral-350">Teléf: </span>
+                        <p className="mt-1 text-xs text-slate-955 dark:text-white font-normal">{order.clientEmail}</p>
+                        <p className="mt-1 text-xs text-slate-955 dark:text-white font-normal">
+                          <span className="font-semibold text-slate-950 dark:text-white">Teléf: </span>
                           {order.clientPhone || 'No registrado'}
                         </p>
-                        <p className="mt-1.5 text-xs text-slate-500 dark:text-neutral-400 leading-relaxed max-w-[280px] font-normal">
-                          <span className="font-semibold text-slate-700 dark:text-neutral-300">Dirección: </span>
+                        <p className="mt-1.5 text-xs text-slate-955 dark:text-white leading-relaxed max-w-[280px] font-normal">
+                          <span className="font-semibold text-slate-950 dark:text-white">Dirección: </span>
                           {order.addressStr}
                         </p>
                       </td>
                       <td className="px-5 py-4">
-                        <p className="text-xs font-bold text-slate-750 dark:text-neutral-300">{formattedDate.day}</p>
-                        <p className="mt-1 text-[11px] text-slate-500 dark:text-neutral-400 font-normal">{formattedDate.time}</p>
+                        <p className="text-xs font-bold text-slate-955 dark:text-white">{formattedDate.day}</p>
+                        <p className="mt-1 text-[11px] text-slate-955 dark:text-white font-normal">{formattedDate.time}</p>
                       </td>
                       <td className="px-5 py-4 font-bold text-sm text-slate-955 dark:text-white">{formatCurrency(order.total)}</td>
                       <td className="px-5 py-4">
@@ -543,7 +543,7 @@ export const VendedorPedidosPage = () => {
 
                 {isLoading && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-500 dark:text-neutral-400">
+                    <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-955 dark:text-white">
                       Cargando pedidos...
                     </td>
                   </tr>
@@ -551,7 +551,7 @@ export const VendedorPedidosPage = () => {
 
                 {!isLoading && pageOrders.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-500 dark:text-neutral-400">
+                    <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-955 dark:text-white">
                       No se encontraron pedidos con los filtros actuales.
                     </td>
                   </tr>
@@ -560,7 +560,7 @@ export const VendedorPedidosPage = () => {
             </table>
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-500 dark:border-neutral-800 dark:text-neutral-400 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-955 dark:border-neutral-800 dark:text-white md:flex-row md:items-center md:justify-between">
             <p>
               Mostrando {firstResult} a {lastResult} de {filteredOrders.length} pedidos
             </p>
@@ -737,7 +737,7 @@ export const VendedorPedidosPage = () => {
                 <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">
                   ¿Estás listo para despachar el pedido {orderToDispatch.id}?
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">
+                <p className="text-xs text-slate-955 dark:text-white mt-1 leading-relaxed">
                   Para actualizar el estado a <span className="font-bold text-teal-500">Enviado (SHIPPED)</span>, es obligatorio cumplir con las reglas del negocio:
                 </p>
               </div>
@@ -745,20 +745,20 @@ export const VendedorPedidosPage = () => {
 
             <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-neutral-800 dark:bg-neutral-900/40 text-xs font-semibold space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">Requisito 1: Pago y Estado</span>
+                <span className="text-slate-955 dark:text-white">Requisito 1: Pago y Estado</span>
                 {orderToDispatch.status === 'En proceso' ? (
                   <span className="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✓ Cumplido (En proceso)</span>
                 ) : (
                   <span className="bg-rose-500/10 text-rose-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✗ Requerido ({orderToDispatch.status})</span>
                 )}
               </div>
-              <p className="text-[10px] text-slate-400 dark:text-neutral-500 leading-normal -mt-2">
+              <p className="text-[10px] text-slate-955 dark:text-white leading-normal -mt-2">
                 El pedido debe estar pagado (estado "En proceso") para poder realizar el envío.
               </p>
 
               <div className="border-t border-slate-200/40 dark:border-neutral-800 pt-3">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-slate-500">Requisito 2: Prueba de Envío (SHIPPING_PROOF)</span>
+                  <span className="text-slate-955 dark:text-white">Requisito 2: Prueba de Envío (SHIPPING_PROOF)</span>
                   {dispatchFile ? (
                     <span className="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✓ Cargado</span>
                   ) : (
@@ -777,7 +777,7 @@ export const VendedorPedidosPage = () => {
                   className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-[10px] file:font-bold file:bg-teal-500/10 file:text-teal-600 hover:file:bg-teal-500/20 file:cursor-pointer cursor-pointer border border-dashed border-slate-300 dark:border-neutral-700 rounded-lg p-2 bg-white dark:bg-neutral-950"
                   disabled={orderToDispatch.status !== 'En proceso'}
                 />
-                <p className="text-[9px] text-slate-400 dark:text-neutral-500 mt-1 font-medium">
+                <p className="text-[9px] text-slate-955 dark:text-white mt-1 font-medium">
                   Soporta imágenes (JPEG, PNG, WEBP) o documentos PDF de hasta 5 MB.
                 </p>
               </div>
@@ -827,7 +827,7 @@ export const VendedorPedidosPage = () => {
                 <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">
                   ¿Registrar entrega para el pedido {orderToDeliver.id}?
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">
+                <p className="text-xs text-slate-955 dark:text-white mt-1 leading-relaxed">
                   Para actualizar el estado a <span className="font-bold text-emerald-500">Entregado (DELIVERED)</span>, debes subir los soportes correspondientes:
                 </p>
               </div>
@@ -835,7 +835,7 @@ export const VendedorPedidosPage = () => {
 
             <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-neutral-800 dark:bg-neutral-900/40 text-xs font-semibold space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">Estado del Pedido</span>
+                <span className="text-slate-955 dark:text-white">Estado del Pedido</span>
                 {orderToDeliver.status === 'Enviado' ? (
                   <span className="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✓ Listo (Enviado)</span>
                 ) : (
@@ -845,7 +845,7 @@ export const VendedorPedidosPage = () => {
 
               <div className="border-t border-slate-200/40 dark:border-neutral-800 pt-3">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-slate-500">1. Foto de la Entrega (DELIVERY_PHOTO)</span>
+                  <span className="text-slate-955 dark:text-white">1. Foto de la Entrega (DELIVERY_PHOTO)</span>
                   {deliveryPhotoFile ? (
                     <span className="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✓ Cargado</span>
                   ) : (
@@ -868,7 +868,7 @@ export const VendedorPedidosPage = () => {
 
               <div className="border-t border-slate-200/40 dark:border-neutral-800 pt-3">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-slate-500">2. Firma del Cliente (CUSTOMER_SIGNATURE)</span>
+                  <span className="text-slate-955 dark:text-white">2. Firma del Cliente (CUSTOMER_SIGNATURE)</span>
                   {customerSignatureFile ? (
                     <span className="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✓ Cargado</span>
                   ) : (
@@ -934,7 +934,7 @@ export const VendedorPedidosPage = () => {
                 <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">
                   ¿Confirmas la cancelación del pedido {orderToCancel.id}?
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">
+                <p className="text-xs text-slate-955 dark:text-white mt-1 leading-relaxed">
                   Esta acción actualizará el estado del pedido a <span className="font-bold text-rose-500">Cancelado (CANCELLED)</span> y liberará los recursos. Esta acción no se puede deshacer.
                 </p>
               </div>

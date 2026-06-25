@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Eye, PackageSearch, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { FormInput } from '../../../components/ui/FormInput';
@@ -11,6 +12,7 @@ import {
   type ModalMode,
 } from '../hooks/useAdminCatalog';
 import type { BackendAttribute } from '../../../services/attributesService';
+import { getProductImageUrl } from '../../../services/api';
 
 const statusTextStyles: Record<CatalogStockStatus, string> = {
   disponible: 'text-emerald-600 dark:text-emerald-400',
@@ -113,6 +115,7 @@ export const CatalogTab = ({
   attributeErrors,
   updateAttributeValue,
 }: CatalogTabProps) => {
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
   return (
     <>
       <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
@@ -182,21 +185,25 @@ export const CatalogTab = ({
                 {pageComponents.map((component) => (
                   <tr key={component.id} className="transition hover:bg-slate-50 dark:hover:bg-white/[0.03]">
                     <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-slate-100 dark:border-neutral-700 dark:bg-neutral-900">
-                          {component.imageUrl ? (
-                            <img src={component.imageUrl} alt={component.name} className="h-full w-full object-cover" />
-                          ) : (
-                            <PackageSearch className="h-4 w-4 text-slate-500" />
-                          )}
+                      <div className="flex items-center gap-3">                        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-slate-100 dark:border-neutral-700 dark:bg-neutral-900">
+                          <img
+                            src={(!failedImages[component.id] && component.imageUrl) ? component.imageUrl : '/favicon.jpg'}
+                            alt={component.name}
+                            className="h-full w-full object-cover"
+                            onError={() => {
+                              if (component.imageUrl && component.imageUrl !== '/favicon.jpg') {
+                                setFailedImages((prev) => ({ ...prev, [component.id]: true }));
+                              }
+                            }}
+                          />
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-slate-950 dark:text-white">{component.name}</p>
-                          <p className="mt-0.5 text-xs text-slate-500 dark:text-neutral-400">{component.description}</p>
+                          <p className="text-sm font-bold text-slate-955 dark:text-white">{component.name}</p>
+                          <p className="mt-1 text-sm font-normal text-slate-955 dark:text-white leading-relaxed">{component.description}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-xs font-normal text-slate-600 dark:text-neutral-300">{component.category}</td>
+                    <td className="px-5 py-4 text-sm font-semibold text-slate-955 dark:text-white">{component.category}</td>
                     <td className="px-5 py-4 font-bold text-sm text-slate-955 dark:text-white">{formatPrice(component.price)}</td>
                     <td className="px-5 py-4 font-normal text-sm text-slate-955 dark:text-white">
                       {component.stock}
@@ -239,7 +246,7 @@ export const CatalogTab = ({
 
                 {isLoading && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-slate-500 dark:text-neutral-400">
+                    <td colSpan={6} className="px-4 py-8 text-center text-slate-955 dark:text-white">
                       Cargando catalogo...
                     </td>
                   </tr>
@@ -247,7 +254,7 @@ export const CatalogTab = ({
 
                 {!isLoading && pageComponents.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-slate-500 dark:text-neutral-400">
+                    <td colSpan={6} className="px-4 py-8 text-center text-slate-955 dark:text-white">
                       No hay componentes para los filtros actuales.
                     </td>
                   </tr>
@@ -256,7 +263,7 @@ export const CatalogTab = ({
             </table>
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-500 dark:border-neutral-800 dark:text-neutral-400 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-955 dark:border-neutral-800 dark:text-white md:flex-row md:items-center md:justify-between">
             <div className="hidden" data-results={`${firstResult}-${lastResult}-${filteredComponents.length}`} />
 
 
@@ -344,7 +351,7 @@ export const CatalogTab = ({
           }
         `}</style>
         <div className="max-h-[60vh] overflow-y-auto pr-2 scrollbar-none">
-          <p className="text-sm font-normal text-slate-500 dark:text-neutral-400 mb-4">
+          <p className="text-sm font-normal text-slate-955 dark:text-white mb-4">
             Completa la información principal del producto para gestionarlo en el catálogo.
           </p>
           <div className="grid gap-4 md:grid-cols-2">
@@ -402,6 +409,19 @@ export const CatalogTab = ({
               placeholder="https://..."
               error={formErrors.imageUrl}
             />
+            {formValues.imageUrl && (
+              <div className="md:col-span-2 mt-2 flex flex-col items-center justify-center p-2 border border-slate-200 dark:border-neutral-800 rounded-lg bg-slate-50 dark:bg-neutral-900/60">
+                <span className="text-xs font-semibold text-slate-500 dark:text-neutral-400 mb-1">Vista previa de imagen:</span>
+                <img
+                  src={getProductImageUrl(formValues.imageUrl.trim())}
+                  alt="Vista previa del componente"
+                  className="max-h-24 object-contain rounded-md"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/favicon.jpg';
+                  }}
+                />
+              </div>
+            )}
             
             {categoryAttributesToFill.length > 0 && (
               <div className="md:col-span-2 border-t border-slate-100 dark:border-neutral-800 pt-4 mt-2">
@@ -477,15 +497,16 @@ export const CatalogTab = ({
           <div className="space-y-6 text-slate-900 dark:text-white max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin">
             <div className="flex flex-col gap-4 sm:flex-row items-center sm:items-start gap-6">
               <div className="h-28 w-28 shrink-0 flex items-center justify-center rounded-xl border border-slate-150 bg-slate-50 p-2 dark:border-neutral-800 dark:bg-neutral-900/60">
-                {selectedComponent.imageUrl ? (
-                  <img
-                    src={selectedComponent.imageUrl}
-                    alt={selectedComponent.name}
-                    className="max-h-full max-w-full object-contain"
-                  />
-                ) : (
-                  <PackageSearch className="h-12 w-12 text-teal-600 dark:text-teal-400" />
-                )}
+                <img
+                  src={(!failedImages[selectedComponent.id] && selectedComponent.imageUrl) ? selectedComponent.imageUrl : '/favicon.jpg'}
+                  alt={selectedComponent.name}
+                  className="max-h-full max-w-full object-contain animate-fade-in"
+                  onError={() => {
+                    if (selectedComponent.imageUrl && selectedComponent.imageUrl !== '/favicon.jpg') {
+                      setFailedImages((prev) => ({ ...prev, [selectedComponent.id]: true }));
+                    }
+                  }}
+                />
               </div>
               <div className="flex-1 w-full space-y-2">
                 <div className="grid grid-cols-2 gap-x-6 gap-y-3">
@@ -576,7 +597,7 @@ export const CatalogTab = ({
               <p className="text-base font-bold text-slate-900 dark:text-white">
                 ¿Estás seguro de que deseas eliminar este componente del catálogo?
               </p>
-              <p className="text-sm font-normal text-slate-500 dark:text-neutral-400 mt-1.5 leading-relaxed">
+              <p className="text-sm font-normal text-slate-955 dark:text-white mt-1.5 leading-relaxed">
                 Esta acción es permanente y retirará el producto "{selectedComponent?.name}" de la tienda y del catálogo general de componentes.
               </p>
             </div>

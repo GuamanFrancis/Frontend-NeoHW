@@ -122,6 +122,7 @@ export const VendedorEstadisticasPage = () => {
   const [period, setPeriod] = useState<'diario' | 'semanal' | 'mensual'>('mensual');
   const [chartType, setChartType] = useState<'linea' | 'barras'>('linea');
   const [ordersLimit, setOrdersLimit] = useState<number>(50);
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     let active = true;
@@ -950,17 +951,16 @@ export const VendedorEstadisticasPage = () => {
                   {globalStats.topProducts.map(({ product, totalSold }) => (
                     <div key={product.id} className="flex items-center justify-between py-2 px-2 hover:bg-slate-50 dark:hover:bg-neutral-900/30 rounded-xl transition-colors">
                       <div className="flex items-center gap-3 min-w-0">
-                        {product.imageUrl ? (
-                          <img
-                            src={product.imageUrl}
-                            alt={product.name}
-                            className="h-10 w-10 rounded-lg object-cover border border-slate-100 dark:border-neutral-800 shrink-0"
-                          />
-                        ) : (
-                          <div className="h-10 w-10 rounded-lg bg-slate-100 dark:bg-neutral-900 flex items-center justify-center shrink-0">
-                            <Package className="h-4.5 w-4.5 text-slate-900 dark:text-white" />
-                          </div>
-                        )}
+                        <img
+                          src={(!failedImages[product.id] && product.imageUrl) ? product.imageUrl : '/favicon.jpg'}
+                          alt={product.name}
+                          className="h-10 w-10 rounded-lg object-cover border border-slate-100 dark:border-neutral-800 shrink-0"
+                          onError={() => {
+                            if (product.imageUrl && product.imageUrl !== '/favicon.jpg') {
+                              setFailedImages((prev) => ({ ...prev, [product.id]: true }));
+                            }
+                          }}
+                        />
                         <div className="min-w-0">
                           <p className="text-xs font-black text-slate-900 dark:text-white truncate max-w-[150px] leading-tight">
                             {product.name}

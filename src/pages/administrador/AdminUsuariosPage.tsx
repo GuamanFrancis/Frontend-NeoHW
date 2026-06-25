@@ -169,12 +169,12 @@ export const AdminUsuariosPage = () => {
                         </div>
                         <div>
                           <p className="font-bold text-slate-950 dark:text-white">{user.name}</p>
-                          <p className="mt-1 text-xs text-slate-500 dark:text-neutral-400">{user.phone}</p>
+                          <p className="mt-1 text-xs text-slate-955 dark:text-white">{user.phone}</p>
                         </div>
                       </div>
                     </td>
 
-                    <td className="px-5 py-4 text-slate-600 dark:text-neutral-300">{user.email}</td>
+                    <td className="px-5 py-4 text-slate-955 dark:text-white">{user.email}</td>
 
                     <td className="px-5 py-4">
                       <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${roleStyles[user.role]}`}>
@@ -183,7 +183,7 @@ export const AdminUsuariosPage = () => {
                     </td>
 
                     <td className="px-5 py-4">
-                      <div className="flex items-center gap-2 text-slate-600 dark:text-neutral-300">
+                      <div className="flex items-center gap-2 text-slate-955 dark:text-white">
                         <span className={`h-2 w-2 rounded-full ${statusStyles[user.status]}`} />
                         {user.status}
                       </div>
@@ -226,7 +226,7 @@ export const AdminUsuariosPage = () => {
 
                 {isLoading && (
                   <tr>
-                    <td colSpan={5} className="px-5 py-10 text-center text-sm text-slate-500 dark:text-neutral-400">
+                    <td colSpan={5} className="px-5 py-10 text-center text-sm text-slate-955 dark:text-white">
                       Cargando usuarios...
                     </td>
                   </tr>
@@ -234,7 +234,7 @@ export const AdminUsuariosPage = () => {
 
                 {!isLoading && pageUsers.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-5 py-10 text-center text-sm text-slate-500 dark:text-neutral-400">
+                    <td colSpan={5} className="px-5 py-10 text-center text-sm text-slate-955 dark:text-white">
                       No se encontraron usuarios con los filtros actuales.
                     </td>
                   </tr>
@@ -243,7 +243,7 @@ export const AdminUsuariosPage = () => {
             </table>
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-slate-200 px-5 py-4 text-sm text-slate-500 dark:border-neutral-800 dark:text-neutral-400 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-3 border-t border-slate-200 px-5 py-4 text-sm text-slate-955 dark:border-neutral-800 dark:text-white md:flex-row md:items-center md:justify-between">
             <p>
               Mostrando {firstResult} a {lastResult} de {filteredUsers.length} usuarios
             </p>
@@ -316,7 +316,7 @@ export const AdminUsuariosPage = () => {
           </>
         }
       >
-        <p className="text-sm font-normal text-slate-500 dark:text-neutral-400 mb-4">
+        <p className="text-sm font-normal text-slate-955 dark:text-white mb-4">
           Completa los datos principales para mantener el acceso del usuario.
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -350,14 +350,14 @@ export const AdminUsuariosPage = () => {
           {showUnlockWarning && !isUnlocked && (
             <div className="sm:col-span-2 rounded-xl border border-slate-200 bg-slate-50/50 p-4 dark:border-neutral-800 dark:bg-neutral-900/30 text-xs">
               <p className="font-bold text-rose-600 dark:text-rose-400 text-sm">Advertencia de seguridad</p>
-              <p className="mt-1.5 text-sm font-normal text-slate-600 dark:text-neutral-400">
+              <p className="mt-1.5 text-sm font-normal text-slate-955 dark:text-white">
                 Vas a modificar la información personal del usuario (Nombre y/o Teléfono). Asegúrate de que los datos sean correctos.
               </p>
               <div className="mt-4 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowUnlockWarning(false)}
-                  className="rounded-lg px-4 py-2 font-bold text-sm text-slate-500 hover:bg-slate-200/50 dark:text-neutral-400 dark:hover:bg-neutral-800"
+                  className="rounded-lg px-4 py-2 font-bold text-sm text-slate-955 hover:bg-slate-200/50 dark:text-white dark:hover:bg-neutral-800"
                 >
                   Cancelar
                 </button>
@@ -477,7 +477,7 @@ export const AdminUsuariosPage = () => {
               <p className="text-base font-bold text-slate-900 dark:text-white">
                 ¿Estás seguro de que deseas desactivar a este usuario?
               </p>
-              <p className="text-sm font-normal text-slate-500 dark:text-neutral-400 mt-1.5 leading-relaxed">
+              <p className="text-sm font-normal text-slate-955 dark:text-white mt-1.5 leading-relaxed">
                 Esta acción suspenderá su acceso al sistema de forma inmediata. El usuario ya no podrá iniciar sesión.
               </p>
             </div>

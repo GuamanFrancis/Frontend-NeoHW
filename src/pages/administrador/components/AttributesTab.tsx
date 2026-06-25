@@ -81,7 +81,7 @@ export const AttributesTab = ({
           
           <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-neutral-800">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 uppercase text-slate-500 dark:bg-white/[0.02] dark:text-neutral-400">
+              <thead className="bg-slate-50 uppercase text-slate-955 dark:bg-white/[0.02] dark:text-white">
                 <tr>
                   <th className="px-3 py-2 font-bold">Atributo</th>
                   <th className="px-3 py-2 font-bold">Slug</th>
@@ -93,21 +93,21 @@ export const AttributesTab = ({
               <tbody className="divide-y divide-slate-100 dark:divide-neutral-800">
                 {globalAttributes.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-3 py-4 text-center text-slate-500">
+                    <td colSpan={5} className="px-3 py-4 text-center text-slate-955 dark:text-white">
                       No hay atributos globales registrados.
                     </td>
                   </tr>
                 ) : (
                   globalAttributes.map((attr) => (
                     <tr key={attr.id} className="transition hover:bg-slate-50 dark:hover:bg-white/[0.02]">
-                      <td className="px-3 py-2 font-semibold text-slate-950 dark:text-white">{attr.name}</td>
-                      <td className="px-3 py-2 text-slate-500 dark:text-neutral-400">{attr.slug}</td>
+                      <td className="px-3 py-2 font-semibold text-slate-955 dark:text-white">{attr.name}</td>
+                      <td className="px-3 py-2 text-slate-955 dark:text-white">{attr.slug}</td>
                       <td className="px-3 py-2">
                         <span className="inline-flex rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700 dark:bg-neutral-800 dark:text-neutral-300">
                           {attr.dataType}
                         </span>
                       </td>
-                      <td className="px-3 py-2 font-medium text-slate-600 dark:text-neutral-400">{attr.unit ?? '-'}</td>
+                      <td className="px-3 py-2 font-medium text-slate-955 dark:text-white">{attr.unit ?? '-'}</td>
                       <td className="px-3 py-2">
                         <div className="flex justify-end gap-1.5">
                           <button
@@ -151,18 +151,18 @@ export const AttributesTab = ({
             <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950">
               <div className="mb-4">
                 <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">Paso 2: Especificaciones de Categoría</h3>
-                <p className="text-xs text-slate-500 mt-1">Vincula o remueve atributos de esta categoría de hardware.</p>
+                  <p className="text-xs text-slate-955 dark:text-white mt-1">Vincula o remueve atributos de esta categoría de hardware.</p>
               </div>
 
               <div className="border-t border-slate-100 dark:border-neutral-900 pt-3 mb-4">
-                <h4 className="text-xs font-bold text-slate-400 uppercase mb-2">Atributos Vinculados</h4>
+                <h4 className="text-xs font-bold text-slate-955 dark:text-white uppercase mb-2">Atributos Vinculados</h4>
                 <div className="grid gap-2">
                   {categoryAttrs.length === 0 ? (
-                    <p className="text-xs text-slate-500 text-center py-2">Ningún atributo vinculado a esta categoría.</p>
+                    <p className="text-xs text-slate-955 dark:text-white text-center py-2">Ningún atributo vinculado a esta categoría.</p>
                   ) : (
                     categoryAttrs.map(attr => (
                       <div key={attr.id} className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-1.5 dark:border-neutral-800">
-                        <span className="text-xs font-bold text-slate-955 dark:text-white">{attr.name} <span className="text-[10px] text-slate-450">({attr.dataType})</span></span>
+                        <span className="text-xs font-bold text-slate-955 dark:text-white">{attr.name} <span className="text-[10px] text-slate-900 dark:text-neutral-300">({attr.dataType})</span></span>
                         <button
                           type="button"
                           onClick={() => disassociateAttr(attr)}
@@ -177,7 +177,7 @@ export const AttributesTab = ({
               </div>
 
               <div className="border-t border-slate-100 dark:border-neutral-900 pt-3">
-                <h4 className="text-xs font-bold text-slate-400 uppercase mb-2">Asociar Nuevo Atributo</h4>
+                <h4 className="text-xs font-bold text-slate-955 dark:text-white uppercase mb-2">Asociar Nuevo Atributo</h4>
                 <div className="grid gap-2">
                   {globalAttributes
                     .filter(attr => !categoryAttrs.some(ca => ca.id === attr.id))

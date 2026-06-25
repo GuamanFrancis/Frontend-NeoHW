@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, getProductImageUrl } from './api';
 
 export type OrdersByStatus = Record<string, number>;
 
@@ -53,5 +53,14 @@ export const getSellerStats = async (): Promise<{ stats: SellerStats }> => {
 
 export const getGlobalStats = async (): Promise<{ stats: GlobalStats }> => {
   const { data } = await api.get<{ stats: GlobalStats }>('/statistics/global');
+  if (data?.stats?.topProducts) {
+    data.stats.topProducts = data.stats.topProducts.map((item) => ({
+      ...item,
+      product: {
+        ...item.product,
+        imageUrl: getProductImageUrl(item.product.imageUrl),
+      },
+    }));
+  }
   return data;
 };

@@ -98,3 +98,18 @@ api.interceptors.response.use(
     }
   },
 );
+
+export const getProductImageUrl = (url: string | null | undefined): string => {
+  if (!url) return '/favicon.jpg';
+  const trimmed = url.trim();
+  if (!trimmed || trimmed === 'null' || trimmed === 'undefined' || trimmed === '') {
+    return '/favicon.jpg';
+  }
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) {
+    return trimmed;
+  }
+  const apiUrl = import.meta.env.VITE_API_URL || '';
+  const backendBase = apiUrl.replace(/\/api$/, '');
+  const path = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return `${backendBase}${path}`;
+};

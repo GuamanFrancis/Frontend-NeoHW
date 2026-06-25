@@ -30,7 +30,7 @@ export const PageCard = ({ title, text, children, icon, actions }: PageCardProps
                   </h1>
                 )}
                 {text && (
-                  <p className="mt-1.5 text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                  <p className="mt-1.5 text-sm font-normal text-slate-955 dark:text-white">
                     {text}
                   </p>
                 )}

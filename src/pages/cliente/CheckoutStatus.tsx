@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router';
+import { useSearchParams, Link } from 'react-router';
 import { CheckCircle2, AlertCircle, ShoppingBag, ArrowLeft, CreditCard } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 
@@ -9,7 +9,6 @@ type CheckoutStatusProps = {
 
 export const CheckoutStatusPage = ({ type }: CheckoutStatusProps) => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const { clearCart } = useCart();
   const orderId = searchParams.get('order_id') || '';
   const isSuccess = type === 'success';
@@ -114,44 +113,40 @@ export const CheckoutStatusPage = ({ type }: CheckoutStatusProps) => {
             {isSuccess ? (
               // Success Buttons
               <>
-                <button
-                  type="button"
+                <Link
+                  to="/cliente/catalogo"
                   className="flex-1 h-14 flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-neutral-950 font-bold uppercase tracking-wider text-xs shadow-[0_4px_20px_rgba(20,184,166,0.25)] transition duration-300 cursor-pointer active:scale-95"
-                  onClick={() => navigate('/cliente/catalogo')}
                 >
                   <ArrowLeft className="h-4.5 w-4.5 text-neutral-950" />
                   <span>Volver al Catálogo</span>
-                </button>
+                </Link>
                 
-                <button
-                  type="button"
+                <Link
+                  to="/cliente/pedidos"
                   className="flex-1 h-14 flex items-center justify-center gap-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/[0.08] font-bold uppercase tracking-wider text-xs shadow-md transition duration-300 cursor-pointer active:scale-95"
-                  onClick={() => navigate('/cliente/pedidos')}
                 >
                   <ShoppingBag className="h-4.5 w-4.5 text-white" />
                   <span>Ver Mis Pedidos</span>
-                </button>
+                </Link>
               </>
             ) : (
               // Cancel Buttons
               <>
-                <button
-                  type="button"
+                <Link
+                  to="/cliente/pedidos"
                   className="flex-1 h-14 flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-neutral-950 font-bold uppercase tracking-wider text-xs shadow-[0_4px_20px_rgba(245,158,11,0.25)] transition duration-300 cursor-pointer active:scale-95"
-                  onClick={() => navigate('/cliente/pedidos')}
                 >
                   <CreditCard className="h-4.5 w-4.5 text-neutral-950" />
                   <span>Ir a Pagar en Historial</span>
-                </button>
+                </Link>
                 
-                <button
-                  type="button"
+                <Link
+                  to="/cliente/catalogo"
                   className="flex-1 h-14 flex items-center justify-center gap-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/[0.08] font-bold uppercase tracking-wider text-xs shadow-md transition duration-300 cursor-pointer active:scale-95"
-                  onClick={() => navigate('/cliente/catalogo')}
                 >
                   <ArrowLeft className="h-4.5 w-4.5 text-white" />
                   <span>Volver al Catálogo</span>
-                </button>
+                </Link>
               </>
             )}
           </div>
