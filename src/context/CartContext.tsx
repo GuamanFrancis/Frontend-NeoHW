@@ -123,11 +123,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const existingItem = cartItems.find((item) => item.product.id === product.id);
         if (existingItem) {
-          const currentQty = Number(existingItem.quantity);
-          if (currentQty < product.stock) {
-            await addToCartApi(product.id, 1);
-            await syncBackendCart();
-          }
+          // Ya está en el carrito, no lo agregamos de nuevo ni incrementamos la cantidad
+          return;
         } else if (product.stock > 0) {
           await addToCartApi(product.id, 1);
           await syncBackendCart();
@@ -139,14 +136,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCartItems((prevItems) => {
         const existingItem = prevItems.find((item) => item.product.id === product.id);
         if (existingItem) {
-          const currentQty = Number(existingItem.quantity);
-          if (currentQty < product.stock) {
-            return prevItems.map((item) =>
-              item.product.id === product.id
-                ? { ...item, quantity: currentQty + 1 }
-                : item
-            );
-          }
+          // Ya está en el carrito, no lo agregamos de nuevo ni incrementamos la cantidad
           return prevItems;
         }
         if (product.stock > 0) {
