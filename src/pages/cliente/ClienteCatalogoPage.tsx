@@ -259,9 +259,9 @@ export const ClienteCatalogoPage = () => {
   return (
     <div className="mx-auto max-w-[95rem] pb-16 text-slate-900 dark:text-neutral-100">
       {catalog.cartSuccessMessage && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-lg bg-teal-500 px-4 py-3 text-white shadow-lg animate-bounce">
-          <Check className="h-5 w-5" />
-          <span className="text-sm font-medium">{catalog.cartSuccessMessage}</span>
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 rounded-2xl border border-teal-500/40 bg-slate-900/95 dark:bg-neutral-900/95 px-6 py-4 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md text-white font-sans max-w-md w-full sm:w-auto text-center justify-center animate-bounce">
+          <Check className="h-5 w-5 text-teal-400 shrink-0 animate-pulse" />
+          <span className="text-sm font-bold tracking-wide">{catalog.cartSuccessMessage}</span>
         </div>
       )}
       <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen bg-neutral-950 h-56 sm:h-72 md:h-88 lg:h-[26rem] xl:h-[32rem] overflow-hidden -mt-5 sm:-mt-6 mb-8 group/banner">

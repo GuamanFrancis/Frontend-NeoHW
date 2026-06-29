@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { useLocation } from 'react-router';
 import {
   LayoutGrid,
   Cpu,
@@ -57,7 +57,7 @@ export const statusLabels = {
 
 export const useClienteCatalog = () => {
   const { addToCart } = useCart();
-  const navigate = useNavigate();
+
   const [components, setComponents] = useState<CatalogComponent[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
@@ -119,7 +119,7 @@ export const useClienteCatalog = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedComponent, setSelectedComponent] = useState<CatalogComponent | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [cartSuccessMessage] = useState<string | null>(null);
+  const [cartSuccessMessage, setCartSuccessMessage] = useState<string | null>(null);
   const [triggerType, setTriggerType] = useState<'click' | 'hover'>('click');
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
 
@@ -275,7 +275,10 @@ export const useClienteCatalog = () => {
 
   const handleAddToCart = (componente: CatalogComponent) => {
     addToCart(componente);
-    navigate('/cliente/carrito');
+    setCartSuccessMessage(`¡${componente.name} añadido al carrito!`);
+    setTimeout(() => {
+      setCartSuccessMessage(null);
+    }, 3000);
   };
 
   const handleOpenDrawer = (componente: CatalogComponent) => {

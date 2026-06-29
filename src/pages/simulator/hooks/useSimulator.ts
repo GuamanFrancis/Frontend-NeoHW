@@ -152,7 +152,7 @@ export const useSimulator = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([{
     role: 'assistant',
-    content: '¡Hola! Soy el **Arquitecto de Hardware de NeoHW**. 🧠\n\nPuedo ayudarte a buscar componentes en nuestro inventario real, sugerirte partes compatibles con tu configuración o resolver dudas técnicas sobre sockets, potencia y compatibilidad física. ¿Qué te gustaría armar hoy?',
+    content: '¡Hola! Soy el **Asistente Inteligente de Compatibilidad de NeoHW**.\n\nPuedo ayudarte a buscar componentes en nuestro inventario, sugerirte partes compatibles con tu configuración o resolver dudas técnicas sobre sockets, potencia y compatibilidad física. ¿Qué te gustaría armar hoy?',
   }]);
 
   const summaryRef = useRef<HTMLDivElement>(null);
@@ -376,8 +376,43 @@ export const useSimulator = () => {
       setTimeout(() => setToastMessage(null), 3000);
       return;
     }
+
+    // Guardar proyecto automáticamente al agregar al carrito
+    const groupedItems: Record<string, number> = {};
+    components.forEach((c) => {
+      if (c.dbProduct) {
+        const pId = c.dbProduct.id;
+        groupedItems[pId] = (groupedItems[pId] || 0) + 1;
+      }
+    });
+
+    const items = Object.entries(groupedItems).map(([productId, quantity]) => ({
+      productId,
+      quantity,
+    }));
+
+    if (items.length > 0) {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('es-EC');
+      const timeStr = now.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' });
+      const autoProjectName = `Ensamble NeoHW - ${dateStr} ${timeStr}`;
+
+      const payload = {
+        name: autoProjectName,
+        description: `Ensamble creado automáticamente al añadir al carrito el ${dateStr} ${timeStr}`,
+        items,
+      };
+
+      try {
+        await saveProject(payload);
+        console.log(`Proyecto "${autoProjectName}" creado automáticamente.`);
+      } catch (err) {
+        console.error('Error al crear proyecto automáticamente:', err);
+      }
+    }
+
     await addMultipleToCart(selectedProds);
-    setToastMessage("¡Añadidos al carrito!");
+    setToastMessage("¡Componentes añadidos al carrito y proyecto guardado!");
     setTimeout(() => setToastMessage(null), 3000);
     navigate('/cliente/carrito');
   }, [userId, components, addMultipleToCart, navigate]);

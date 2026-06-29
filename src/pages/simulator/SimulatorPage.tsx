@@ -51,10 +51,6 @@ export const SimulatorPage = () => {
     toastMessage,
     catalogSearch,
     setCatalogSearch,
-    isSaveModalOpen,
-    setIsSaveModalOpen,
-    projectName,
-    setProjectName,
     isAuthRequiredModalOpen,
     setIsAuthRequiredModalOpen,
     authModalReason,
@@ -75,8 +71,6 @@ export const SimulatorPage = () => {
     installedCount,
     visibleComponents,
     hardwareStats,
-    handleOpenSaveModal,
-    handleSaveProject,
     handleSendToCart,
     handleReset,
     handleRemoveComponent,
@@ -184,7 +178,6 @@ export const SimulatorPage = () => {
                 components={components}
                 hardwareStats={hardwareStats}
                 hasSelectedComponents={hasSelectedComponents}
-                onOpenSaveModal={handleOpenSaveModal}
                 onSendToCart={handleSendToCart}
                 compatibilityStatus={compatibilityStatus}
               />
@@ -192,7 +185,7 @@ export const SimulatorPage = () => {
           </div>
         </div>
   
-        <button type="button" onClick={() => setIsAiOpen(!isAiOpen)} className="fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full bg-teal-500 hover:bg-teal-400 text-slate-950 flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer border-none" title="Asistente AI de Hardware">
+        <button type="button" onClick={() => setIsAiOpen(!isAiOpen)} className="fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full bg-teal-500 hover:bg-teal-400 text-slate-950 flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer border-none" title="Asistente de Compatibilidad IA">
           {isAiOpen ? <X className="h-6 w-6" /> : <MessageSquare className="h-6 w-6 animate-bounce" />}
         </button>
   
@@ -205,19 +198,7 @@ export const SimulatorPage = () => {
           setChatInput={setChatInput}
           onSubmit={handleChatSubmit}
           chatBottomRef={chatBottomRef}
-        />        <Modal open={isSaveModalOpen} title="Guardar Proyecto de Ensamblaje" onClose={() => setIsSaveModalOpen(false)}>
-          <div className="space-y-4 text-slate-900 dark:text-neutral-100">
-            <p className="text-xs text-slate-700 dark:text-neutral-300 font-medium leading-relaxed font-sans">Ingresa un nombre para tu configuración de hardware. Podrás acceder a ella para simularla de nuevo o comprarla directamente desde tu sección "Mis proyectos".</p>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-wider text-slate-950 dark:text-white">Nombre del Proyecto</label>
-              <input type="text" value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder="Ej. Mi Ensamble Gamer, Servidor de Trabajo" className="w-full bg-slate-50 border border-slate-200 dark:bg-neutral-900/60 dark:border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-neutral-200 focus:outline-none focus:border-teal-500 transition font-medium" />
-            </div>
-            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-neutral-900">
-              <Button type="button" variant="outline" onClick={() => setIsSaveModalOpen(false)}>Cancelar</Button>
-              <button type="button" onClick={handleSaveProject} disabled={!projectName.trim()} className="rounded-lg bg-teal-500 hover:bg-teal-650 text-slate-955 font-bold px-4 py-2 transition text-xs shadow-sm disabled:opacity-50 cursor-pointer">Guardar</button>
-            </div>
-          </div>
-        </Modal>
+        />
   
         <Modal open={isAuthRequiredModalOpen} title="Inicio de Sesión Requerido" onClose={() => setIsAuthRequiredModalOpen(false)}>
           <div className="space-y-4 text-center py-4">
@@ -248,9 +229,9 @@ export const SimulatorPage = () => {
         </Modal>
   
         {toastMessage && (
-          <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-xl border border-teal-500/30 bg-neutral-900 px-4 py-3 shadow-2xl animate-fade-in-up">
-            <CheckCircle2 className="h-4 w-4 text-teal-400 animate-pulse" />
-            <span className="text-xs font-bold text-neutral-200">{toastMessage}</span>
+          <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 rounded-2xl border border-teal-500/40 bg-slate-900/95 dark:bg-neutral-900/95 px-6 py-4 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md text-white font-sans max-w-md w-full sm:w-auto text-center justify-center animate-bounce">
+            <CheckCircle2 className="h-5 w-5 text-teal-400 shrink-0 animate-pulse" />
+            <span className="text-sm font-bold tracking-wide">{toastMessage}</span>
           </div>
         )}
 

@@ -22,7 +22,6 @@ interface SummaryCardProps {
     moboRam: string;
   };
   hasSelectedComponents: boolean;
-  onOpenSaveModal: () => void;
   onSendToCart: () => void;
   compatibilityStatus: {
     checked: boolean;
@@ -41,7 +40,6 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
   components,
   hardwareStats,
   hasSelectedComponents,
-  onOpenSaveModal,
   onSendToCart,
   compatibilityStatus,
 }) => {
@@ -177,14 +175,6 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
             className="w-full h-11 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-955 font-semibold uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm shadow-teal-500/10 disabled:opacity-40 disabled:cursor-not-allowed border-none text-xs"
           >
             <ShoppingCart className="h-4 w-4" /> Añadir Carrito
-          </button>
-          <button
-            type="button"
-            onClick={onOpenSaveModal}
-            disabled={!hasSelectedComponents}
-            className="w-full h-11 rounded-xl border border-slate-300 dark:border-neutral-805 bg-white dark:bg-neutral-950 text-slate-800 dark:text-white hover:bg-slate-100 dark:hover:bg-neutral-900/60 disabled:opacity-40 disabled:cursor-not-allowed transition text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-1 cursor-pointer shadow-sm"
-          >
-            Guardar Proyecto
           </button>
         </div>
       </div>

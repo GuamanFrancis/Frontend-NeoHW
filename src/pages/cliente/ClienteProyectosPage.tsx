@@ -249,9 +249,9 @@ export const ClienteProyectosPage = () => {
   return (
     <div className="w-full pb-16 text-slate-900 dark:text-neutral-100 pt-2">
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-xl border border-teal-500/30 bg-neutral-900 px-4 py-3 shadow-2xl animate-fade-in-up">
-          <CheckCircle2 className="h-4 w-4 text-teal-400" />
-          <span className="text-xs font-bold text-neutral-200">{toastMessage}</span>
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 rounded-2xl border border-teal-500/40 bg-slate-900/95 dark:bg-neutral-900/95 px-6 py-4 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md text-white font-sans max-w-md w-full sm:w-auto text-center justify-center animate-bounce">
+          <CheckCircle2 className="h-5 w-5 text-teal-400 shrink-0 animate-pulse" />
+          <span className="text-sm font-bold tracking-wide">{toastMessage}</span>
         </div>
       )}
 

@@ -20,7 +20,7 @@ export const CheckoutStatusPage = ({ type }: CheckoutStatusProps) => {
   }, [isSuccess, clearCart]);
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-slate-50 dark:bg-neutral-955 px-4 transition-colors duration-300 font-sans">
+    <div className="flex min-h-screen w-full items-center justify-center bg-[#eef4fa] dark:bg-[#0a0a0a] px-4 transition-colors duration-300 font-sans">
       <div className="w-full max-w-md rounded-2xl bg-white dark:bg-neutral-900 border border-slate-100 dark:border-neutral-800 text-center shadow-[0_20px_50px_rgba(0,0,0,0.06)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden relative">
         
         {/* Banner Superior */}
@@ -49,7 +49,7 @@ export const CheckoutStatusPage = ({ type }: CheckoutStatusProps) => {
           
           {/* Detalles */}
           {orderId && (
-            <div className="rounded-xl bg-slate-50 dark:bg-neutral-950/40 border border-slate-100 dark:border-neutral-800 p-5 space-y-4 text-left">
+            <div className="rounded-xl bg-slate-50 dark:bg-neutral-950/50 border border-slate-100 dark:border-neutral-800 p-5 space-y-4 text-left">
               <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-neutral-800">
                 <span className="text-sm font-medium text-slate-500 dark:text-neutral-400">Número de Orden</span>
                 <span className="font-mono text-sm font-semibold text-slate-800 dark:text-white select-all">
@@ -76,7 +76,7 @@ export const CheckoutStatusPage = ({ type }: CheckoutStatusProps) => {
           )}
 
           {/* Mensaje de Estado Simplificado */}
-          <p className="text-sm text-slate-600 dark:text-neutral-350 leading-relaxed font-medium text-center">
+          <p className="text-sm text-slate-700 dark:text-neutral-200 leading-relaxed font-medium text-center">
             {isSuccess
               ? 'A la brevedad un vendedor preparará y despachará sus componentes.'
               : 'El pago fue cancelado. Su pedido sigue activo como PENDIENTE. Puede pagarlo en cualquier momento desde su historial.'}
