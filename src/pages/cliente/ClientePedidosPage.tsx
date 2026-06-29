@@ -170,7 +170,7 @@ export const ClientePedidosPage = () => {
     try {
       const sessionData = await createStripeSession(orderId);
       if (sessionData.url) {
-        window.location.href = sessionData.url;
+        window.location.replace(sessionData.url);
       } else {
         alert('No se pudo iniciar el pago con Stripe. Reintente más tarde.');
       }

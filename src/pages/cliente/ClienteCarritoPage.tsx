@@ -52,7 +52,6 @@ export const ClienteCarritoPage = () => {
     updateQuantity,
     clearCart,
     subtotal,
-    taxes,
     total,
     itemCount,
     syncCart,
@@ -166,7 +165,7 @@ export const ClienteCarritoPage = () => {
       const stripeRes = await createStripeSession(response.orderId);
       await clearCart(true);
       if (stripeRes && stripeRes.url) {
-        window.location.href = stripeRes.url;
+        window.location.replace(stripeRes.url);
       } else {
         setCheckoutError('Error al iniciar la pasarela de Stripe.');
       }
@@ -415,12 +414,7 @@ export const ClienteCarritoPage = () => {
                   </span>
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span>Impuestos (IVA 15%)</span>
-                <span className="text-slate-800 dark:text-neutral-200 font-medium">
-                  ${taxes.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-              </div>
+
             </div>
             <div className="py-4 flex justify-between items-baseline">
               <span className="text-sm font-semibold text-slate-900 dark:text-white">Total</span>
