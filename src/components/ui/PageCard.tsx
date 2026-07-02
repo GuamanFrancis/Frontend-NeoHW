@@ -14,7 +14,7 @@ export const PageCard = ({ title, text, children, icon, actions }: PageCardProps
   return (
     <div className="rounded-xl bg-white p-6 shadow-sm shadow-slate-200/70 dark:bg-neutral-900 dark:shadow-black/20">
       {hasHeader && (
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-start gap-4">
             {icon && (
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-400/10 dark:text-teal-300">

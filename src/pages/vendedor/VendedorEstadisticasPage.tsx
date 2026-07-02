@@ -10,10 +10,12 @@ import {
   FileText,
   PieChart as PieIcon,
   TrendingUp,
-  Search
+  Search,
+  UsersRound
 } from 'lucide-react';
 import { getOrders, type OrderBackend } from '../../services/ordersService';
 import { getSellerStats, getGlobalStats, type SellerStats, type GlobalStats } from '../../services/statisticsService';
+import { getCatalogComponents } from '../../services/catalogService';
 import { getStoredSession } from '../../services/session';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -123,6 +125,7 @@ export const VendedorEstadisticasPage = () => {
   const [chartType, setChartType] = useState<'linea' | 'barras'>('linea');
   const [ordersLimit, setOrdersLimit] = useState<number>(50);
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
+  const [stockStats, setStockStats] = useState<{ available: number; lowStock: number; outOfStock: number } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -138,6 +141,23 @@ export const VendedorEstadisticasPage = () => {
           const globalRes = await getGlobalStats();
           if (active && globalRes?.stats) {
             setGlobalStats(globalRes.stats);
+          }
+          // Fetch catalog to calculate stock breakdown for the Admin
+          const catalogRes = await getCatalogComponents({ page: 1, limit: 1000 });
+          if (active && catalogRes && Array.isArray(catalogRes.items)) {
+            let available = 0;
+            let lowStock = 0;
+            let outOfStock = 0;
+            for (const prod of catalogRes.items) {
+              if (prod.stock <= 0) {
+                outOfStock++;
+              } else if (prod.stock <= 10) {
+                lowStock++;
+              } else {
+                available++;
+              }
+            }
+            setStockStats({ available, lowStock, outOfStock });
           }
         } else {
           const sellerRes = await getSellerStats();
@@ -525,6 +545,76 @@ export const VendedorEstadisticasPage = () => {
             <CircularProgressRing percentage={pendingPercentage} color="#3b82f6" label="En proceso" />
           </div>
         </div>
+
+        {/* Second Row: System Parameters & Stock Breakdown (Admin only) */}
+        {isAdmin && globalStats && (
+          <div className="grid gap-5 grid-cols-1 sm:grid-cols-3 mt-5">
+            {/* Card 1: Clientes */}
+            <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-slate-955/60">
+              <div className="h-2.5 bg-gradient-to-r from-teal-500 to-emerald-500 w-full" />
+              <div className="p-5 flex flex-col justify-between h-32">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium uppercase tracking-wider text-slate-900 dark:text-white">CLIENTES REGISTRADOS</span>
+                  <span className="h-6 w-6 rounded-lg bg-teal-50 dark:bg-teal-950/40 flex items-center justify-center text-teal-500 text-sm">
+                    <UsersRound className="h-4.5 w-4.5" />
+                  </span>
+                </div>
+                <div>
+                  <p className="text-4xl font-normal text-slate-900 dark:text-white tracking-tight">{globalStats.overview.totalUsers}</p>
+                  <p className="text-xs text-slate-900 dark:text-white font-normal mt-1">Usuarios con rol de cliente</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2: Productos */}
+            <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-slate-955/60">
+              <div className="h-2.5 bg-gradient-to-r from-amber-500 to-orange-500 w-full" />
+              <div className="p-5 flex flex-col justify-between h-32">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium uppercase tracking-wider text-slate-900 dark:text-white">PRODUCTOS ACTIVOS</span>
+                  <span className="h-6 w-6 rounded-lg bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center text-amber-500 text-sm">
+                    <Package className="h-4.5 w-4.5" />
+                  </span>
+                </div>
+                <div>
+                  <p className="text-4xl font-normal text-slate-900 dark:text-white tracking-tight">{globalStats.overview.totalProducts}</p>
+                  <p className="text-xs text-slate-900 dark:text-white font-normal mt-1">Componentes en catálogo</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3: Estado del Inventario */}
+            <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-slate-955/60">
+              <div className="h-2.5 bg-gradient-to-r from-blue-500 to-indigo-500 w-full" />
+              <div className="p-5 flex flex-col justify-between h-32">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium uppercase tracking-wider text-slate-900 dark:text-white">ESTADO DEL INVENTARIO</span>
+                  <span className="h-6 w-6 rounded-lg bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center text-blue-500 text-sm">
+                    <Sliders className="h-4.5 w-4.5" />
+                  </span>
+                </div>
+                {stockStats ? (
+                  <div className="flex items-center justify-between gap-4 mt-2">
+                    <div className="text-center flex-1">
+                      <span className="text-lg font-bold text-emerald-500 block leading-tight">{stockStats.available}</span>
+                      <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-neutral-400">Disponibles</span>
+                    </div>
+                    <div className="text-center flex-1 border-x border-slate-100 dark:border-neutral-800">
+                      <span className="text-lg font-bold text-amber-500 block leading-tight">{stockStats.lowStock}</span>
+                      <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-neutral-400">Stock bajo</span>
+                    </div>
+                    <div className="text-center flex-1">
+                      <span className="text-lg font-bold text-rose-500 block leading-tight">{stockStats.outOfStock}</span>
+                      <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-neutral-400">Agotados</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-xs text-slate-400 font-semibold animate-pulse py-2">Calculando inventario...</div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
         <div className="w-full">
           <div className="rounded-2xl bg-white p-5 shadow-sm dark:bg-slate-955/60 flex flex-col justify-between min-h-[290px]">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-neutral-900 pb-3">

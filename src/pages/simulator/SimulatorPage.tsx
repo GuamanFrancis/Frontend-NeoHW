@@ -101,7 +101,7 @@ export const SimulatorPage = () => {
   }, [autoRotate, setAutoRotate, setCameraAction]);
 
   return (
-      <div className={isPublic ? "flex flex-col bg-slate-50 text-slate-900 dark:bg-neutral-950 dark:text-white min-h-screen transition-colors duration-200 overflow-x-hidden" : "flex flex-col -mx-5 sm:-mx-6 -mt-5 sm:-mt-6 -mb-5 sm:-mb-6 bg-slate-50 text-slate-900 dark:bg-neutral-950 dark:text-white h-[calc(100vh-64px)] transition-colors duration-200 overflow-hidden"}>
+      <div className={isPublic ? "flex flex-col bg-slate-50 text-slate-900 dark:bg-neutral-950 dark:text-white min-h-screen transition-colors duration-200 overflow-x-hidden" : "flex flex-col -mx-5 sm:-mx-6 -mt-5 sm:-mt-6 -mb-5 sm:-mb-6 bg-slate-50 text-slate-900 dark:bg-neutral-950 dark:text-white min-h-[calc(100vh-64px)] lg:h-[calc(100vh-64px)] transition-colors duration-200 overflow-y-auto lg:overflow-hidden"}>
         {isPublic && <PublicHeader />}
         <div className="flex-1 flex flex-col px-4 sm:px-6">
           <div className="flex-1 flex flex-col lg:flex-row items-start gap-4 py-4">

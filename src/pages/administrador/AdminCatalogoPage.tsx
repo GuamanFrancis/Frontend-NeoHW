@@ -108,7 +108,7 @@ export const AdminCatalogoPage = () => {
       text="Administra productos, inventario, disponibilidad y atributos técnicos en una sola vista."
       icon={<PackageSearch className="h-6 w-6" />}
       actions={
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 dark:border-neutral-800 dark:bg-neutral-900">
             <button
               type="button"
