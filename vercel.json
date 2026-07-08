@@ -2,47 +2,47 @@
   "rewrites": [
     {
       "source": "/auth/:path*",
-      "destination": "https://neohw-backend-production.up.railway.app/auth/:path*"
+      "destination": "https://neohw-backend-production.up.railway.app/api/v1/auth/:path*"
     },
     {
       "source": "/carts/:path*",
-      "destination": "https://neohw-backend-production.up.railway.app/carts/:path*"
+      "destination": "https://neohw-backend-production.up.railway.app/api/v1/carts/:path*"
     },
     {
       "source": "/projects/:path*",
-      "destination": "https://neohw-backend-production.up.railway.app/projects/:path*"
+      "destination": "https://neohw-backend-production.up.railway.app/api/v1/projects/:path*"
     },
     {
       "source": "/users/:path*",
-      "destination": "https://neohw-backend-production.up.railway.app/users/:path*"
+      "destination": "https://neohw-backend-production.up.railway.app/api/v1/users/:path*"
     },
     {
       "source": "/products/:path*",
-      "destination": "https://neohw-backend-production.up.railway.app/products/:path*"
+      "destination": "https://neohw-backend-production.up.railway.app/api/v1/products/:path*"
     },
     {
       "source": "/categories/:path*",
-      "destination": "https://neohw-backend-production.up.railway.app/categories/:path*"
+      "destination": "https://neohw-backend-production.up.railway.app/api/v1/categories/:path*"
     },
     {
       "source": "/attributes/:path*",
-      "destination": "https://neohw-backend-production.up.railway.app/attributes/:path*"
+      "destination": "https://neohw-backend-production.up.railway.app/api/v1/attributes/:path*"
     },
     {
       "source": "/compatibility/:path*",
-      "destination": "https://neohw-backend-production.up.railway.app/compatibility/:path*"
+      "destination": "https://neohw-backend-production.up.railway.app/api/v1/compatibility/:path*"
     },
     {
       "source": "/ai/:path*",
-      "destination": "https://neohw-backend-production.up.railway.app/ai/:path*"
+      "destination": "https://neohw-backend-production.up.railway.app/api/v1/ai/:path*"
     },
     {
       "source": "/orders/:path*",
-      "destination": "https://neohw-backend-production.up.railway.app/orders/:path*"
+      "destination": "https://neohw-backend-production.up.railway.app/api/v1/orders/:path*"
     },
     {
       "source": "/payments/:path*",
-      "destination": "https://neohw-backend-production.up.railway.app/payments/:path*"
+      "destination": "https://neohw-backend-production.up.railway.app/api/v1/payments/:path*"
     },
     {
       "source": "/((?!assets/|.*\\..*).*)",
@@ -50,3 +50,4 @@
     }
   ]
 }
+
