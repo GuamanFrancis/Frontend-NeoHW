@@ -117,6 +117,7 @@ export const useSimulator = () => {
   }, [userId]);
 
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isCartLoading, setIsCartLoading] = useState(false);
   
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
   const [selectedDetailProduct, setSelectedDetailProduct] = useState<CatalogComponent | null>(null);
@@ -126,7 +127,26 @@ export const useSimulator = () => {
     setIsDetailDrawerOpen(true);
   }, []);
   
-  const [isAiOpen, setIsAiOpen] = useState(false);
+  const [isAiOpen, setIsAiOpen] = useState(() => {
+    try {
+      const key = userId ? `neohw_ai_chat_dismissed_${userId}` : 'neohw_ai_chat_dismissed_guest';
+      return localStorage.getItem(key) !== 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    if (!isAiOpen) {
+      try {
+        const key = userId ? `neohw_ai_chat_dismissed_${userId}` : 'neohw_ai_chat_dismissed_guest';
+        localStorage.setItem(key, 'true');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, [isAiOpen, userId]);
+
   const [autoRotate, setAutoRotate] = useState(false);
   const [cameraAction, setCameraAction] = useState<CameraAction | null>(null);
   const [sceneKey, setSceneKey] = useState(0);
@@ -364,59 +384,6 @@ export const useSimulator = () => {
       });
   }, [projectName, userId, components]);
 
-  const handleSendToCart = useCallback(async () => {
-    if (!userId) {
-      setAuthModalReason('checkout');
-      setIsAuthRequiredModalOpen(true);
-      return;
-    }
-    const selectedProds = components.map((c) => c.dbProduct).filter((p): p is CatalogComponent => !!p);
-    if (selectedProds.length === 0) {
-      setToastMessage("Selecciona al menos un componente.");
-      setTimeout(() => setToastMessage(null), 3000);
-      return;
-    }
-
-    // Guardar proyecto automáticamente al agregar al carrito
-    const groupedItems: Record<string, number> = {};
-    components.forEach((c) => {
-      if (c.dbProduct) {
-        const pId = c.dbProduct.id;
-        groupedItems[pId] = (groupedItems[pId] || 0) + 1;
-      }
-    });
-
-    const items = Object.entries(groupedItems).map(([productId, quantity]) => ({
-      productId,
-      quantity,
-    }));
-
-    if (items.length > 0) {
-      const now = new Date();
-      const dateStr = now.toLocaleDateString('es-EC');
-      const timeStr = now.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' });
-      const autoProjectName = `Ensamble NeoHW - ${dateStr} ${timeStr}`;
-
-      const payload = {
-        name: autoProjectName,
-        description: `Ensamble creado automáticamente al añadir al carrito el ${dateStr} ${timeStr}`,
-        items,
-      };
-
-      try {
-        await saveProject(payload);
-        console.log(`Proyecto "${autoProjectName}" creado automáticamente.`);
-      } catch (err) {
-        console.error('Error al crear proyecto automáticamente:', err);
-      }
-    }
-
-    await addMultipleToCart(selectedProds);
-    setToastMessage("¡Componentes añadidos al carrito y proyecto guardado!");
-    setTimeout(() => setToastMessage(null), 3000);
-    navigate('/cliente/carrito');
-  }, [userId, components, addMultipleToCart, navigate]);
-
   const handleReset = useCallback(() => {
     setComponents(PC_COMPONENTS.map((c) => ({ ...c, dbProduct: null })));
     setAssemblyStates(recalcStates({}, PC_COMPONENTS));
@@ -431,6 +398,69 @@ export const useSimulator = () => {
       console.error(e);
     }
   }, [userId]);
+
+  const handleSendToCart = useCallback(async () => {
+    if (!userId) {
+      setAuthModalReason('checkout');
+      setIsAuthRequiredModalOpen(true);
+      return;
+    }
+    const selectedProds = components.map((c) => c.dbProduct).filter((p): p is CatalogComponent => !!p);
+    if (selectedProds.length === 0) {
+      setToastMessage("Selecciona al menos un componente.");
+      setTimeout(() => setToastMessage(null), 3000);
+      return;
+    }
+
+    setIsCartLoading(true);
+    try {
+      // Guardar proyecto automáticamente al agregar al carrito
+      const groupedItems: Record<string, number> = {};
+      components.forEach((c) => {
+        if (c.dbProduct) {
+          const pId = c.dbProduct.id;
+          groupedItems[pId] = (groupedItems[pId] || 0) + 1;
+        }
+      });
+
+      const items = Object.entries(groupedItems).map(([productId, quantity]) => ({
+        productId,
+        quantity,
+      }));
+
+      if (items.length > 0) {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('es-EC');
+        const timeStr = now.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' });
+        const autoProjectName = `Ensamble NeoHW - ${dateStr} ${timeStr}`;
+
+        const payload = {
+          name: autoProjectName,
+          description: `Ensamble creado automáticamente al añadir al carrito el ${dateStr} ${timeStr}`,
+          items,
+        };
+
+        try {
+          await saveProject(payload);
+          console.log(`Proyecto "${autoProjectName}" creado automáticamente.`);
+        } catch (err) {
+          console.error('Error al crear proyecto automáticamente:', err);
+        }
+      }
+
+      await addMultipleToCart(selectedProds);
+      
+      // Limpiar el simulador en segundo plano
+      handleReset();
+      
+      navigate('/cliente/carrito', { state: { message: "¡Componentes añadidos al carrito y proyecto guardado!" } });
+    } catch (err) {
+      console.error('Error al procesar carrito:', err);
+      alert('Ocurrió un error al añadir al carrito.');
+    } finally {
+      setIsCartLoading(false);
+    }
+  }, [userId, components, addMultipleToCart, navigate, handleReset]);
 
   const handleRemoveComponent = useCallback((id: string) => {
     const idsToRemove = new Set<string>([id]);
@@ -593,19 +623,34 @@ export const useSimulator = () => {
             return copy;
           }),
           () => setAiLoading(false),
-          () => {
-            setChatMessages((prev) => {
-              const lastIdx = prev.length - 1;
-              if (lastIdx < 0) return prev;
-              const last = prev[lastIdx];
-              if (last.role !== 'assistant') return prev;
-              const copy = [...prev];
-              copy[lastIdx] = {
-                ...last,
-                content: '❌ Ocurrió un error al conectar con el asistente IA. Intente nuevamente.'
-              };
-              return copy;
-            });
+          (err: any) => {
+            const errText = String(err?.message || '').toLowerCase();
+            const isLimitError = errText.includes('límite') || errText.includes('limite') || errText.includes('prueba') || err?.status === 403;
+            
+            if (isLimitError) {
+              setAuthModalReason('limit');
+              setIsAuthRequiredModalOpen(true);
+              // Clean up the empty assistant message bubble and the user query message we just created to keep chat tidy
+              setChatMessages((prev) => {
+                if (prev.length >= 2) {
+                  return prev.slice(0, prev.length - 2);
+                }
+                return prev;
+              });
+            } else {
+              setChatMessages((prev) => {
+                const lastIdx = prev.length - 1;
+                if (lastIdx < 0) return prev;
+                const last = prev[lastIdx];
+                if (last.role !== 'assistant') return prev;
+                const copy = [...prev];
+                copy[lastIdx] = {
+                  ...last,
+                  content: `❌ ${err?.message || 'Ocurrió un error al conectar con el asistente IA. Intente nuevamente.'}`
+                };
+                return copy;
+              });
+            }
             setAiLoading(false);
           },
       );
@@ -619,6 +664,7 @@ export const useSimulator = () => {
     components,
     assemblyStates,
     isAnimating,
+    isCartLoading,
     isDetailDrawerOpen,
     selectedDetailProduct,
     setIsDetailDrawerOpen,

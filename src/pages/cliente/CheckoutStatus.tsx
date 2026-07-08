@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { CheckCircle2, AlertCircle, ShoppingBag, ArrowLeft, CreditCard } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import { getMyOrders } from '../../services/ordersService';
 
 type CheckoutStatusProps = {
   type: 'success' | 'cancel';
@@ -12,12 +13,30 @@ export const CheckoutStatusPage = ({ type }: CheckoutStatusProps) => {
   const { clearCart } = useCart();
   const orderId = searchParams.get('order_id') || '';
   const isSuccess = type === 'success';
+  const [trackingCode, setTrackingCode] = useState<string | null>(null);
 
   useEffect(() => {
     if (isSuccess) {
       clearCart(true);
     }
   }, [isSuccess, clearCart]);
+
+  useEffect(() => {
+    const fetchOrderDetails = async () => {
+      if (orderId && isSuccess) {
+        try {
+          const res = await getMyOrders();
+          const match = res.data.find((o) => o.id === orderId);
+          if (match?.trackingCode) {
+            setTrackingCode(match.trackingCode);
+          }
+        } catch (e) {
+          console.error('Error fetching tracking code for order:', e);
+        }
+      }
+    };
+    void fetchOrderDetails();
+  }, [orderId, isSuccess]);
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-[#eef4fa] dark:bg-[#0a0a0a] px-4 transition-colors duration-300 font-sans">
@@ -48,14 +67,23 @@ export const CheckoutStatusPage = ({ type }: CheckoutStatusProps) => {
         <div className="p-6 md:p-8 space-y-6">
           
           {/* Detalles */}
-          {orderId && (
+          {(orderId || trackingCode) && (
             <div className="rounded-xl bg-slate-50 dark:bg-neutral-950/50 border border-slate-100 dark:border-neutral-800 p-5 space-y-4 text-left">
-              <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-neutral-800">
-                <span className="text-sm font-medium text-slate-500 dark:text-neutral-400">Número de Orden</span>
-                <span className="font-mono text-sm font-semibold text-slate-800 dark:text-white select-all">
-                  #{orderId}
-                </span>
-              </div>
+              {trackingCode ? (
+                <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-neutral-800">
+                  <span className="text-sm font-medium text-slate-500 dark:text-neutral-400">Código de Rastreo</span>
+                  <span className="font-mono text-sm font-bold text-teal-600 dark:text-teal-400 select-all">
+                    {trackingCode}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-neutral-800">
+                  <span className="text-sm font-medium text-slate-500 dark:text-neutral-400">Código de Pedido</span>
+                  <span className="font-mono text-sm font-semibold text-slate-800 dark:text-white select-all">
+                    #{orderId.slice(0, 8)}...
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-neutral-800">
                 <span className="text-sm font-medium text-slate-500 dark:text-neutral-400">Estado del Pago</span>
                 <span className={`text-xs font-bold px-3 py-1 rounded-full border ${

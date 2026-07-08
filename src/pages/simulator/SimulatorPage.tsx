@@ -72,6 +72,7 @@ export const SimulatorPage = () => {
     visibleComponents,
     hardwareStats,
     handleSendToCart,
+    isCartLoading,
     handleReset,
     handleRemoveComponent,
     completeInstall,
@@ -179,14 +180,40 @@ export const SimulatorPage = () => {
                 hardwareStats={hardwareStats}
                 hasSelectedComponents={hasSelectedComponents}
                 onSendToCart={handleSendToCart}
+                isCartLoading={isCartLoading}
                 compatibilityStatus={compatibilityStatus}
               />
             </div>
           </div>
         </div>
   
-        <button type="button" onClick={() => setIsAiOpen(!isAiOpen)} className="fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full bg-teal-500 hover:bg-teal-400 text-slate-950 flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer border-none" title="Asistente de Compatibilidad IA">
-          {isAiOpen ? <X className="h-6 w-6" /> : <MessageSquare className="h-6 w-6 animate-bounce" />}
+        {!isAiOpen && (
+          <div className="fixed bottom-7 right-24 z-40 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white text-[11px] font-bold px-4 py-2.5 rounded-2xl shadow-xl animate-pulse flex items-center gap-1.5 pointer-events-none select-none border border-indigo-500/30">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
+            </span>
+            ¿Dudas con el ensamble? ¡Pregúntale a la IA!
+          </div>
+        )}
+  
+        <button 
+          type="button" 
+          onClick={() => setIsAiOpen(!isAiOpen)} 
+          className="fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 hover:from-indigo-400 hover:to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer border-none" 
+          title="Asistente de Compatibilidad IA"
+        >
+          {isAiOpen ? (
+            <X className="h-6 w-6" />
+          ) : (
+            <div className="relative">
+              <MessageSquare className="h-6 w-6 animate-pulse" />
+              <span className="absolute -top-1.5 -right-1.5 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-600"></span>
+              </span>
+            </div>
+          )}
         </button>
   
         <ChatbotDrawer

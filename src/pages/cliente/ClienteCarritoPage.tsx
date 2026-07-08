@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useLocation } from 'react-router';
 import {
   ArrowLeft,
   Trash2,
@@ -7,7 +7,8 @@ import {
   ShoppingCart,
   Plus,
   Minus,
-  AlertTriangle
+  AlertTriangle,
+  Check
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { createOrderFromCart } from '../../services/ordersService';
@@ -46,12 +47,30 @@ const ECUADOR_PROVINCES: Record<string, string[]> = {
 
 export const ClienteCarritoPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (location.state?.message) {
+      setToastMessage(location.state.message);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, location.pathname, navigate]);
+
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => setToastMessage(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
+
   const {
     cartItems,
     removeFromCart,
     updateQuantity,
     clearCart,
     subtotal,
+    taxes,
     total,
     itemCount,
     syncCart,
@@ -73,6 +92,56 @@ export const ClienteCarritoPage = () => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+
+  const [errors, setErrors] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    postalCode: '',
+    street: '',
+  });
+
+  const validateField = (name: string, value: string) => {
+    let errMsg = '';
+    const trimmed = value.trim();
+
+    if (!value) {
+      errMsg = 'Este campo es obligatorio.';
+    } else {
+      if (name === 'fullName') {
+        const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,60}$/;
+        if (!nameRegex.test(trimmed)) {
+          errMsg = 'Solo debe contener letras y tener al menos 3 caracteres.';
+        }
+      }
+      if (name === 'email') {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(trimmed)) {
+          errMsg = 'Formato de correo electrónico inválido (ej: correo@ejemplo.com).';
+        }
+      }
+      if (name === 'phone') {
+        const phoneRegex = /^0\d{8,9}$/;
+        if (!phoneRegex.test(trimmed)) {
+          errMsg = 'Debe tener entre 9 y 10 dígitos numéricos y comenzar con 0.';
+        }
+      }
+      if (name === 'postalCode') {
+        const postalRegex = /^\d{6}$/;
+        if (!postalRegex.test(trimmed)) {
+          errMsg = 'Debe ser un número de exactamente 6 dígitos (ej: 170504).';
+        }
+      }
+      if (name === 'street') {
+        if (trimmed.length < 5) {
+          errMsg = 'La dirección debe tener al menos 5 caracteres.';
+        }
+      }
+    }
+
+    setErrors((prev) => ({ ...prev, [name]: errMsg }));
+    return errMsg === '';
+  };
 
   const [loadingCheckout, setLoadingCheckout] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
@@ -135,22 +204,38 @@ export const ClienteCarritoPage = () => {
 
   const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!street.trim() || !city.trim() || !stateName.trim() || !postalCode.trim() || !fullName.trim() || !email.trim() || !phone.trim()) {
-      setCheckoutError('Por favor complete todos los campos obligatorios del formulario.');
+    
+    const cleanStreet = street.trim();
+    const cleanCity = city.trim();
+    const cleanState = stateName.trim();
+    const cleanPostal = postalCode.trim();
+    const cleanName = fullName.trim();
+    const cleanEmail = email.trim();
+    const cleanPhone = phone.trim();
+
+    const isNameValid = validateField('fullName', fullName);
+    const isEmailValid = validateField('email', email);
+    const isPhoneValid = validateField('phone', phone);
+    const isPostalValid = validateField('postalCode', postalCode);
+    const isStreetValid = validateField('street', street);
+
+    if (!isNameValid || !isEmailValid || !isPhoneValid || !isPostalValid || !isStreetValid || !cleanCity || !cleanState) {
+      setCheckoutError('Por favor corrige los errores del formulario antes de continuar.');
       return;
     }
+
     setLoadingCheckout(true);
     setCheckoutError(null);
     try {
       const payload = {
         shippingAddress: {
-          fullName: fullName.trim(),
-          email: email.trim(),
-          phone: phone.trim(),
-          street: street.trim(),
-          city: city.trim(),
-          state: stateName.trim(),
-          postalCode: postalCode.trim(),
+          fullName: cleanName,
+          email: cleanEmail,
+          phone: cleanPhone,
+          street: cleanStreet,
+          city: cleanCity,
+          state: cleanState,
+          postalCode: cleanPostal,
           country: country.trim(),
         },
       };
@@ -167,7 +252,7 @@ export const ClienteCarritoPage = () => {
       if (stripeRes && stripeRes.url) {
         window.location.replace(stripeRes.url);
       } else {
-        setCheckoutError('Error al iniciar la pasarela de Stripe.');
+        setCheckoutError('Error al iniciar el método de pago con Stripe.');
       }
     } catch (err: unknown) {
       console.error(err);
@@ -193,30 +278,45 @@ export const ClienteCarritoPage = () => {
 
   if (cartItems.length === 0) {
     return (
-      <div className="w-full pt-4 pb-16 text-slate-800 dark:text-neutral-200">
-        <div className="flex h-96 flex-col items-center justify-between rounded-2xl border border-dashed border-slate-200 dark:border-neutral-800 bg-white/50 p-8 text-center dark:bg-neutral-900/10 max-w-2xl mx-auto py-16">
-          <ShoppingCart className="h-16 w-16 text-slate-800 dark:text-neutral-200 opacity-40" />
-          <div>
-            <h3 className="text-xl font-semibold text-slate-800 dark:text-neutral-200 mt-4">Tu carrito está vacío</h3>
-            <p className="text-sm font-normal text-slate-600 dark:text-neutral-400 mt-2 max-w-md">
-              Aún no has agregado ningún componente a tu carrito. Explora nuestro catálogo de hardware para comenzar a armar tu PC.
-            </p>
+      <>
+        {toastMessage && (
+          <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 rounded-2xl border border-teal-500/40 bg-slate-900/95 dark:bg-neutral-900/95 px-6 py-4 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md text-white font-sans max-w-md w-full sm:w-auto text-center justify-center animate-bounce">
+            <Check className="h-5 w-5 text-teal-400 shrink-0 animate-pulse" />
+            <span className="text-sm font-bold tracking-wide">{toastMessage}</span>
           </div>
-          <button
-            type="button"
-            onClick={() => navigate('/cliente/catalogo')}
-            className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-neutral-800 bg-transparent text-slate-700 dark:text-neutral-300 font-medium px-6 py-2.5 transition mt-6 text-sm hover:bg-slate-50 dark:hover:bg-neutral-900/50"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Explorar catálogo
-          </button>
+        )}
+        <div className="w-full pt-4 pb-16 text-slate-800 dark:text-neutral-200">
+          <div className="flex h-96 flex-col items-center justify-between rounded-2xl border border-dashed border-slate-200 dark:border-neutral-800 bg-white/50 p-8 text-center dark:bg-neutral-900/10 max-w-2xl mx-auto py-16">
+            <ShoppingCart className="h-16 w-16 text-slate-800 dark:text-neutral-200 opacity-40" />
+            <div>
+              <h3 className="text-xl font-semibold text-slate-800 dark:text-neutral-200 mt-4">Tu carrito está vacío</h3>
+              <p className="text-sm font-normal text-slate-600 dark:text-neutral-400 mt-2 max-w-md">
+                Aún no has agregado ningún componente a tu carrito. Explora nuestro catálogo de hardware para comenzar a armar tu PC.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/cliente/catalogo')}
+              className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-neutral-800 bg-transparent text-slate-700 dark:text-neutral-300 font-medium px-6 py-2.5 transition mt-6 text-sm hover:bg-slate-50 dark:hover:bg-neutral-900/50"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Explorar catálogo
+            </button>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="w-full pt-4 pb-16 text-slate-800 dark:text-neutral-200">
+    <>
+      {toastMessage && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 rounded-2xl border border-teal-500/40 bg-slate-900/95 dark:bg-neutral-900/95 px-6 py-4 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md text-white font-sans max-w-md w-full sm:w-auto text-center justify-center animate-bounce">
+          <Check className="h-5 w-5 text-teal-400 shrink-0 animate-pulse" />
+          <span className="text-sm font-bold tracking-wide">{toastMessage}</span>
+        </div>
+      )}
+      <div className="w-full pt-4 pb-16 text-slate-800 dark:text-neutral-200">
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
         <div className="lg:col-span-8 space-y-6">
           <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white dark:border-neutral-900 dark:bg-neutral-950/20 shadow-sm">
@@ -405,6 +505,12 @@ export const ClienteCarritoPage = () => {
                   ${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
+              <div className="flex justify-between">
+                <span>IVA (15%)</span>
+                <span className="text-slate-800 dark:text-neutral-200 font-medium">
+                  ${taxes.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
               <div className="flex justify-between items-center">
                 <span>Envío estándar</span>
                 <span className="flex items-center gap-1.5 text-teal-600 dark:text-teal-400 font-semibold">
@@ -414,7 +520,6 @@ export const ClienteCarritoPage = () => {
                   </span>
                 </span>
               </div>
-
             </div>
             <div className="py-4 flex justify-between items-baseline">
               <span className="text-sm font-semibold text-slate-900 dark:text-white">Total</span>
@@ -446,7 +551,7 @@ export const ClienteCarritoPage = () => {
       >
         <form onSubmit={handleCheckoutSubmit} className="space-y-4">
           <p className="text-sm font-medium text-slate-700 dark:text-neutral-300">
-            Ingresa la dirección de envío para completar tu pedido y proceder a la pasarela de pago seguro con Stripe.
+            Ingresa la dirección de envío para completar tu pedido y proceder al método de pago seguro con Stripe.
           </p>
           {checkoutError && (
             <div className="flex items-start gap-2.5 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-red-500 text-xs font-semibold">
@@ -458,9 +563,14 @@ export const ClienteCarritoPage = () => {
             <div className="sm:col-span-2">
               <FormInput
                 label="Nombre Completo del Destinatario"
-                placeholder="Ej: Francis Guaman"
+                placeholder="Ej: Juan Pérez"
                 value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFullName(val);
+                  validateField('fullName', val);
+                }}
+                error={errors.fullName}
                 disabled={loadingCheckout}
                 required
               />
@@ -470,7 +580,12 @@ export const ClienteCarritoPage = () => {
                 label="Correo de Contacto"
                 placeholder="Ej: correo@ejemplo.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setEmail(val);
+                  validateField('email', val);
+                }}
+                error={errors.email}
                 disabled={loadingCheckout}
                 required
               />
@@ -480,7 +595,12 @@ export const ClienteCarritoPage = () => {
                 label="Teléfono de Contacto"
                 placeholder="Ej: 0998877665"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setPhone(val);
+                  validateField('phone', val);
+                }}
+                error={errors.phone}
                 disabled={loadingCheckout}
                 required
               />
@@ -490,7 +610,12 @@ export const ClienteCarritoPage = () => {
                 label="Calle y Número"
                 placeholder="Ej: Av. Amazonas N32-12 y Mariana de Jesús, Piso 3"
                 value={street}
-                onChange={(e) => setStreet(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setStreet(val);
+                  validateField('street', val);
+                }}
+                error={errors.street}
                 disabled={loadingCheckout}
                 required
               />
@@ -542,7 +667,12 @@ export const ClienteCarritoPage = () => {
                 label="Código Postal"
                 placeholder="Ej: 170504"
                 value={postalCode}
-                onChange={(e) => setPostalCode(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setPostalCode(val);
+                  validateField('postalCode', val);
+                }}
+                error={errors.postalCode}
                 disabled={loadingCheckout}
                 required
               />
@@ -552,16 +682,9 @@ export const ClienteCarritoPage = () => {
                 <span className="text-sm font-semibold text-slate-900 dark:text-white">
                   País
                 </span>
-                <span className="mt-1.5 flex h-12 items-center rounded-lg border bg-white px-3.5 text-slate-700 dark:bg-neutral-950/50 dark:text-white border-slate-300 dark:border-neutral-700">
-                  <select
-                    value={country}
-                    onChange={(e) => setCountry(e.target.value)}
-                    disabled
-                    className="h-full w-full border-0 bg-transparent px-4 text-sm font-medium text-slate-900 outline-none dark:text-white dark:bg-neutral-950"
-                  >
-                    <option value="Ecuador" className="dark:bg-neutral-950 dark:text-white">Ecuador</option>
-                  </select>
-                </span>
+                <div className="mt-1.5 flex h-12 items-center rounded-lg border bg-slate-50 dark:bg-neutral-900/40 px-3.5 text-slate-500 dark:text-neutral-400 border-slate-300 dark:border-neutral-700 text-sm font-medium select-none cursor-not-allowed">
+                  Ecuador
+                </div>
               </label>
             </div>
           </div>
@@ -596,5 +719,6 @@ export const ClienteCarritoPage = () => {
         showAddToCart={false}
       />
     </div>
+    </>
   );
 };

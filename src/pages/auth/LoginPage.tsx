@@ -41,10 +41,27 @@ export const LoginPage = () => {
         navigate('/verificar-cuenta', { state: { email: values.email } });
         return;
       }
-      setFormError(
-        msg ||
-        'No se pudo iniciar sesion. Revisa tus credenciales o el rol asignado en el sistema.'
-      );
+      let errorMsg = '';
+      if (err.response) {
+        if (err.response.data && typeof err.response.data === 'object' && err.response.data.message) {
+          errorMsg = Array.isArray(err.response.data.message) 
+            ? err.response.data.message.join(' ') 
+            : String(err.response.data.message);
+        } else if (typeof err.response.data === 'string') {
+          if (err.response.data.includes('Cannot POST') || err.response.status === 404) {
+            errorMsg = 'El servicio de autenticación no está disponible en este momento.';
+          } else {
+            errorMsg = err.response.data;
+          }
+        } else {
+          errorMsg = 'Error de servidor. Revisa tus credenciales o el rol asignado.';
+        }
+      } else if (err.request) {
+        errorMsg = 'No se pudo establecer conexión con el servidor. Por favor, inténtalo más tarde.';
+      } else {
+        errorMsg = err.message || 'Error al iniciar sesión.';
+      }
+      setFormError(errorMsg);
     }
   };
 

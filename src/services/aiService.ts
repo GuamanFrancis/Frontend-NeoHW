@@ -36,7 +36,9 @@ export const streamAiChat = async (
         errorMessage = 'Límite de solicitudes de IA excedido. Por favor, intenta de nuevo en unos minutos.';
       }
 
-      throw new Error(errorMessage);
+      const errorObj = new Error(errorMessage) as any;
+      errorObj.status = response.status;
+      throw errorObj;
     }
 
     const data: { role: string; content: string } = await response.json();

@@ -38,6 +38,9 @@ interface OrderDocumentLocal {
 
 interface OrderLocal {
   id: string;
+  trackingCode?: string | null;
+  subtotal?: number;
+  taxAmount?: number;
   totalAmount: number;
   status: 'PENDING_PAYMENT' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
   createdAt: string;
@@ -95,6 +98,9 @@ export const ClientePedidosPage = () => {
         }
         return {
           id: order.id,
+          trackingCode: order.trackingCode,
+          subtotal: order.subtotal ? (typeof order.subtotal === 'string' ? parseFloat(order.subtotal) : order.subtotal) : undefined,
+          taxAmount: order.taxAmount ? (typeof order.taxAmount === 'string' ? parseFloat(order.taxAmount) : order.taxAmount) : undefined,
           totalAmount: typeof order.totalAmount === 'string' ? parseFloat(order.totalAmount) : order.totalAmount,
           status: order.status,
           createdAt: order.createdAt,
@@ -384,15 +390,15 @@ export const ClientePedidosPage = () => {
                           <td className="py-3 px-4 font-bold text-slate-955 whitespace-nowrap dark:text-white">
                             <div className="flex items-center gap-1.5">
                               <span className="font-mono text-slate-955 dark:text-white select-all font-bold">
-                                #{order.id.slice(0, 8)}...
+                                {order.trackingCode ? order.trackingCode : `#${order.id.slice(0, 8)}...`}
                               </span>
                               <button
                                 type="button"
-                                onClick={() => handleCopyId(order.id)}
+                                onClick={() => handleCopyId(order.trackingCode || order.id)}
                                 className="text-slate-955 hover:text-teal-500 transition dark:text-white dark:hover:text-teal-400"
-                                title="Copiar ID completo"
+                                title={order.trackingCode ? "Copiar código de rastreo" : "Copiar ID de pedido"}
                               >
-                                {copiedId === order.id ? (
+                                {copiedId === (order.trackingCode || order.id) ? (
                                   <span className="text-[10px] text-teal-500 font-bold">¡Copiado!</span>
                                 ) : (
                                   <Copy className="h-3.5 w-3.5" />
@@ -497,12 +503,25 @@ export const ClientePedidosPage = () => {
             <div className="border-b border-slate-100 dark:border-neutral-900 pb-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <span className="text-xs font-bold text-slate-955 dark:text-white uppercase tracking-wider block">
-                    ID completo del pedido
-                  </span>
-                  <span className="font-mono text-base font-extrabold text-slate-955 dark:text-white select-all">
-                    {selectedOrder.id}
-                  </span>
+                  {selectedOrder.trackingCode ? (
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-955 dark:text-white uppercase tracking-wider block">
+                        Código de Rastreo
+                      </span>
+                      <span className="font-mono text-base font-extrabold text-teal-600 dark:text-teal-400 select-all">
+                        {selectedOrder.trackingCode}
+                      </span>
+                    </div>
+                  ) : (
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-955 dark:text-white uppercase tracking-wider block">
+                        Código de Pedido
+                      </span>
+                      <span className="font-mono text-xs font-semibold text-slate-955 dark:text-white select-all">
+                        {selectedOrder.id}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <div className="text-right">
                   {getStatusBadge(selectedOrder.status)}
@@ -626,17 +645,31 @@ export const ClientePedidosPage = () => {
               </div>
             )}
 
-            <div className="rounded-xl bg-slate-50 border border-slate-100 p-4 dark:bg-neutral-900 dark:border-neutral-850 flex items-center justify-between">
-              <div className="text-sm font-bold text-slate-955 dark:text-white uppercase tracking-wider">
-                Total del pedido
-              </div>
-              <div className="text-right">
-                <span className="text-2xl font-bold text-teal-600 dark:text-teal-400 block leading-none">
-                  ${selectedOrder.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </span>
-                <span className="text-xs font-bold text-slate-955 dark:text-white mt-1 inline-block">
-                  USD
-                </span>
+            <div className="rounded-xl bg-slate-50 border border-slate-100 p-4 dark:bg-neutral-900 dark:border-neutral-850 space-y-2">
+              {selectedOrder.subtotal !== undefined && selectedOrder.taxAmount !== undefined && (
+                <>
+                  <div className="flex justify-between text-xs font-semibold text-slate-700 dark:text-neutral-300">
+                    <span>Subtotal</span>
+                    <span>${selectedOrder.subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</span>
+                  </div>
+                  <div className="flex justify-between text-xs font-semibold text-slate-700 dark:text-neutral-300 pb-2 border-b border-slate-200 dark:border-neutral-850">
+                    <span>IVA (15%)</span>
+                    <span>${selectedOrder.taxAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</span>
+                  </div>
+                </>
+              )}
+              <div className="flex items-center justify-between pt-1">
+                <div className="text-sm font-bold text-slate-955 dark:text-white uppercase tracking-wider">
+                  Total del pedido
+                </div>
+                <div className="text-right">
+                  <span className="text-2xl font-bold text-teal-600 dark:text-teal-400 block leading-none">
+                    ${selectedOrder.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </span>
+                  <span className="text-xs font-bold text-slate-955 dark:text-white mt-1 inline-block">
+                    USD
+                  </span>
+                </div>
               </div>
             </div>
 

@@ -5,10 +5,8 @@ import {
   Package,
   ShoppingCart,
   ArrowUpRight,
-  Calendar,
   Sliders,
   FileText,
-  PieChart as PieIcon,
   TrendingUp,
   Search,
   UsersRound
@@ -107,18 +105,18 @@ const CircularProgressRing = ({ percentage, color, label }: { percentage: number
 
 export const VendedorEstadisticasPage = () => {
   const session = getStoredSession();
-  const role = session?.user?.backendRole || 'SELLER';
+  const rawRole = session?.user?.backendRole || session?.user?.role || 'SELLER';
+  const role = rawRole.toUpperCase();
   const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
 
   // Navigation tab state
-  const [activeTab, setActiveTab] = useState<'general' | 'orders' | 'pie' | 'performance'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'orders' | 'performance'>('general');
   const [searchQuery, setSearchQuery] = useState('');
 
   const [orders, setOrders] = useState<OrderBackend[]>([]);
   const [sellerStats, setSellerStats] = useState<SellerStats | null>(null);
   const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [hoveredStatusIndex, setHoveredStatusIndex] = useState<number | null>(null);
   const [hoveredPointIndex, setHoveredPointIndex] = useState<number | null>(null);
 
   const [period, setPeriod] = useState<'diario' | 'semanal' | 'mensual'>('mensual');
@@ -130,20 +128,32 @@ export const VendedorEstadisticasPage = () => {
   useEffect(() => {
     let active = true;
     const fetchData = async () => {
+      setIsLoading(true);
+
+      // Fetch orders (independent)
       try {
-        setIsLoading(true);
         const ordersRes = await getOrders(undefined, 1, ordersLimit);
         if (active && ordersRes && Array.isArray(ordersRes.data)) {
           setOrders(ordersRes.data);
         }
+      } catch (err) {
+        console.error('Error fetching orders:', err);
+      }
 
-        if (isAdmin) {
+      if (isAdmin) {
+        // Fetch global stats (independent)
+        try {
           const globalRes = await getGlobalStats();
           if (active && globalRes?.stats) {
             setGlobalStats(globalRes.stats);
           }
-          // Fetch catalog to calculate stock breakdown for the Admin
-          const catalogRes = await getCatalogComponents({ page: 1, limit: 1000 });
+        } catch (err) {
+          console.error('Error fetching global stats:', err);
+        }
+
+        // Fetch catalog (independent)
+        try {
+          const catalogRes = await getCatalogComponents({ page: 1, limit: 100 });
           if (active && catalogRes && Array.isArray(catalogRes.items)) {
             let available = 0;
             let lowStock = 0;
@@ -159,23 +169,28 @@ export const VendedorEstadisticasPage = () => {
             }
             setStockStats({ available, lowStock, outOfStock });
           }
-        } else {
+        } catch (err) {
+          console.error('Error fetching catalog components:', err);
+        }
+      } else {
+        // Fetch seller stats (independent)
+        try {
           const sellerRes = await getSellerStats();
           if (active && sellerRes?.stats) {
             setSellerStats(sellerRes.stats);
           }
+        } catch (err) {
+          console.error('Error fetching seller stats:', err);
         }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        if (active) setIsLoading(false);
       }
+
+      if (active) setIsLoading(false);
     };
     void fetchData();
     return () => {
       active = false;
     };
-  }, [isAdmin, ordersLimit]);
+  }, [isAdmin, ordersLimit, activeTab]);
 
   const computedStats = useMemo(() => {
     const statusCounts: Record<string, number> = {
@@ -217,6 +232,81 @@ export const VendedorEstadisticasPage = () => {
     }
     return computedStats;
   }, [sellerStats, computedStats]);
+
+  // Local fallbacks calculated from the orders array
+  const localStats = useMemo(() => {
+    const deliveredOrders = orders.filter(o => o.status === 'DELIVERED');
+    const localTotalRevenue = deliveredOrders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
+    const localTotalOrders = orders.length;
+    const localTotalUsers = Array.from(new Set(orders.map(o => o.userId))).length;
+    
+    // Top products calculation
+    const localTopProductsMap = new Map<string, { product: any, totalSold: number }>();
+    for (const order of orders) {
+      if (order.items && Array.isArray(order.items)) {
+        for (const item of order.items) {
+          if (item.product) {
+            const prodId = item.productId;
+            const existing = localTopProductsMap.get(prodId);
+            if (existing) {
+              existing.totalSold += item.quantity;
+            } else {
+              localTopProductsMap.set(prodId, {
+                product: {
+                  id: prodId,
+                  name: item.product.name,
+                  sku: item.product.sku,
+                  imageUrl: item.product.imageUrl || '/favicon.jpg',
+                  price: Number(item.priceAtTime)
+                },
+                totalSold: item.quantity
+              });
+            }
+          }
+        }
+      }
+    }
+    const localTopProducts = Array.from(localTopProductsMap.values())
+      .sort((a, b) => b.totalSold - a.totalSold)
+      .slice(0, 5);
+
+    // Seller performance calculation
+    const localSellerMap = new Map<string, { seller: any, ordersDelivered: number, totalRevenue: number }>();
+    for (const order of orders) {
+      const orderAny = order as any;
+      if (orderAny.status === 'DELIVERED' && orderAny.assignedSellerId) {
+        const sellerId = orderAny.assignedSellerId;
+        const existing = localSellerMap.get(sellerId);
+        const revenue = Number(orderAny.totalAmount || 0);
+        if (existing) {
+          existing.ordersDelivered++;
+          existing.totalRevenue += revenue;
+        } else {
+          // Extract name from user or default
+          const sellerName = orderAny.user ? `${orderAny.user.firstName || ''} ${orderAny.user.lastName || ''}`.trim() : '';
+          localSellerMap.set(sellerId, {
+            seller: {
+              id: sellerId,
+              firstName: sellerName || 'Empleado',
+              lastName: ''
+            },
+            ordersDelivered: 1,
+            totalRevenue: revenue
+          });
+        }
+      }
+    }
+    const localSellerPerformance = Array.from(localSellerMap.values())
+      .sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+    return {
+      totalRevenue: localTotalRevenue,
+      totalOrders: localTotalOrders,
+      totalUsers: localTotalUsers,
+      topProducts: localTopProducts,
+      sellerPerformance: localSellerPerformance
+    };
+  }, [orders]);
 
   const periodData = useMemo(() => {
     if (period === 'diario') {
@@ -405,9 +495,6 @@ export const VendedorEstadisticasPage = () => {
     });
   }, [isAdmin, globalStats, activeSellerStats]);
 
-  const donutTotal = useMemo(() => {
-    return donutData.reduce((sum, item) => sum + item.count, 0);
-  }, [donutData]);
 
   const maxSellerRevenue = useMemo(() => {
     if (!globalStats?.sellerPerformance) return 1;
@@ -417,6 +504,7 @@ export const VendedorEstadisticasPage = () => {
 
   const totalItemsSold = useMemo(() => {
     return orders.reduce((acc, order) => {
+      if (order.status !== 'DELIVERED') return acc;
       const itemsCount = Array.isArray(order.items)
         ? order.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0)
         : 0;
@@ -478,106 +566,124 @@ export const VendedorEstadisticasPage = () => {
 
   // Dashboard content renderer (Pestaña 1)
   const renderDashboardTab = () => {
-    const revenueVal = isAdmin && globalStats ? globalStats.overview.totalRevenue : activeSellerStats.totalRevenue;
-    const ordersVal = isAdmin && globalStats ? globalStats.overview.totalOrders : activeSellerStats.totalOrdersAssigned;
-    const pendingVal = isAdmin ? donutData.find(d => d.key === 'PROCESSING')?.count || 0 : activeSellerStats.pendingOrders;
+    const overviewObj = (globalStats?.overview || globalStats) as any;
 
-    const deliveryPercentage = ordersVal > 0 ? ((isAdmin && globalStats ? (donutData.find(d => d.key === 'DELIVERED')?.count || 0) : activeSellerStats.totalDelivered) / ordersVal) * 100 : 0;
+    const finalTotalRevenue = (overviewObj?.totalRevenue && Number(overviewObj.totalRevenue) > 0)
+      ? Number(overviewObj.totalRevenue)
+      : localStats.totalRevenue;
+
+    const finalTotalOrders = (overviewObj?.totalOrders && Number(overviewObj.totalOrders) > 0)
+      ? Number(overviewObj.totalOrders)
+      : localStats.totalOrders;
+
+    const finalTotalProducts = (overviewObj?.totalProducts && Number(overviewObj.totalProducts) > 0)
+      ? Number(overviewObj.totalProducts)
+      : (stockStats ? (stockStats.available + stockStats.lowStock + stockStats.outOfStock) : 0);
+
+    const finalTotalUsers = (overviewObj?.totalUsers && Number(overviewObj.totalUsers) > 0)
+      ? Number(overviewObj.totalUsers)
+      : localStats.totalUsers;
+
+    const revenueVal = isAdmin && globalStats ? finalTotalRevenue : (activeSellerStats?.totalRevenue ?? 0);
+    const ordersVal = isAdmin && globalStats ? finalTotalOrders : (activeSellerStats?.totalOrdersAssigned ?? 0);
+    const pendingVal = isAdmin ? (donutData.find(d => d.key === 'PROCESSING')?.count || 0) : (activeSellerStats?.pendingOrders ?? 0);
+
+    const deliveryPercentage = ordersVal > 0 ? ((isAdmin && globalStats ? (donutData.find(d => d.key === 'DELIVERED')?.count || 0) : (activeSellerStats?.totalDelivered ?? 0)) / ordersVal) * 100 : 0;
     const pendingPercentage = ordersVal > 0 ? (pendingVal / ordersVal) * 100 : 0;
 
     return (
       <div className="space-y-6">        {/* KPI Grid with custom colored gradient stripes */}
-        <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
-          {/* Card 1: Earnings */}
-          <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-slate-955/60">
-            <div className="h-2.5 bg-gradient-to-r from-pink-500 to-rose-500 w-full" />
-            <div className="p-5 flex flex-col justify-between h-32">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium uppercase tracking-wider text-slate-900 dark:text-white">GANANCIAS</span>
-                <span className="h-6 w-6 rounded-lg bg-pink-50 dark:bg-pink-950/40 flex items-center justify-center text-pink-500 text-sm">
-                  $
-                </span>
-              </div>
-              <div>
-                <p className="text-4xl font-normal text-slate-900 dark:text-white tracking-tight">{formatCurrency(revenueVal)}</p>
-                <p className="text-xs text-slate-900 dark:text-white font-normal mt-1">Ingresos de pedidos completados</p>
-              </div>
+      <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+        {/* Card 1: Earnings */}
+        <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-slate-955/60">
+          <div className="h-2.5 bg-gradient-to-r from-pink-500 to-rose-500 w-full" />
+          <div className="p-5 flex flex-col justify-between h-32">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium uppercase tracking-wider text-slate-900 dark:text-white">GANANCIAS</span>
+              <span className="h-6 w-6 rounded-lg bg-pink-50 dark:bg-pink-950/40 flex items-center justify-center text-pink-500 text-sm">
+                $
+              </span>
             </div>
-          </div>
-
-          {/* Card 2: Pedidos */}
-          <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-slate-955/60">
-            <div className="h-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 w-full" />
-            <div className="p-5 flex flex-col justify-between h-32">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium uppercase tracking-wider text-slate-900 dark:text-white">PEDIDOS</span>
-                <span className="h-6 w-6 rounded-lg bg-purple-50 dark:bg-purple-950/40 flex items-center justify-center text-purple-500 text-sm">
-                  <ShoppingCart className="h-4.5 w-4.5" />
-                </span>
-              </div>
-              <div>
-                <p className="text-4xl font-normal text-slate-900 dark:text-white tracking-tight">{ordersVal}</p>
-                <p className="text-xs text-slate-900 dark:text-white font-normal mt-1">Total de pedidos gestionados</p>
-              </div>
+            <div>
+              <p className="text-4xl font-normal text-slate-900 dark:text-white tracking-tight">{formatCurrency(revenueVal)}</p>
+              <p className="text-xs text-slate-900 dark:text-white font-normal mt-1">Ingresos de pedidos completados</p>
             </div>
-          </div>
-
-          {/* Card 3: Processing */}
-          <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-slate-955/60">
-            <div className="h-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 w-full" />
-            <div className="p-5 flex flex-col justify-between h-32">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium uppercase tracking-wider text-slate-900 dark:text-white">PROCESANDO</span>
-                <span className="h-6 w-6 rounded-lg bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center text-blue-500 text-sm">
-                  <Clock3 className="h-4.5 w-4.5" />
-                </span>
-              </div>
-              <div>
-                <p className="text-4xl font-normal text-slate-900 dark:text-white tracking-tight">{pendingVal}</p>
-                <p className="text-xs text-slate-900 dark:text-white font-normal mt-1">Órdenes pendientes de despacho</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 4: Progress circular rings */}
-          <div className="rounded-2xl bg-white p-4 shadow-sm dark:bg-neutral-950/60 flex items-center justify-around">
-            <CircularProgressRing percentage={deliveryPercentage} color="#2563eb" label="Entregados" />
-            <CircularProgressRing percentage={pendingPercentage} color="#3b82f6" label="En proceso" />
           </div>
         </div>
 
-        {/* Second Row: System Parameters & Stock Breakdown (Admin only) */}
-        {isAdmin && globalStats && (
-          <div className="grid gap-5 grid-cols-1 sm:grid-cols-3 mt-5">
-            {/* Card 1: Clientes */}
-            <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-slate-955/60">
-              <div className="h-2.5 bg-gradient-to-r from-teal-500 to-emerald-500 w-full" />
-              <div className="p-5 flex flex-col justify-between h-32">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium uppercase tracking-wider text-slate-900 dark:text-white">CLIENTES REGISTRADOS</span>
-                  <span className="h-6 w-6 rounded-lg bg-teal-50 dark:bg-teal-950/40 flex items-center justify-center text-teal-500 text-sm">
-                    <UsersRound className="h-4.5 w-4.5" />
-                  </span>
-                </div>
-                <div>
-                  <p className="text-4xl font-normal text-slate-900 dark:text-white tracking-tight">{globalStats.overview.totalUsers}</p>
-                  <p className="text-xs text-slate-900 dark:text-white font-normal mt-1">Usuarios con rol de cliente</p>
-                </div>
+        {/* Card 2: Pedidos */}
+        <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-slate-955/60">
+          <div className="h-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 w-full" />
+          <div className="p-5 flex flex-col justify-between h-32">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium uppercase tracking-wider text-slate-900 dark:text-white">PEDIDOS</span>
+              <span className="h-6 w-6 rounded-lg bg-purple-50 dark:bg-purple-950/40 flex items-center justify-center text-purple-500 text-sm">
+                <ShoppingCart className="h-4.5 w-4.5" />
+              </span>
+            </div>
+            <div>
+              <p className="text-4xl font-normal text-slate-900 dark:text-white tracking-tight">{ordersVal}</p>
+              <p className="text-xs text-slate-900 dark:text-white font-normal mt-1">Total de pedidos gestionados</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3: Processing */}
+        <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-slate-955/60">
+          <div className="h-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 w-full" />
+          <div className="p-5 flex flex-col justify-between h-32">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium uppercase tracking-wider text-slate-900 dark:text-white">PROCESANDO</span>
+              <span className="h-6 w-6 rounded-lg bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center text-blue-500 text-sm">
+                <Clock3 className="h-4.5 w-4.5" />
+              </span>
+            </div>
+            <div>
+              <p className="text-4xl font-normal text-slate-900 dark:text-white tracking-tight">{pendingVal}</p>
+              <p className="text-xs text-slate-900 dark:text-white font-normal mt-1">Órdenes pendientes de despacho</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 4: Progress circular rings */}
+        <div className="rounded-2xl bg-white p-4 shadow-sm dark:bg-neutral-950/60 flex items-center justify-around">
+          <CircularProgressRing percentage={deliveryPercentage} color="#2563eb" label="Entregados" />
+          <CircularProgressRing percentage={pendingPercentage} color="#3b82f6" label="En proceso" />
+        </div>
+      </div>
+
+      {/* Second Row: System Parameters & Stock Breakdown (Admin only) */}
+      {isAdmin && globalStats && (
+        <div className="grid gap-5 grid-cols-1 sm:grid-cols-3 mt-5">
+          {/* Card 1: Clientes */}
+          <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-slate-955/60">
+            <div className="h-2.5 bg-gradient-to-r from-teal-500 to-emerald-500 w-full" />
+            <div className="p-5 flex flex-col justify-between h-32">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium uppercase tracking-wider text-slate-900 dark:text-white">CLIENTES REGISTRADOS</span>
+                <span className="h-6 w-6 rounded-lg bg-teal-50 dark:bg-teal-950/40 flex items-center justify-center text-teal-500 text-sm">
+                  <UsersRound className="h-4.5 w-4.5" />
+                </span>
+              </div>
+              <div>
+                <p className="text-4xl font-normal text-slate-900 dark:text-white tracking-tight">{isAdmin && globalStats ? finalTotalUsers : 0}</p>
+                <p className="text-xs text-slate-900 dark:text-white font-normal mt-1">Usuarios con rol de cliente</p>
               </div>
             </div>
+          </div>
 
-            {/* Card 2: Productos */}
-            <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-slate-955/60">
-              <div className="h-2.5 bg-gradient-to-r from-amber-500 to-orange-500 w-full" />
-              <div className="p-5 flex flex-col justify-between h-32">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium uppercase tracking-wider text-slate-900 dark:text-white">PRODUCTOS ACTIVOS</span>
-                  <span className="h-6 w-6 rounded-lg bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center text-amber-500 text-sm">
-                    <Package className="h-4.5 w-4.5" />
-                  </span>
-                </div>
-                <div>
-                  <p className="text-4xl font-normal text-slate-900 dark:text-white tracking-tight">{globalStats.overview.totalProducts}</p>
+          {/* Card 2: Productos */}
+          <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-slate-955/60">
+            <div className="h-2.5 bg-gradient-to-r from-amber-500 to-orange-500 w-full" />
+            <div className="p-5 flex flex-col justify-between h-32">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium uppercase tracking-wider text-slate-900 dark:text-white">PRODUCTOS ACTIVOS</span>
+                <span className="h-6 w-6 rounded-lg bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center text-amber-500 text-sm">
+                  <Package className="h-4.5 w-4.5" />
+                </span>
+              </div>
+              <div>
+                <p className="text-4xl font-normal text-slate-900 dark:text-white tracking-tight">{isAdmin && globalStats ? finalTotalProducts : 0}</p>
                   <p className="text-xs text-slate-900 dark:text-white font-normal mt-1">Componentes en catálogo</p>
                 </div>
               </div>
@@ -597,15 +703,15 @@ export const VendedorEstadisticasPage = () => {
                   <div className="flex items-center justify-between gap-4 mt-2">
                     <div className="text-center flex-1">
                       <span className="text-lg font-bold text-emerald-500 block leading-tight">{stockStats.available}</span>
-                      <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-neutral-400">Disponibles</span>
+                      <span className="text-[10px] uppercase font-bold text-slate-955 dark:text-white">Disponibles</span>
                     </div>
                     <div className="text-center flex-1 border-x border-slate-100 dark:border-neutral-800">
                       <span className="text-lg font-bold text-amber-500 block leading-tight">{stockStats.lowStock}</span>
-                      <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-neutral-400">Stock bajo</span>
+                      <span className="text-[10px] uppercase font-bold text-slate-955 dark:text-white">Stock bajo</span>
                     </div>
                     <div className="text-center flex-1">
                       <span className="text-lg font-bold text-rose-500 block leading-tight">{stockStats.outOfStock}</span>
-                      <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-neutral-400">Agotados</span>
+                      <span className="text-[10px] uppercase font-bold text-slate-955 dark:text-white">Agotados</span>
                     </div>
                   </div>
                 ) : (
@@ -829,7 +935,7 @@ export const VendedorEstadisticasPage = () => {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-neutral-900">
                 {periodData.map((item) => (
-                  <tr key={item.key} className="text-slate-900 dark:text-neutral-300 hover:bg-slate-50/30 dark:hover:bg-neutral-900/40 transition-colors">
+                  <tr key={item.key} className="text-slate-955 dark:text-white hover:bg-slate-50/30 dark:hover:bg-neutral-900/40 transition-colors">
                     <td className="py-3 px-3.5 font-normal">{item.fullLabel}</td>
                     <td className="py-3 px-3.5 text-right font-normal text-slate-900 dark:text-white">
                       {formatCurrency(item.revenue)}
@@ -851,26 +957,6 @@ export const VendedorEstadisticasPage = () => {
   const renderOrdersTab = () => {
     return (
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h3 className="text-2xl font-light tracking-wide text-slate-900 dark:text-white uppercase border-l-4 border-blue-600 pl-3">
-              Ventas y Pedidos Asignados
-            </h3>
-            <p className="text-sm font-normal text-slate-900 dark:text-white">
-              Listado de transacciones vinculadas a tu cuenta
-            </p>
-          </div>
-          <div className="relative w-full sm:w-60">
-            <Search className="absolute left-3 top-2.5 h-4.5 w-4.5 text-slate-900 dark:text-white" />
-            <input
-              type="text"
-              placeholder="Buscar por cliente o ID..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm font-normal rounded-xl border border-slate-200 bg-white/70 focus:border-purple-500 focus:outline-none dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-white"
-            />
-          </div>
-        </div>
 
         {filteredOrders.length === 0 ? (
           <div className="rounded-2xl bg-white p-8 text-center dark:bg-slate-955/60">
@@ -893,7 +979,7 @@ export const VendedorEstadisticasPage = () => {
                   {filteredOrders.map((order) => {
                     const cfg = statusConfig[order.status] || { label: order.status, color: '#94a3b8', textClass: 'text-slate-900 dark:text-white' };
                     return (
-                      <tr key={order.id} className="text-slate-900 dark:text-neutral-300 hover:bg-slate-50/30 dark:hover:bg-neutral-900/30 transition-colors">
+                      <tr key={order.id} className="text-slate-955 dark:text-white hover:bg-slate-50/30 dark:hover:bg-neutral-900/30 transition-colors">
                         <td className="py-3 px-4 font-mono font-normal text-slate-900 dark:text-white">
                           #{order.id.slice(-8).toUpperCase()}
                         </td>
@@ -923,237 +1009,159 @@ export const VendedorEstadisticasPage = () => {
     );
   };
 
-  const renderPieTab = () => {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h3 className="text-2xl font-light tracking-wide text-slate-900 dark:text-white uppercase border-l-4 border-blue-600 pl-3">
-            Distribución de Pedidos
-          </h3>
-          <p className="text-sm font-normal text-slate-900 dark:text-white mt-1">
-            Desglose del volumen comercial según estados de despacho
-          </p>
-        </div>
 
-        {donutTotal === 0 ? (
-          <div className="rounded-2xl bg-white p-8 text-center dark:bg-neutral-950/60">
-            <p className="text-sm font-normal text-slate-900 dark:text-white">No hay datos suficientes para generar el gráfico circular.</p>
-          </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* SVG Pie Chart Wrapper */}
-            <div className="rounded-2xl bg-white p-6 shadow-sm dark:bg-slate-955/60 flex flex-col items-center justify-center min-h-[300px]">
-              <div className="relative flex items-center justify-center w-56 h-56">
-                <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="35"
-                    fill="transparent"
-                    stroke="#f8fafc"
-                    className="dark:stroke-neutral-900/60"
-                    strokeWidth="9.5"
-                  />
-                  {donutData.map((item, idx) => (
-                    <motion.circle
-                      key={item.key}
-                      cx="50"
-                      cy="50"
-                      r="35"
-                      fill="transparent"
-                      stroke={item.color}
-                      strokeWidth={hoveredStatusIndex === idx ? 12.5 : 9.5}
-                      strokeDasharray={item.strokeDasharray}
-                      strokeDashoffset={item.strokeDashoffset}
-                      strokeLinecap="round"
-                      onMouseEnter={() => setHoveredStatusIndex(idx)}
-                      onMouseLeave={() => setHoveredStatusIndex(null)}
-                      className="cursor-pointer transition-all duration-150"
-                      initial={{ strokeDasharray: `0 ${2 * Math.PI * 35}` }}
-                      animate={{ strokeDasharray: item.strokeDasharray }}
-                      transition={{ duration: 1.2, ease: 'easeOut' }}
-                    />
-                  ))}
-                </svg>
-                <div className="absolute flex flex-col items-center justify-center text-center p-3 rounded-full shadow-md backdrop-blur-sm bg-white/40 dark:bg-black/40 border border-slate-100/50 dark:border-neutral-800/50 w-36 h-36">
-                  <span className="text-3xl font-normal text-slate-900 dark:text-white leading-none">
-                    {hoveredStatusIndex !== null ? donutData[hoveredStatusIndex].count : donutTotal}
-                  </span>
-                  <span className="text-sm font-medium uppercase tracking-wider text-slate-900 dark:text-white mt-2 max-w-[110px] truncate block leading-tight text-center">
-                    {hoveredStatusIndex !== null ? donutData[hoveredStatusIndex].label : 'Total Pedidos'}
-                  </span>
-                </div>
-              </div>
-                   {/* List and breakdowns */}
-            <div className="rounded-2xl bg-white p-5 shadow-sm dark:bg-slate-955/60 flex flex-col justify-center">
-              <h4 className="text-base font-normal text-slate-900 dark:text-white uppercase tracking-widest mb-4">Resumen de Ventas</h4>
-              <div className="space-y-3">
-                {donutData.map((item) => (
-                  <div
-                    key={item.key}
-                    className="flex items-center gap-3 rounded-xl px-4 py-2"
-                  >
-                    <div className="min-w-0">
-                      <span className="text-base font-normal block truncate" style={{ color: item.color }}>
-                        {item.label}
-                      </span>
-                      <span className="text-sm font-normal text-slate-500 dark:text-neutral-400 block mt-0.5">
-                        {item.count} {item.count === 1 ? 'pedido' : 'pedidos'}
-                      </span>
-                    </div>
-                    <span className="ml-auto text-lg font-normal pl-4" style={{ color: item.color }}>
-                      {Math.round(item.percentage * 100)}%
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>       </div>
-          </div>
-        )}
-      </div>
-    );
-  };
 
   const renderPerformanceTab = () => {
+    const topProductsList = (globalStats?.topProducts && globalStats.topProducts.length > 0)
+      ? globalStats.topProducts
+      : localStats.topProducts;
+
+    const sellerPerformanceList = (globalStats?.sellerPerformance && globalStats.sellerPerformance.length > 0)
+      ? globalStats.sellerPerformance
+      : localStats.sellerPerformance;
+
     return (
       <div className="space-y-6">
-        <div>
-          <h3 className="text-2xl font-light tracking-wide text-slate-900 dark:text-white uppercase border-l-4 border-blue-600 pl-3">
-            Desempeño del Empleado
-          </h3>
-          <p className="text-sm font-normal text-slate-900 dark:text-white mt-1">
-            {isAdmin ? 'Volumen comercial de cada vendedor activo' : 'Resumen detallado de despacho de componentes y eficiencia'}
-          </p>
-        </div>
 
-        {isAdmin && globalStats ? (
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Top Products */}
-            <div className="rounded-2xl bg-white p-5 shadow-sm dark:bg-slate-955/60">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-neutral-800 pb-3 mb-4">
-                <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">Productos más vendidos</h4>
-                <ArrowUpRight className="h-4.5 w-4.5 text-slate-900 dark:text-white" />
-              </div>
-              {globalStats.topProducts.length === 0 ? (
-                <p className="text-sm font-bold text-slate-900 dark:text-white py-4">No hay ventas en la base de datos.</p>
-              ) : (
-                <div className="space-y-4 max-h-[360px] overflow-y-auto pr-1 scrollbar-thin">
-                  {globalStats.topProducts.map(({ product, totalSold }) => (
-                    <div key={product.id} className="flex items-center justify-between py-2 px-2 hover:bg-slate-50 dark:hover:bg-neutral-900/30 rounded-xl transition-colors">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <img
-                          src={(!failedImages[product.id] && product.imageUrl) ? product.imageUrl : '/favicon.jpg'}
-                          alt={product.name}
-                          className="h-10 w-10 rounded-lg object-cover border border-slate-100 dark:border-neutral-800 shrink-0"
-                          onError={() => {
-                            if (product.imageUrl && product.imageUrl !== '/favicon.jpg') {
-                              setFailedImages((prev) => ({ ...prev, [product.id]: true }));
-                            }
-                          }}
-                        />
-                        <div className="min-w-0">
-                          <p className="text-xs font-black text-slate-900 dark:text-white truncate max-w-[150px] leading-tight">
-                            {product.name}
-                          </p>
-                          <span className="text-[10px] text-slate-900 dark:text-white font-bold block mt-0.5">
-                            {product.sku && product.sku !== 'N/A' && product.sku !== 'null' && product.sku !== 'undefined' && <span>SKU: {product.sku} • </span>} {formatCurrency(Number(product.price))}
-                          </span>
+        {isAdmin ? (
+          globalStats ? (
+            <div className="grid gap-8 sm:grid-cols-2">
+              {/* Top Products */}
+              <div className="rounded-2xl bg-white p-6 md:p-8 shadow-sm dark:bg-slate-955/60">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-neutral-800 pb-3 mb-4">
+                  <h4 className="text-base font-bold text-slate-955 dark:text-white uppercase tracking-wider">Productos más vendidos</h4>
+                  <ArrowUpRight className="h-5 w-5 text-slate-955 dark:text-white" />
+                </div>
+                {topProductsList.length === 0 ? (
+                  <p className="text-sm font-normal text-slate-955 dark:text-white py-4">No hay ventas en la base de datos.</p>
+                ) : (
+                  <div className="space-y-4 max-h-[360px] overflow-y-auto pr-1 scrollbar-thin">
+                    {topProductsList.map(({ product, totalSold }) => (
+                      <div key={product.id} className="flex items-center justify-between py-3 px-2 hover:bg-slate-50 dark:hover:bg-neutral-900/30 rounded-xl transition-colors">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <img
+                            src={(!failedImages[product.id] && product.imageUrl) ? product.imageUrl : '/favicon.jpg'}
+                            alt={product.name}
+                            className="h-12 w-12 rounded-lg object-cover border border-slate-100 dark:border-neutral-800 shrink-0"
+                            onError={() => {
+                              if (product.imageUrl && product.imageUrl !== '/favicon.jpg') {
+                                setFailedImages((prev) => ({ ...prev, [product.id]: true }));
+                              }
+                            }}
+                          />
+                          <div className="min-w-0">
+                            <p className="text-base font-semibold text-slate-955 dark:text-white truncate max-w-[180px] leading-tight">
+                              {product.name}
+                            </p>
+                            <span className="text-xs font-normal text-slate-955 dark:text-white/80 block mt-1">
+                              {product.sku && product.sku !== 'N/A' && product.sku !== 'null' && product.sku !== 'undefined' && <span>Código: {product.sku} • </span>} {formatCurrency(Number(product.price))}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-base md:text-lg font-bold text-cyan-600 dark:text-cyan-400">{totalSold} unds</p>
+                          <p className="text-xs font-medium text-slate-955 dark:text-white uppercase tracking-wider block mt-0.5">vendidos</p>
                         </div>
                       </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-sm font-black text-cyan-600 dark:text-cyan-400">{totalSold} unds</p>
-                        <p className="text-[9px] text-slate-900 dark:text-white uppercase tracking-widest font-black">vendidos</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Seller performance ranking */}
-            <div className="rounded-2xl bg-white p-5 shadow-sm dark:bg-neutral-950/60">
-              <div className="border-b border-slate-100 dark:border-neutral-900 pb-3 mb-4">
-                <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">Rendimiento por Vendedor</h4>
+                    ))}
+                  </div>
+                )}
               </div>
-              {globalStats.sellerPerformance.length === 0 ? (
-                <p className="text-sm font-bold text-slate-900 dark:text-white py-4">No hay estadísticas de vendedores.</p>
-              ) : (
-                <div className="space-y-4 max-h-[360px] overflow-y-auto pr-1 scrollbar-thin">
-                  {globalStats.sellerPerformance.map(({ seller, ordersDelivered, totalRevenue }) => (
-                    <div key={seller.id} className="space-y-1.5 px-1">
-                      <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
-                        <span>{seller.firstName} {seller.lastName}</span>
-                        <span className="font-black text-slate-900 dark:text-white">
-                          {formatCurrency(totalRevenue)} <span className="text-[10px] font-normal text-slate-900 dark:text-white">({ordersDelivered} {ordersDelivered === 1 ? 'pedido' : 'pedidos'})</span>
-                        </span>
-                      </div>
-                      <div className="h-2.5 rounded-full bg-slate-100 dark:bg-neutral-900/60 overflow-hidden shadow-inner">
-                        <motion.div
-                          className="h-full rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-600"
-                          initial={{ width: 0 }}
-                          animate={{ width: `${(totalRevenue / maxSellerRevenue) * 100}%` }}
-                          transition={{ duration: 1.2, ease: 'easeOut' }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+
+              {/* Seller performance ranking */}
+              <div className="rounded-2xl bg-white p-6 md:p-8 shadow-sm dark:bg-slate-955/60">
+                <div className="border-b border-slate-100 dark:border-neutral-900 pb-3 mb-4">
+                  <h4 className="text-base font-bold text-slate-955 dark:text-white uppercase tracking-wider">Rendimiento por Vendedor</h4>
                 </div>
-              )}
+                {sellerPerformanceList.length === 0 ? (
+                  <p className="text-sm font-normal text-slate-955 dark:text-white py-4">No hay estadísticas de vendedores.</p>
+                ) : (
+                  <div className="space-y-4 max-h-[360px] overflow-y-auto pr-1 scrollbar-thin">
+                    {sellerPerformanceList.map(({ seller, ordersDelivered, totalRevenue }) => (
+                      <div key={seller.id} className="space-y-2.5 px-1">
+                        <div className="flex items-center justify-between text-sm font-semibold text-slate-955 dark:text-white">
+                          <span>{seller.firstName} {seller.lastName}</span>
+                          <span className="font-bold text-slate-955 dark:text-white">
+                            {formatCurrency(totalRevenue)} <span className="text-xs font-normal text-slate-955 dark:text-white">({ordersDelivered} {ordersDelivered === 1 ? 'pedido' : 'pedidos'})</span>
+                          </span>
+                        </div>
+                        <div className="h-3 rounded-full bg-slate-100 dark:bg-neutral-900/60 overflow-hidden shadow-inner">
+                          <motion.div
+                            className="h-full rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-600"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${(totalRevenue / maxSellerRevenue) * 100}%` }}
+                            transition={{ duration: 1.2, ease: 'easeOut' }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          ) : isLoading ? (
+            <div className="py-16 flex flex-col items-center justify-center gap-3 bg-white dark:bg-slate-955/65 rounded-2xl shadow-sm">
+              <div className="h-9 w-9 rounded-full border-4 border-teal-500 border-t-transparent animate-spin"></div>
+              <span className="text-sm font-semibold text-slate-955 dark:text-white">Cargando métricas globales...</span>
+            </div>
+          ) : (
+            <div className="py-16 flex flex-col items-center justify-center gap-3 bg-white dark:bg-slate-955/65 rounded-2xl shadow-sm">
+              <span className="text-sm font-semibold text-red-500">Error al cargar las métricas. Intente recargar la página.</span>
+            </div>
+          )
         ) : (
           /* Seller-specific Dispatch summary with extra sections */
-          <div className="space-y-6">
-            <div className="rounded-2xl bg-gradient-to-br from-white to-slate-50/50 p-5 shadow-sm dark:from-neutral-900/60 dark:to-neutral-950/40">
-              <div className="flex items-center gap-3.5">
-                <div className="h-10 w-10 rounded-xl bg-cyan-50 dark:bg-cyan-950/40 flex items-center justify-center text-cyan-600 dark:text-cyan-400 shrink-0">
-                  <Package className="h-5.5 w-5.5" />
+          <div className="space-y-8">
+            <div className="rounded-2xl bg-gradient-to-br from-white to-slate-50/50 p-6 md:p-8 shadow-sm dark:from-neutral-900/60 dark:to-neutral-955/40">
+              <div className="flex items-center gap-5">
+                <div className="h-14 w-14 rounded-2xl bg-cyan-50 dark:bg-cyan-950/40 flex items-center justify-center text-cyan-600 dark:text-cyan-400 shrink-0">
+                  <Package className="h-7 w-7" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">Eficiencia de Despacho</h4>
-                  <p className="text-xs text-slate-900 dark:text-white leading-relaxed mt-0.5">
-                    Se han despachado de forma exitosa <span className="font-black text-slate-900 dark:text-white">{activeSellerStats.totalDelivered}</span> de los <span className="font-black text-slate-900 dark:text-white">{activeSellerStats.totalOrdersAssigned}</span> pedidos asignados. Esto equivale a un total de <span className="font-black text-emerald-600 dark:text-emerald-400">{totalItemsSold}</span> componentes físicos de hardware suministrados por el empleado.
+                  <h4 className="text-base font-bold text-slate-955 dark:text-white uppercase tracking-wider">Eficiencia de Despacho</h4>
+                  <p className="text-sm md:text-base text-slate-955 dark:text-white leading-relaxed mt-1">
+                    Se han despachado de forma exitosa <span className="font-bold text-slate-955 dark:text-white">{activeSellerStats.totalDelivered}</span> de los <span className="font-bold text-slate-955 dark:text-white">{activeSellerStats.totalOrdersAssigned}</span> pedidos asignados. Esto equivale a un total de <span className="font-bold text-emerald-600 dark:text-emerald-400">{totalItemsSold}</span> componentes físicos de hardware suministrados por el empleado.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="grid gap-6 sm:grid-cols-2">
-              <div className="rounded-2xl bg-white p-5 shadow-sm dark:bg-neutral-950/60">
-                <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest block">Monto Promedio por Pedido</span>
-                <p className="text-2xl font-black text-slate-900 dark:text-white mt-2">
+            <div className="grid gap-8 sm:grid-cols-2">
+              <div className="rounded-2xl bg-white p-6 md:p-8 shadow-sm dark:bg-neutral-950/60">
+                <span className="text-sm font-bold text-slate-955 dark:text-white uppercase tracking-widest block">Monto Promedio por Pedido</span>
+                <p className="text-3xl md:text-4xl font-extrabold text-slate-955 dark:text-white mt-3">
                   {formatCurrency(activeSellerStats.totalDelivered > 0 ? activeSellerStats.totalRevenue / activeSellerStats.totalDelivered : 0)}
                 </p>
-                <p className="text-[11px] text-slate-900 dark:text-white font-bold mt-1">Suma media facturada para las entregas completadas</p>
+                <p className="text-xs md:text-sm text-slate-955 dark:text-white font-normal mt-1.5">Suma media facturada para las entregas completadas</p>
               </div>
 
-              <div className="rounded-2xl bg-white p-5 shadow-sm dark:bg-slate-955/60">
-                <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest block">Volumen de Entrega</span>
-                <p className="text-2xl font-black text-slate-900 dark:text-white mt-2">
-                  {activeSellerStats.totalDelivered} <span className="text-xs font-bold text-slate-900 dark:text-white">pedidos</span>
+              <div className="rounded-2xl bg-white p-6 md:p-8 shadow-sm dark:bg-slate-955/60">
+                <span className="text-sm font-bold text-slate-955 dark:text-white uppercase tracking-widest block">Volumen de Entrega</span>
+                <p className="text-3xl md:text-4xl font-extrabold text-slate-955 dark:text-white mt-3">
+                  {activeSellerStats.totalDelivered} <span className="text-sm font-medium text-slate-955 dark:text-white">pedidos</span>
                 </p>
-                <p className="text-[11px] text-slate-900 dark:text-white font-bold mt-1">Total de transacciones marcadas como "Entregado"</p>
+                <p className="text-xs md:text-sm text-slate-955 dark:text-white font-normal mt-1.5">Total de transacciones marcadas como "Entregado"</p>
               </div>
             </div>
 
             {/* Dynamic Seller Top Components List */}
-            <div className="rounded-2xl bg-white p-5 shadow-sm dark:bg-neutral-950/60">
-              <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-neutral-800 pb-2">Componentes Despachados por el Empleado</h4>
+            <div className="rounded-2xl bg-white p-6 md:p-8 shadow-sm dark:bg-neutral-950/60">
+              <h4 className="text-base font-bold text-slate-955 dark:text-white uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-neutral-800 pb-3">Componentes Despachados por el Empleado</h4>
               {sellerProducts.length === 0 ? (
-                <p className="text-sm font-bold text-slate-900 dark:text-white">No se han registrado entregas para cuantificar componentes despachados.</p>
+                <p className="text-sm md:text-base font-medium text-slate-955 dark:text-white">No se han registrado entregas para cuantificar componentes despachados.</p>
               ) : (
                 <div className="divide-y divide-slate-100 dark:divide-neutral-900">
                   {sellerProducts.map((p, idx) => (
-                    <div key={idx} className="flex justify-between items-center py-3">
+                    <div key={idx} className="flex justify-between items-center py-4">
                       <div>
-                        <span className="text-sm font-black text-slate-900 dark:text-white block leading-tight">{p.name}</span>
-                        <span className="text-[10px] font-bold text-slate-900 dark:text-white mt-1 block">
-                          {p.sku && p.sku !== 'N/A' && p.sku !== 'null' && p.sku !== 'undefined' && <span>SKU: {p.sku} • </span>} {formatCurrency(p.price)}
+                        <span className="text-base md:text-lg font-semibold text-slate-955 dark:text-white block leading-tight">{p.name}</span>
+                        <span className="text-xs md:text-sm font-normal text-slate-955 dark:text-white mt-1 block">
+                          {p.sku && p.sku !== 'N/A' && p.sku !== 'null' && p.sku !== 'undefined' && <span>Código: {p.sku} • </span>} {formatCurrency(p.price)}
                         </span>
                       </div>
                       <div className="text-right">
-                        <span className="text-sm font-black text-cyan-600 dark:text-cyan-400 block">{p.quantity} unds</span>
-                        <span className="text-[9px] font-black text-slate-900 dark:text-white uppercase tracking-wider block">despachadas</span>
+                        <span className="text-base md:text-lg font-bold text-cyan-600 dark:text-cyan-400 block">{p.quantity} unds</span>
+                        <span className="text-xs font-medium text-slate-955 dark:text-white uppercase tracking-wider block">despachadas</span>
                       </div>
                     </div>
                   ))}
@@ -1175,34 +1183,12 @@ export const VendedorEstadisticasPage = () => {
             onClick={() => setActiveTab('general')}
             className={`flex items-center gap-2.5 rounded-lg px-6 py-2 text-sm font-bold transition-all duration-200 cursor-pointer ${
               activeTab === 'general'
-                ? 'bg-blue-600 text-white shadow-sm dark:bg-blue-700 dark:text-white'
+                ? 'bg-blue-600 text-white shadow-sm dark:bg-blue-600 dark:text-white'
                 : 'text-slate-900 hover:bg-slate-200/50 dark:text-neutral-300 dark:hover:bg-neutral-800/50'
             }`}
           >
             <BarChart3 className="h-4.5 w-4.5" />
             General
-          </button>
-          <button
-            onClick={() => setActiveTab('orders')}
-            className={`flex items-center gap-2.5 rounded-lg px-6 py-2 text-sm font-bold transition-all duration-200 cursor-pointer ${
-              activeTab === 'orders'
-                ? 'bg-blue-600 text-white shadow-sm dark:bg-blue-600 dark:text-white'
-                : 'text-slate-900 hover:bg-slate-200/50 dark:text-neutral-300 dark:hover:bg-neutral-800/50'
-            }`}
-          >
-            <FileText className="h-4.5 w-4.5" />
-            Pedidos
-          </button>
-          <button
-            onClick={() => setActiveTab('pie')}
-            className={`flex items-center gap-2.5 rounded-lg px-6 py-2 text-sm font-bold transition-all duration-200 cursor-pointer ${
-              activeTab === 'pie'
-                ? 'bg-blue-600 text-white shadow-sm dark:bg-blue-600 dark:text-white'
-                : 'text-slate-900 hover:bg-slate-200/50 dark:text-neutral-300 dark:hover:bg-neutral-800/50'
-            }`}
-          >
-            <PieIcon className="h-4.5 w-4.5" />
-            Diagrama de Pastel
           </button>
           <button
             onClick={() => setActiveTab('performance')}
@@ -1215,23 +1201,24 @@ export const VendedorEstadisticasPage = () => {
             <TrendingUp className="h-4.5 w-4.5" />
             Rendimiento
           </button>
+          <button
+            onClick={() => setActiveTab('orders')}
+            className={`flex items-center gap-2.5 rounded-lg px-6 py-2 text-sm font-bold transition-all duration-200 cursor-pointer ${
+              activeTab === 'orders'
+                ? 'bg-blue-600 text-white shadow-sm dark:bg-blue-600 dark:text-white'
+                : 'text-slate-900 hover:bg-slate-200/50 dark:text-neutral-300 dark:hover:bg-neutral-800/50'
+            }`}
+          >
+            <FileText className="h-4.5 w-4.5" />
+            Pedidos
+          </button>
         </div>
       </div>
 
       {/* Control bar (Filtros) - Only rendered when tab uses them */}
       {(activeTab === 'general' || activeTab === 'orders') && (
-        <div className="mb-4 rounded-2xl bg-white/70 dark:bg-slate-955/60 p-5 shadow-sm backdrop-blur-md">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
-                <Calendar className="h-4.5 w-4.5" />
-              </div>
-              <div>
-                <span className="text-sm font-black text-slate-800 dark:text-white block uppercase tracking-wider">Filtros</span>
-                <span className="text-[10px] text-slate-900 dark:text-white font-bold">Filtros activos para la pestaña actual</span>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
+        <div className="mb-4 rounded-2xl bg-white/70 dark:bg-slate-955/60 p-4 shadow-sm backdrop-blur-md">
+          <div className="flex flex-wrap items-center justify-end gap-3 w-full">
               {/* Search input - only on Orders tab */}
               {activeTab === 'orders' && (
                 <div className="relative w-full sm:w-48">
@@ -1302,8 +1289,7 @@ export const VendedorEstadisticasPage = () => {
               )}
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Main Content Area - Full width */}
       <div className="min-w-0">
@@ -1317,7 +1303,6 @@ export const VendedorEstadisticasPage = () => {
           >
             {activeTab === 'general' && renderDashboardTab()}
             {activeTab === 'orders' && renderOrdersTab()}
-            {activeTab === 'pie' && renderPieTab()}
             {activeTab === 'performance' && renderPerformanceTab()}
           </motion.div>
         </AnimatePresence>

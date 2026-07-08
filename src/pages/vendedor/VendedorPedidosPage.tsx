@@ -64,6 +64,9 @@ const dateFilterDays: Record<Exclude<DateFilter, 'todos'>, number> = {
 
 export interface MappedSellerOrder {
   id: string;
+  trackingCode?: string | null;
+  subtotal?: number;
+  taxAmount?: number;
   itemsCount: number;
   clientName: string;
   clientEmail: string;
@@ -166,6 +169,9 @@ export const VendedorPedidosPage = () => {
 
         return {
           id: order.id,
+          trackingCode: order.trackingCode,
+          subtotal: order.subtotal ? Number(order.subtotal) : undefined,
+          taxAmount: order.taxAmount ? Number(order.taxAmount) : undefined,
           itemsCount,
           clientName,
           clientEmail,
@@ -346,6 +352,7 @@ export const VendedorPedidosPage = () => {
       const matchesSearch =
         !normalizedSearch ||
         order.id.toLowerCase().includes(normalizedSearch) ||
+        (order.trackingCode && order.trackingCode.toLowerCase().includes(normalizedSearch)) ||
         order.clientName.toLowerCase().includes(normalizedSearch) ||
         order.clientEmail.toLowerCase().includes(normalizedSearch);
 
@@ -435,8 +442,8 @@ export const VendedorPedidosPage = () => {
             <table className="w-full min-w-[920px] text-left text-sm">
               <thead className="bg-slate-50 text-sm uppercase tracking-wider text-slate-900 dark:bg-white/[0.02] dark:text-white border-b border-slate-200 dark:border-neutral-800">
                 <tr>
+                  <th className="px-5 py-4 font-bold text-center">Cliente</th>
                   <th className="px-5 py-4 font-bold">Pedido</th>
-                  <th className="px-5 py-4 font-bold">Cliente</th>
                   <th className="px-5 py-4 font-bold">Fecha</th>
                   <th className="px-5 py-4 font-bold">Total</th>
                   <th className="px-5 py-4 font-bold">Estado</th>
@@ -450,39 +457,37 @@ export const VendedorPedidosPage = () => {
 
                   return (
                     <tr key={order.id} className="transition hover:bg-slate-50 dark:hover:bg-white/[0.03]">
-                      <td className="px-5 py-4">
-                        <p className="font-semibold text-slate-950 dark:text-white">{order.id}</p>
-                        <p className="mt-1 text-xs text-slate-955 dark:text-white font-medium">
-                          {order.itemsCount} {order.itemsCount === 1 ? 'producto' : 'productos'}
-                        </p>
-                        {order.items && order.items.length > 0 && (
-                          <div className="mt-1.5 space-y-0.5 max-w-xs">
-                            {order.items.map((item, idx) => (
-                              <p key={item.id || idx} className="text-xs font-normal text-slate-950 dark:text-white leading-tight">
-                                {item.product?.name || `Componente ID: ${item.productId}`} <span className="text-slate-950 dark:text-white font-bold">x{item.quantity}</span>
-                              </p>
-                            ))}
+                      <td className="px-5 py-4 min-w-[360px]">
+                        <div className="grid grid-cols-2 gap-x-4 text-sm font-normal text-slate-955 dark:text-white">
+                          <div>
+                            <div className="flex items-baseline gap-1.5">
+                              <p className="text-sm font-medium text-slate-955 dark:text-white">{order.clientName}</p>
+                              {new Date(order.createdAt).getTime() > Date.now() - 24 * 60 * 60 * 1000 && (
+                                <span className="relative flex h-2 w-2 shrink-0">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 animate-pulse" title="¡Pedido nuevo!"></span>
+                                </span>
+                              )}
+                            </div>
+                            <p className="mt-1.5 text-sm font-normal text-slate-955/80 dark:text-white/80 max-w-[180px] break-all">{order.clientEmail}</p>
                           </div>
-                        )}
+                          <div>
+                            <p className="text-sm font-normal text-slate-955 dark:text-white">
+                              {order.clientPhone || 'No registrado'}
+                            </p>
+                            <p className="mt-1.5 text-sm font-normal text-slate-955 dark:text-white leading-relaxed max-w-[200px]">
+                              {order.addressStr}
+                            </p>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-5 py-4">
-                        <div className="flex items-baseline gap-1.5">
-                          <p className="text-sm font-bold text-slate-950 dark:text-white">{order.clientName}</p>
-                          {new Date(order.createdAt).getTime() > Date.now() - 24 * 60 * 60 * 1000 && (
-                            <span className="relative flex h-2 w-2 shrink-0">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 animate-pulse" title="¡Pedido nuevo!"></span>
-                            </span>
+                        <p className="font-mono text-sm font-bold text-slate-955 dark:text-white select-all">
+                          {order.trackingCode ? (
+                            <span className="text-teal-600 dark:text-teal-400">{order.trackingCode}</span>
+                          ) : (
+                            order.id.slice(0, 8) + '...'
                           )}
-                        </div>
-                        <p className="mt-1 text-xs text-slate-955 dark:text-white font-normal">{order.clientEmail}</p>
-                        <p className="mt-1 text-xs text-slate-955 dark:text-white font-normal">
-                          <span className="font-semibold text-slate-950 dark:text-white">Teléf: </span>
-                          {order.clientPhone || 'No registrado'}
-                        </p>
-                        <p className="mt-1.5 text-xs text-slate-955 dark:text-white leading-relaxed max-w-[280px] font-normal">
-                          <span className="font-semibold text-slate-950 dark:text-white">Dirección: </span>
-                          {order.addressStr}
                         </p>
                       </td>
                       <td className="px-5 py-4">
@@ -627,8 +632,16 @@ export const VendedorPedidosPage = () => {
           <div className="space-y-6 text-slate-900 dark:text-white max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin">
             <div className="grid grid-cols-2 gap-x-6 gap-y-3">
               <div>
-                <span className="block font-semibold text-slate-900 dark:text-white text-base">ID de Pedido</span>
-                <span className="block font-mono font-normal text-slate-955 dark:text-white text-base mt-0.5">{selectedOrder.id}</span>
+                <span className="block font-semibold text-slate-900 dark:text-white text-base">
+                  {selectedOrder.trackingCode ? 'Código de Rastreo' : 'Código de Pedido'}
+                </span>
+                <span className="block font-mono font-normal text-slate-955 dark:text-white text-base mt-0.5">
+                  {selectedOrder.trackingCode ? (
+                    <span className="font-bold text-teal-600 dark:text-teal-400">{selectedOrder.trackingCode}</span>
+                  ) : (
+                    selectedOrder.id
+                  )}
+                </span>
               </div>
               <div>
                 <span className="block font-semibold text-slate-900 dark:text-white text-base">Fecha de Creación</span>
@@ -700,16 +713,30 @@ export const VendedorPedidosPage = () => {
 
             <div className="border-t border-slate-150 dark:border-neutral-800" />
 
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="block font-bold uppercase tracking-wider text-slate-955 dark:text-white text-sm">Total del Pedido</span>
-                <span className="block text-2xl font-semibold text-slate-955 dark:text-white mt-1">{formatCurrency(selectedOrder.total)}</span>
-              </div>
-              <div className="text-right">
-                <span className="block font-bold uppercase tracking-wider text-slate-955 dark:text-white text-sm">Estado</span>
-                <span className={`block text-lg font-semibold mt-1 ${statusStyles[selectedOrder.status as SellerOrderStatus]}`}>
-                  {selectedOrder.status}
-                </span>
+            <div className="border-t border-slate-150 dark:border-neutral-800 pt-4 space-y-2">
+              {selectedOrder.subtotal !== undefined && selectedOrder.taxAmount !== undefined && (
+                <>
+                  <div className="flex justify-between text-sm font-semibold text-slate-750 dark:text-neutral-300">
+                    <span>Subtotal</span>
+                    <span>{formatCurrency(selectedOrder.subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-semibold text-slate-750 dark:text-neutral-300 pb-2 border-b border-slate-200 dark:border-neutral-800">
+                    <span>IVA (15%)</span>
+                    <span>{formatCurrency(selectedOrder.taxAmount)}</span>
+                  </div>
+                </>
+              )}
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="block font-bold uppercase tracking-wider text-slate-955 dark:text-white text-sm">Total del Pedido</span>
+                  <span className="block text-2xl font-semibold text-slate-955 dark:text-white mt-1">{formatCurrency(selectedOrder.total)}</span>
+                </div>
+                <div className="text-right">
+                  <span className="block font-bold uppercase tracking-wider text-slate-955 dark:text-white text-sm">Estado</span>
+                  <span className={`block text-lg font-semibold mt-1 ${statusStyles[selectedOrder.status as SellerOrderStatus]}`}>
+                    {selectedOrder.status}
+                  </span>
+                </div>
               </div>
             </div>
 

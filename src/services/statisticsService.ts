@@ -47,20 +47,31 @@ export type GlobalStats = {
 };
 
 export const getSellerStats = async (): Promise<{ stats: SellerStats }> => {
-  const { data } = await api.get<{ stats: SellerStats }>('/statistics/seller');
-  return data;
+  const { data } = await api.get<any>('/statistics/seller');
+  const statsObj = data?.stats || data;
+  return { stats: statsObj };
 };
 
 export const getGlobalStats = async (): Promise<{ stats: GlobalStats }> => {
-  const { data } = await api.get<{ stats: GlobalStats }>('/statistics/global');
-  if (data?.stats?.topProducts) {
-    data.stats.topProducts = data.stats.topProducts.map((item) => ({
-      ...item,
-      product: {
-        ...item.product,
-        imageUrl: getProductImageUrl(item.product.imageUrl),
-      },
-    }));
+  const { data } = await api.get<any>('/statistics/global');
+  const statsObj = data?.stats || data;
+  
+  if (statsObj) {
+    if (statsObj.topProducts && Array.isArray(statsObj.topProducts)) {
+      statsObj.topProducts = statsObj.topProducts
+        .filter((item: any) => item && item.product != null)
+        .map((item: any) => ({
+          ...item,
+          product: {
+            ...item.product!,
+            imageUrl: getProductImageUrl(item.product!.imageUrl),
+          },
+        }));
+    }
+    if (statsObj.sellerPerformance && Array.isArray(statsObj.sellerPerformance)) {
+      statsObj.sellerPerformance = statsObj.sellerPerformance.filter((item: any) => item && item.seller != null);
+    }
   }
-  return data;
+  
+  return { stats: statsObj };
 };

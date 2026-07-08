@@ -33,11 +33,17 @@ const ROLE_MAP: Record<string, string> = {
 
 const ABBREVIATED_LABELS: Record<string, string> = {
   'Mi cuenta': 'Cuenta',
+  'Mi perfil': 'Perfil',
   'Explorar catálogo': 'Catálogo',
+  'Ver catálogo': 'Catálogo',
   'Simulador IA': 'Simulador',
+  'Armar mi PC': 'Simulador',
   'Mis proyectos': 'Proyectos',
+  'Mis ensambles': 'Ensambles',
   'Historial de compras': 'Historial',
+  'Mis compras': 'Compras',
   'Carrito de compras': 'Carrito',
+  'Mi carrito': 'Carrito',
   'Pedidos de clientes': 'Pedidos',
   'Estadisticas de ventas': 'Estadísticas',
   'Inventario': 'Inventario',

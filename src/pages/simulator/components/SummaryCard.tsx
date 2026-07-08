@@ -5,7 +5,8 @@ import {
   ChevronUp,
   CheckCircle2,
   AlertTriangle,
-  XCircle
+  XCircle,
+  Loader2
 } from 'lucide-react';
 import type { PCComponent } from '../types';
 import { getFriendlyCompatibilityDetail } from '../utils/compatibilityHelpers';
@@ -23,6 +24,7 @@ interface SummaryCardProps {
   };
   hasSelectedComponents: boolean;
   onSendToCart: () => void;
+  isCartLoading?: boolean;
   compatibilityStatus: {
     checked: boolean;
     results: Array<{
@@ -41,6 +43,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
   hardwareStats,
   hasSelectedComponents,
   onSendToCart,
+  isCartLoading,
   compatibilityStatus,
 }) => {
   const [isCompatibilityOpen, setIsCompatibilityOpen] = React.useState(false);
@@ -171,10 +174,18 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
           <button
             type="button"
             onClick={onSendToCart}
-            disabled={!hasSelectedComponents}
+            disabled={!hasSelectedComponents || isCartLoading}
             className="w-full h-11 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-955 font-semibold uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm shadow-teal-500/10 disabled:opacity-40 disabled:cursor-not-allowed border-none text-xs"
           >
-            <ShoppingCart className="h-4 w-4" /> Añadir Carrito
+            {isCartLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> Añadiendo...
+              </>
+            ) : (
+              <>
+                <ShoppingCart className="h-4 w-4" /> Añadir Carrito
+              </>
+            )}
           </button>
         </div>
       </div>

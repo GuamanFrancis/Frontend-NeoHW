@@ -46,10 +46,27 @@ export const RegisterPage = () => {
         },
       });
     } catch (err: any) {
-      setFormError(
-        err.response?.data?.message ||
-        'No se pudo crear la cuenta. Revisa que el correo no exista y que la contrasena cumpla los requisitos.'
-      );
+      let errorMsg = '';
+      if (err.response) {
+        if (err.response.data && typeof err.response.data === 'object' && err.response.data.message) {
+          errorMsg = Array.isArray(err.response.data.message) 
+            ? err.response.data.message.join(' ') 
+            : String(err.response.data.message);
+        } else if (typeof err.response.data === 'string') {
+          if (err.response.data.includes('Cannot POST') || err.response.status === 404) {
+            errorMsg = 'El servicio de autenticación no está disponible en este momento.';
+          } else {
+            errorMsg = err.response.data;
+          }
+        } else {
+          errorMsg = 'No se pudo crear la cuenta. Revisa que el correo no exista y que la contraseña cumpla los requisitos.';
+        }
+      } else if (err.request) {
+        errorMsg = 'No se pudo establecer conexión con el servidor. Por favor, inténtalo más tarde.';
+      } else {
+        errorMsg = err.message || 'Error al crear la cuenta.';
+      }
+      setFormError(errorMsg);
     }
   };
 

@@ -222,9 +222,6 @@ export const VendedorInventarioPage = () => {
                             <span className="block font-normal text-base text-slate-900 dark:text-white truncate max-w-[240px]">
                               {item.name}
                             </span>
-                            <span className="block text-sm font-normal text-slate-500 dark:text-neutral-400">
-                              ID: {item.id.slice(0, 8)}...
-                            </span>
                           </div>
                         </div>
                       </td>

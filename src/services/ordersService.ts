@@ -34,8 +34,11 @@ export type OrderItemBackend = {
 
 export type OrderBackend = {
   id: string;
+  trackingCode?: string | null;
   userId: string;
   status: 'PENDING_PAYMENT' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+  subtotal?: number | string;
+  taxAmount?: number | string;
   totalAmount: number | string;
   shippingAddress: string | Record<string, unknown> | null;
   createdAt: string;
