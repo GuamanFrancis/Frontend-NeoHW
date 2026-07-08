@@ -13,6 +13,142 @@ interface ChatbotDrawerProps {
   chatBottomRef: React.RefObject<HTMLDivElement | null>;
 }
 
+const parseInlineMarkdown = (text: string): React.ReactNode => {
+  const parts: React.ReactNode[] = [];
+  let lastIdx = 0;
+  const regex = /(\*\*(.*?)\*\*|`(.*?)`)/g;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIdx) {
+      parts.push(text.substring(lastIdx, match.index));
+    }
+    if (match[2] !== undefined) {
+      parts.push(
+        <strong key={match.index} className="font-bold text-slate-950 dark:text-white">
+          {match[2]}
+        </strong>
+      );
+    } else if (match[3] !== undefined) {
+      parts.push(
+        <code key={match.index} className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-neutral-800 font-mono text-[11px] text-indigo-600 dark:text-indigo-400 font-medium whitespace-nowrap">
+          {match[3]}
+        </code>
+      );
+    }
+    lastIdx = regex.lastIndex;
+  }
+  if (lastIdx < text.length) {
+    parts.push(text.substring(lastIdx));
+  }
+  return parts.length > 0 ? parts : text;
+};
+
+const renderMessageContent = (content: string): React.ReactNode[] => {
+  const lines = content.split('\n');
+  const elements: React.ReactNode[] = [];
+  let inTable = false;
+  let tableHeaders: string[] = [];
+  let tableRows: string[][] = [];
+  let inList = false;
+  let listItems: React.ReactNode[] = [];
+
+  const flushList = (key: number) => {
+    if (listItems.length > 0) {
+      elements.push(
+        <ul key={`list-${key}`} className="list-disc pl-5 my-2 space-y-1">
+          {listItems}
+        </ul>
+      );
+      listItems = [];
+    }
+    inList = false;
+  };
+
+  const flushTable = (key: number) => {
+    if (tableHeaders.length > 0 || tableRows.length > 0) {
+      elements.push(
+        <div key={`table-wrapper-${key}`} className="overflow-x-auto my-2 rounded-xl border border-slate-200 dark:border-neutral-800 shadow-sm scrollbar-thin">
+          <table className="min-w-full divide-y divide-slate-200 dark:divide-neutral-800 text-xs">
+            {tableHeaders.length > 0 && (
+              <thead className="bg-slate-100 dark:bg-neutral-800/80">
+                <tr>
+                  {tableHeaders.map((h, i) => (
+                    <th key={i} className="px-3 py-2 text-left font-bold text-slate-800 dark:text-neutral-200 uppercase tracking-wider">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+            )}
+            <tbody className="divide-y divide-slate-150 dark:divide-neutral-800 bg-white dark:bg-neutral-900">
+              {tableRows.map((row, idx) => (
+                <tr key={idx} className={idx % 2 === 0 ? 'bg-white dark:bg-neutral-900' : 'bg-slate-50/50 dark:bg-neutral-950/20'}>
+                  {row.map((val, i) => (
+                    <td key={i} className="px-3 py-2 text-slate-700 dark:text-neutral-300 font-medium">
+                      {parseInlineMarkdown(val)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+      tableHeaders = [];
+      tableRows = [];
+    }
+    inTable = false;
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line.startsWith('|') && line.endsWith('|')) {
+      if (inList) flushList(i);
+      const cells = line.split('|').map(c => c.trim()).filter((_, idx, arr) => idx > 0 && idx < arr.length - 1);
+      const isSeparator = cells.every(c => c.startsWith(':') || c.startsWith('-') || c.endsWith(':'));
+      if (isSeparator) {
+        inTable = true;
+        continue;
+      }
+      if (!inTable) {
+        tableHeaders = cells;
+        inTable = true;
+      } else {
+        tableRows.push(cells);
+      }
+      continue;
+    } else {
+      if (inTable) flushTable(i);
+    }
+
+    if (line.startsWith('- ') || line.startsWith('* ')) {
+      inList = true;
+      const text = line.substring(2);
+      listItems.push(
+        <li key={`li-${i}`} className="text-slate-700 dark:text-neutral-300">
+          {parseInlineMarkdown(text)}
+        </li>
+      );
+      continue;
+    } else {
+      if (inList) flushList(i);
+    }
+
+    if (line === '') {
+      continue;
+    }
+    elements.push(
+      <p key={`p-${i}`} className="my-1.5 leading-relaxed text-slate-700 dark:text-neutral-300">
+        {parseInlineMarkdown(line)}
+      </p>
+    );
+  }
+
+  if (inTable) flushTable(lines.length);
+  if (inList) flushList(lines.length);
+  return elements;
+};
+
 export const ChatbotDrawer: React.FC<ChatbotDrawerProps> = ({
   isOpen,
   onClose,
@@ -59,27 +195,7 @@ export const ChatbotDrawer: React.FC<ChatbotDrawerProps> = ({
                   : 'bg-white border border-slate-200 dark:bg-neutral-900 dark:border-neutral-800 text-slate-800 dark:text-white rounded-tl-none'
               }`}
             >
-              {msg.content.split('\n').map((line, idx) => {
-                const parts: React.ReactNode[] = [];
-                let lastIdx = 0;
-                const boldRe = /\*\*(.*?)\*\*/g;
-                let match;
-                while ((match = boldRe.exec(line)) !== null) {
-                  parts.push(line.substring(lastIdx, match.index));
-                  parts.push(
-                    <strong key={match.index} className="font-semibold text-slate-955 dark:text-white">
-                      {match[1]}
-                    </strong>
-                  );
-                  lastIdx = boldRe.lastIndex;
-                }
-                parts.push(line.substring(lastIdx));
-                return (
-                  <p key={idx} className={idx > 0 ? 'mt-1.5' : ''}>
-                    {parts.length > 1 ? parts : line}
-                  </p>
-                );
-              })}
+              {renderMessageContent(msg.content)}
             </div>
           </div>
         ))}
