@@ -108,18 +108,6 @@ export const VendedorPedidosPage = () => {
       setIsLoading(true);
 
       const res = await getOrders();
-      const paidOrders = JSON.parse(localStorage.getItem('neohw_paid_order_ids') || '[]');
-
-      for (const order of res.data) {
-        if (order.status === 'PENDING_PAYMENT' && paidOrders.includes(order.id)) {
-          try {
-            await updateOrderStatus(order.id, 'PROCESSING');
-            order.status = 'PROCESSING';
-          } catch (err) {
-            console.error(err);
-          }
-        }
-      }
 
       const mapped = res.data.map((order): MappedSellerOrder => {
         let itemsCount = 0;
@@ -164,8 +152,7 @@ export const VendedorPedidosPage = () => {
           }
         }
 
-        const isPaidLocal = order.status === 'PENDING_PAYMENT' && paidOrders.includes(order.id);
-        const currentOrderStatus = isPaidLocal ? 'PROCESSING' : order.status;
+        const currentOrderStatus = order.status;
 
         return {
           id: order.id,

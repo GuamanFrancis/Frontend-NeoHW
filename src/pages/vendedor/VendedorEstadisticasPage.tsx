@@ -282,8 +282,9 @@ export const VendedorEstadisticasPage = () => {
           existing.ordersDelivered++;
           existing.totalRevenue += revenue;
         } else {
-          // Extract name from user or default
-          const sellerName = orderAny.user ? `${orderAny.user.firstName || ''} ${orderAny.user.lastName || ''}`.trim() : '';
+          // Extract name from assigned seller if present
+          const sellerObj = orderAny.assignedSeller;
+          const sellerName = sellerObj ? `${sellerObj.firstName || ''} ${sellerObj.lastName || ''}`.trim() : '';
           localSellerMap.set(sellerId, {
             seller: {
               id: sellerId,
@@ -981,7 +982,7 @@ export const VendedorEstadisticasPage = () => {
                     return (
                       <tr key={order.id} className="text-slate-955 dark:text-white hover:bg-slate-50/30 dark:hover:bg-neutral-900/30 transition-colors">
                         <td className="py-3 px-4 font-mono font-normal text-slate-900 dark:text-white">
-                          #{order.id.slice(-8).toUpperCase()}
+                          {order.trackingCode ? order.trackingCode : `#${order.id.slice(-8).toUpperCase()}`}
                         </td>
                         <td className="py-3 px-4 font-normal">
                           {getClientName(order)}
@@ -1054,7 +1055,7 @@ export const VendedorEstadisticasPage = () => {
                               {product.name}
                             </p>
                             <span className="text-xs font-normal text-slate-955 dark:text-white/80 block mt-1">
-                              {product.sku && product.sku !== 'N/A' && product.sku !== 'null' && product.sku !== 'undefined' && <span>Código: {product.sku} • </span>} {formatCurrency(Number(product.price))}
+                              {formatCurrency(Number(product.price))}
                             </span>
                           </div>
                         </div>
@@ -1080,7 +1081,11 @@ export const VendedorEstadisticasPage = () => {
                     {sellerPerformanceList.map(({ seller, ordersDelivered, totalRevenue }) => (
                       <div key={seller.id} className="space-y-2.5 px-1">
                         <div className="flex items-center justify-between text-sm font-semibold text-slate-955 dark:text-white">
-                          <span>{seller.firstName} {seller.lastName}</span>
+                          <span>
+                            {seller ? (
+                              `${seller.firstName || ''} ${seller.lastName || ''}`.trim() || seller.email || 'Vendedor'
+                            ) : 'Empleado'}
+                          </span>
                           <span className="font-bold text-slate-955 dark:text-white">
                             {formatCurrency(totalRevenue)} <span className="text-xs font-normal text-slate-955 dark:text-white">({ordersDelivered} {ordersDelivered === 1 ? 'pedido' : 'pedidos'})</span>
                           </span>
