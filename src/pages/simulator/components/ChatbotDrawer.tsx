@@ -13,7 +13,7 @@ interface ChatbotDrawerProps {
   chatBottomRef: React.RefObject<HTMLDivElement | null>;
 }
 
-const parseInlineMarkdown = (text: string): React.ReactNode => {
+const parseInlineMarkdown = (text: string, isUser = false): React.ReactNode => {
   const parts: React.ReactNode[] = [];
   let lastIdx = 0;
   const regex = /(\*\*(.*?)\*\*|`(.*?)`)/g;
@@ -24,7 +24,7 @@ const parseInlineMarkdown = (text: string): React.ReactNode => {
     }
     if (match[2] !== undefined) {
       parts.push(
-        <strong key={match.index} className="font-bold text-slate-950 dark:text-white">
+        <strong key={match.index} className={`font-bold ${isUser ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
           {match[2]}
         </strong>
       );
@@ -43,7 +43,7 @@ const parseInlineMarkdown = (text: string): React.ReactNode => {
   return parts.length > 0 ? parts : text;
 };
 
-const renderMessageContent = (content: string): React.ReactNode[] => {
+const renderMessageContent = (content: string, isUser = false): React.ReactNode[] => {
   const lines = content.split('\n');
   const elements: React.ReactNode[] = [];
   let inTable = false;
@@ -52,10 +52,12 @@ const renderMessageContent = (content: string): React.ReactNode[] => {
   let inList = false;
   let listItems: React.ReactNode[] = [];
 
+  const textColorClass = isUser ? 'text-white' : 'text-slate-700 dark:text-neutral-300';
+
   const flushList = (key: number) => {
     if (listItems.length > 0) {
       elements.push(
-        <ul key={`list-${key}`} className="list-disc pl-5 my-2 space-y-1">
+        <ul key={`list-${key}`} className={`list-disc pl-5 my-2 space-y-1 ${textColorClass}`}>
           {listItems}
         </ul>
       );
@@ -85,7 +87,7 @@ const renderMessageContent = (content: string): React.ReactNode[] => {
                 <tr key={idx} className={idx % 2 === 0 ? 'bg-white dark:bg-neutral-900' : 'bg-slate-50/50 dark:bg-neutral-950/20'}>
                   {row.map((val, i) => (
                     <td key={i} className="px-3 py-2 text-slate-700 dark:text-neutral-300 font-medium">
-                      {parseInlineMarkdown(val)}
+                      {parseInlineMarkdown(val, isUser)}
                     </td>
                   ))}
                 </tr>
@@ -125,8 +127,8 @@ const renderMessageContent = (content: string): React.ReactNode[] => {
       inList = true;
       const text = line.substring(2);
       listItems.push(
-        <li key={`li-${i}`} className="text-slate-700 dark:text-neutral-300">
-          {parseInlineMarkdown(text)}
+        <li key={`li-${i}`} className={textColorClass}>
+          {parseInlineMarkdown(text, isUser)}
         </li>
       );
       continue;
@@ -138,8 +140,8 @@ const renderMessageContent = (content: string): React.ReactNode[] => {
       continue;
     }
     elements.push(
-      <p key={`p-${i}`} className="my-1.5 leading-relaxed text-slate-700 dark:text-neutral-300">
-        {parseInlineMarkdown(line)}
+      <p key={`p-${i}`} className={`my-1.5 leading-relaxed ${textColorClass}`}>
+        {parseInlineMarkdown(line, isUser)}
       </p>
     );
   }
@@ -195,7 +197,7 @@ export const ChatbotDrawer: React.FC<ChatbotDrawerProps> = ({
                   : 'bg-white border border-slate-200 dark:bg-neutral-900 dark:border-neutral-800 text-slate-800 dark:text-white rounded-tl-none'
               }`}
             >
-              {renderMessageContent(msg.content)}
+              {renderMessageContent(msg.content, msg.role === 'user')}
             </div>
           </div>
         ))}
