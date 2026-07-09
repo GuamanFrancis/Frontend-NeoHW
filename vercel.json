@@ -45,6 +45,10 @@
       "destination": "https://neohw-backend-production.up.railway.app/api/v1/payments/:path*"
     },
     {
+      "source": "/statistics/:path*",
+      "destination": "https://neohw-backend-production.up.railway.app/api/v1/statistics/:path*"
+    },
+    {
       "source": "/((?!assets/|.*\\..*).*)",
       "destination": "/index.html"
     }

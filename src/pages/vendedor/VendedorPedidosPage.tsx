@@ -698,7 +698,7 @@ export const VendedorPedidosPage = () => {
                   <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-white/10">
                     <div className="max-h-[160px] overflow-y-auto scrollbar-thin">
                       <table className="w-full min-w-full text-left text-base">
-                        <thead className="bg-slate-50 text-slate-900 dark:text-white dark:bg-black dark:text-white border-b border-slate-200 dark:border-white/10 sticky top-0">
+                        <thead className="bg-slate-50 text-slate-900 dark:text-white dark:bg-neutral-950 border-b border-slate-200 dark:border-white/10 sticky top-0">
                           <tr>
                             <th className="px-3 py-2.5 font-bold">Producto</th>
                             <th className="px-3 py-2.5 text-center font-bold">Cant.</th>
@@ -792,7 +792,7 @@ export const VendedorPedidosPage = () => {
               </div>
             </div>
 
-            <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-6 dark:border-white/10 dark:bg-black text-base font-semibold space-y-5">
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-6 dark:border-white/10 dark:bg-neutral-950 text-base font-semibold space-y-5">
               <div className="flex items-center justify-between">
                 <span className="text-slate-800 dark:text-white font-bold">Requisito 1: Pago y Estado</span>
                 {orderToDispatch.status === 'En proceso' ? (
@@ -823,7 +823,7 @@ export const VendedorPedidosPage = () => {
                       setDispatchFile(files[0]);
                     }
                   }}
-                  className="w-full text-base text-slate-700 dark:text-white/90 file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-teal-500/10 file:text-teal-650 hover:file:bg-teal-500/20 file:cursor-pointer cursor-pointer border border-dashed border-slate-300 dark:border-white/10 rounded-xl p-3 bg-white dark:bg-black"
+                  className="w-full text-base text-slate-700 dark:text-white/90 file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-teal-500/10 file:text-teal-650 hover:file:bg-teal-500/20 file:cursor-pointer cursor-pointer border border-dashed border-slate-300 dark:border-white/10 rounded-xl p-3 bg-white dark:bg-neutral-950"
                   disabled={orderToDispatch.status !== 'En proceso'}
                 />
                 <p className="text-sm text-slate-500 dark:text-white/60 mt-2 font-medium opacity-85">
@@ -887,7 +887,7 @@ export const VendedorPedidosPage = () => {
               </div>
             </div>
 
-            <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-6 dark:border-white/10 dark:bg-black text-base font-semibold space-y-5">
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-6 dark:border-white/10 dark:bg-neutral-950 text-base font-semibold space-y-5">
               <div className="flex items-center justify-between">
                 <span className="text-slate-800 dark:text-white font-bold">Estado del Pedido</span>
                 {orderToDeliver.status === 'Enviado' ? (
@@ -915,7 +915,7 @@ export const VendedorPedidosPage = () => {
                       setDeliveryPhotoFile(files[0]);
                     }
                   }}
-                  className="w-full text-base text-slate-700 dark:text-white/90 file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-teal-500/10 file:text-teal-655 hover:file:bg-teal-500/20 file:cursor-pointer cursor-pointer border border-dashed border-slate-300 dark:border-white/10 rounded-xl p-3 bg-white dark:bg-black"
+                  className="w-full text-base text-slate-700 dark:text-white/90 file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-teal-500/10 file:text-teal-655 hover:file:bg-teal-500/20 file:cursor-pointer cursor-pointer border border-dashed border-slate-300 dark:border-white/10 rounded-xl p-3 bg-white dark:bg-neutral-950"
                   disabled={orderToDeliver.status !== 'Enviado'}
                 />
                 <p className="text-sm text-slate-500 dark:text-white/60 mt-2 font-medium opacity-85">
@@ -941,7 +941,7 @@ export const VendedorPedidosPage = () => {
                       setCustomerSignatureFile(files[0]);
                     }
                   }}
-                  className="w-full text-base text-slate-700 dark:text-white/90 file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-teal-500/10 file:text-teal-655 hover:file:bg-teal-500/20 file:cursor-pointer cursor-pointer border border-dashed border-slate-300 dark:border-white/10 rounded-xl p-3 bg-white dark:bg-black"
+                  className="w-full text-base text-slate-700 dark:text-white/90 file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-teal-500/10 file:text-teal-655 hover:file:bg-teal-500/20 file:cursor-pointer cursor-pointer border border-dashed border-slate-300 dark:border-white/10 rounded-xl p-3 bg-white dark:bg-neutral-950"
                   disabled={orderToDeliver.status !== 'Enviado'}
                 />
                 <p className="text-sm text-slate-500 dark:text-white/60 mt-2 font-medium opacity-85">
