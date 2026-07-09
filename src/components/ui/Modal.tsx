@@ -8,17 +8,18 @@ type ModalProps = {
   children: ReactNode;
   footer?: ReactNode;
   onClose: () => void;
+  className?: string;
 };
 
-export const Modal = ({ open, title, text, children, footer, onClose }: ModalProps) => {
+export const Modal = ({ open, title, text, children, footer, onClose, className = 'max-w-xl p-6' }: ModalProps) => {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-6 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 px-4 py-6 backdrop-blur-sm">
       <div
         role="dialog"
         aria-modal="true"
-        className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-950/20 dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-black/50"
+        className={`w-full rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/20 dark:border-white/10 dark:bg-black dark:shadow-black/50 ${className}`}
       >
         <div className="flex items-start justify-between gap-4">
           <div>

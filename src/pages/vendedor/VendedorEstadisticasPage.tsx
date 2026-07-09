@@ -9,7 +9,9 @@ import {
   FileText,
   TrendingUp,
   Search,
-  UsersRound
+  UsersRound,
+  XCircle,
+  Truck
 } from 'lucide-react';
 import { getOrders, type OrderBackend } from '../../services/ordersService';
 import { getSellerStats, getGlobalStats, type SellerStats, type GlobalStats } from '../../services/statisticsService';
@@ -57,51 +59,7 @@ const getClientName = (order: OrderBackend): string => {
   return name;
 };
 
-// Helper sub-component for target progress rings
-const CircularProgressRing = ({ percentage, color, label }: { percentage: number; color: string; label: string }) => {
-  const radius = 20;
-  const strokeWidth = 4.5;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (Math.min(Math.max(percentage, 0), 100) / 100) * circumference;
 
-  return (
-    <div className="flex flex-col items-center justify-center gap-1.5">
-      <div className="relative flex items-center justify-center h-16 w-16">
-        <svg viewBox="0 0 50 50" className="h-full w-full -rotate-90">
-          <circle
-            cx="25"
-            cy="25"
-            r={radius}
-            fill="transparent"
-            stroke="#f1f5f9"
-            className="dark:stroke-neutral-800"
-            strokeWidth={strokeWidth}
-          />
-          <motion.circle
-            cx="25"
-            cy="25"
-            r={radius}
-            fill="transparent"
-            stroke={color}
-            strokeWidth={strokeWidth}
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
-            strokeLinecap="round"
-            initial={{ strokeDashoffset: circumference }}
-            animate={{ strokeDashoffset }}
-            transition={{ duration: 1.2, ease: 'easeOut' }}
-          />
-        </svg>
-        <span className="absolute text-sm font-medium text-slate-900 dark:text-white">
-          {Math.round(percentage)}%
-        </span>
-      </div>
-      <span className="text-xs font-medium text-slate-900 dark:text-white uppercase tracking-wider text-center max-w-[70px] truncate leading-tight">
-        {label}
-      </span>
-    </div>
-  );
-};
 
 export const VendedorEstadisticasPage = () => {
   const session = getStoredSession();
@@ -328,11 +286,9 @@ export const VendedorEstadisticasPage = () => {
         const orderDate = new Date(order.createdAt);
         const orderKey = orderDate.toDateString();
         const found = list.find((item) => item.key === orderKey);
-        if (found) {
+        if (found && order.status === 'DELIVERED') {
           found.ordersCount++;
-          if (order.status === 'DELIVERED') {
-            found.revenue += Number(order.totalAmount || 0);
-          }
+          found.revenue += Number(order.totalAmount || 0);
         }
       }
       return list;
@@ -362,11 +318,9 @@ export const VendedorEstadisticasPage = () => {
       for (const order of orders) {
         const orderDate = new Date(order.createdAt);
         const found = list.find((item) => orderDate >= item.start && orderDate <= item.end);
-        if (found) {
+        if (found && order.status === 'DELIVERED') {
           found.ordersCount++;
-          if (order.status === 'DELIVERED') {
-            found.revenue += Number(order.totalAmount || 0);
-          }
+          found.revenue += Number(order.totalAmount || 0);
         }
       }
       return list;
@@ -390,11 +344,9 @@ export const VendedorEstadisticasPage = () => {
         const y = orderDate.getFullYear();
         const m = orderDate.getMonth();
         const found = list.find((item) => item.year === y && item.month === m);
-        if (found) {
+        if (found && order.status === 'DELIVERED') {
           found.ordersCount++;
-          if (order.status === 'DELIVERED') {
-            found.revenue += Number(order.totalAmount || 0);
-          }
+          found.revenue += Number(order.totalAmount || 0);
         }
       }
       return list;
@@ -505,7 +457,7 @@ export const VendedorEstadisticasPage = () => {
 
   const totalItemsSold = useMemo(() => {
     return orders.reduce((acc, order) => {
-      if (order.status !== 'DELIVERED') return acc;
+      if (order.status !== 'SHIPPED' && order.status !== 'DELIVERED') return acc;
       const itemsCount = Array.isArray(order.items)
         ? order.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0)
         : 0;
@@ -519,7 +471,7 @@ export const VendedorEstadisticasPage = () => {
   const sellerProducts = useMemo(() => {
     const productMap: Record<string, { name: string; sku: string | null; price: number; quantity: number }> = {};
     for (const order of orders) {
-      if (order.status === 'DELIVERED' && Array.isArray(order.items)) {
+      if ((order.status === 'SHIPPED' || order.status === 'DELIVERED') && Array.isArray(order.items)) {
         for (const item of order.items) {
           const pid = item.productId;
           if (!productMap[pid]) {
@@ -588,76 +540,109 @@ export const VendedorEstadisticasPage = () => {
     const revenueVal = isAdmin && globalStats ? finalTotalRevenue : (activeSellerStats?.totalRevenue ?? 0);
     const ordersVal = isAdmin && globalStats ? finalTotalOrders : (activeSellerStats?.totalOrdersAssigned ?? 0);
     const pendingVal = isAdmin ? (donutData.find(d => d.key === 'PROCESSING')?.count || 0) : (activeSellerStats?.pendingOrders ?? 0);
+    const cancelledCount = isAdmin && globalStats
+      ? (donutData.find((d) => d.key === 'CANCELLED')?.count || 0)
+      : (activeSellerStats?.ordersByStatus?.['CANCELLED'] ?? 0);
 
-    const deliveryPercentage = ordersVal > 0 ? ((isAdmin && globalStats ? (donutData.find(d => d.key === 'DELIVERED')?.count || 0) : (activeSellerStats?.totalDelivered ?? 0)) / ordersVal) * 100 : 0;
-    const pendingPercentage = ordersVal > 0 ? (pendingVal / ordersVal) * 100 : 0;
+    const shippedCount = isAdmin && globalStats
+      ? (donutData.find((d) => d.key === 'SHIPPED')?.count || 0)
+      : (activeSellerStats?.ordersByStatus?.['SHIPPED'] ?? 0);
 
     return (
-      <div className="space-y-6">        {/* KPI Grid with custom colored gradient stripes */}
-      <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
-        {/* Card 1: Earnings */}
-        <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-slate-955/60">
-          <div className="h-2.5 bg-gradient-to-r from-pink-500 to-rose-500 w-full" />
-          <div className="p-5 flex flex-col justify-between h-32">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium uppercase tracking-wider text-slate-900 dark:text-white">GANANCIAS</span>
-              <span className="h-6 w-6 rounded-lg bg-pink-50 dark:bg-pink-950/40 flex items-center justify-center text-pink-500 text-sm">
-                $
-              </span>
+      <div className="space-y-6">
+        {/* KPI Grid with custom colored gradient stripes */}
+        <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          {/* Card 1: Earnings */}
+          <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-black dark:border dark:border-white/10">
+            <div className="h-2.5 bg-gradient-to-r from-pink-500 to-rose-500 w-full" />
+            <div className="p-5 flex flex-col justify-between h-32">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium uppercase tracking-wider text-slate-900 dark:text-white">GANANCIAS</span>
+                <span className="h-6 w-6 rounded-lg bg-pink-50 dark:bg-pink-950/40 flex items-center justify-center text-pink-500 text-sm">
+                  $
+                </span>
+              </div>
+              <div>
+                <p className="text-4xl font-normal text-slate-900 dark:text-white tracking-tight">{formatCurrency(revenueVal)}</p>
+                <p className="text-xs text-slate-900 dark:text-white font-normal mt-1">Ingresos de pedidos completados</p>
+              </div>
             </div>
-            <div>
-              <p className="text-4xl font-normal text-slate-900 dark:text-white tracking-tight">{formatCurrency(revenueVal)}</p>
-              <p className="text-xs text-slate-900 dark:text-white font-normal mt-1">Ingresos de pedidos completados</p>
+          </div>
+
+          {/* Card 2: Pedidos */}
+          <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-black dark:border dark:border-white/10">
+            <div className="h-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 w-full" />
+            <div className="p-5 flex flex-col justify-between h-32">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium uppercase tracking-wider text-slate-900 dark:text-white">PEDIDOS</span>
+                <span className="h-6 w-6 rounded-lg bg-purple-50 dark:bg-purple-950/40 flex items-center justify-center text-purple-500 text-sm">
+                  <ShoppingCart className="h-4.5 w-4.5" />
+                </span>
+              </div>
+              <div>
+                <p className="text-4xl font-normal text-slate-900 dark:text-white tracking-tight">{ordersVal}</p>
+                <p className="text-xs text-slate-900 dark:text-white font-normal mt-1">Total de pedidos gestionados</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: Processing */}
+          <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-black dark:border dark:border-white/10">
+            <div className="h-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 w-full" />
+            <div className="p-5 flex flex-col justify-between h-32">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium uppercase tracking-wider text-slate-900 dark:text-white">PROCESANDO</span>
+                <span className="h-6 w-6 rounded-lg bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center text-blue-500 text-sm">
+                  <Clock3 className="h-4.5 w-4.5" />
+                </span>
+              </div>
+              <div>
+                <p className="text-4xl font-normal text-slate-900 dark:text-white tracking-tight">{pendingVal}</p>
+                <p className="text-xs text-slate-900 dark:text-white font-normal mt-1">Órdenes pendientes de despacho</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 4: Cancelados */}
+          <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-black dark:border dark:border-white/10">
+            <div className="h-2.5 bg-gradient-to-r from-rose-500 to-red-500 w-full" />
+            <div className="p-5 flex flex-col justify-between h-32">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium uppercase tracking-wider text-slate-900 dark:text-white">CANCELADOS</span>
+                <span className="h-6 w-6 rounded-lg bg-rose-50 dark:bg-rose-950/40 flex items-center justify-center text-rose-500 text-sm">
+                  <XCircle className="h-4.5 w-4.5" />
+                </span>
+              </div>
+              <div>
+                <p className="text-4xl font-normal text-slate-900 dark:text-white tracking-tight">{cancelledCount}</p>
+                <p className="text-xs text-slate-900 dark:text-white font-normal mt-1">Total de pedidos cancelados</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 5: Enviados */}
+          <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-black dark:border dark:border-white/10">
+            <div className="h-2.5 bg-gradient-to-r from-violet-500 to-fuchsia-500 w-full" />
+            <div className="p-5 flex flex-col justify-between h-32">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium uppercase tracking-wider text-slate-900 dark:text-white">ENVIADOS</span>
+                <span className="h-6 w-6 rounded-lg bg-violet-50 dark:bg-violet-950/40 flex items-center justify-center text-violet-500 text-sm">
+                  <Truck className="h-4.5 w-4.5" />
+                </span>
+              </div>
+              <div>
+                <p className="text-4xl font-normal text-slate-900 dark:text-white tracking-tight">{shippedCount}</p>
+                <p className="text-xs text-slate-900 dark:text-white font-normal mt-1">Total de pedidos en tránsito</p>
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Card 2: Pedidos */}
-        <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-slate-955/60">
-          <div className="h-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 w-full" />
-          <div className="p-5 flex flex-col justify-between h-32">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium uppercase tracking-wider text-slate-900 dark:text-white">PEDIDOS</span>
-              <span className="h-6 w-6 rounded-lg bg-purple-50 dark:bg-purple-950/40 flex items-center justify-center text-purple-500 text-sm">
-                <ShoppingCart className="h-4.5 w-4.5" />
-              </span>
-            </div>
-            <div>
-              <p className="text-4xl font-normal text-slate-900 dark:text-white tracking-tight">{ordersVal}</p>
-              <p className="text-xs text-slate-900 dark:text-white font-normal mt-1">Total de pedidos gestionados</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3: Processing */}
-        <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-slate-955/60">
-          <div className="h-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 w-full" />
-          <div className="p-5 flex flex-col justify-between h-32">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium uppercase tracking-wider text-slate-900 dark:text-white">PROCESANDO</span>
-              <span className="h-6 w-6 rounded-lg bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center text-blue-500 text-sm">
-                <Clock3 className="h-4.5 w-4.5" />
-              </span>
-            </div>
-            <div>
-              <p className="text-4xl font-normal text-slate-900 dark:text-white tracking-tight">{pendingVal}</p>
-              <p className="text-xs text-slate-900 dark:text-white font-normal mt-1">Órdenes pendientes de despacho</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 4: Progress circular rings */}
-        <div className="rounded-2xl bg-white p-4 shadow-sm dark:bg-neutral-950/60 flex items-center justify-around">
-          <CircularProgressRing percentage={deliveryPercentage} color="#2563eb" label="Entregados" />
-          <CircularProgressRing percentage={pendingPercentage} color="#3b82f6" label="En proceso" />
-        </div>
-      </div>
 
       {/* Second Row: System Parameters & Stock Breakdown (Admin only) */}
       {isAdmin && globalStats && (
         <div className="grid gap-5 grid-cols-1 sm:grid-cols-3 mt-5">
           {/* Card 1: Clientes */}
-          <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-slate-955/60">
+          <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-black dark:border dark:border-white/10">
             <div className="h-2.5 bg-gradient-to-r from-teal-500 to-emerald-500 w-full" />
             <div className="p-5 flex flex-col justify-between h-32">
               <div className="flex items-center justify-between">
@@ -674,7 +659,7 @@ export const VendedorEstadisticasPage = () => {
           </div>
 
           {/* Card 2: Productos */}
-          <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-slate-955/60">
+          <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-black dark:border dark:border-white/10">
             <div className="h-2.5 bg-gradient-to-r from-amber-500 to-orange-500 w-full" />
             <div className="p-5 flex flex-col justify-between h-32">
               <div className="flex items-center justify-between">
@@ -691,7 +676,7 @@ export const VendedorEstadisticasPage = () => {
             </div>
 
             {/* Card 3: Estado del Inventario */}
-            <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-slate-955/60">
+            <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-black dark:border dark:border-white/10">
               <div className="h-2.5 bg-gradient-to-r from-blue-500 to-indigo-500 w-full" />
               <div className="p-5 flex flex-col justify-between h-32">
                 <div className="flex items-center justify-between">
@@ -723,7 +708,7 @@ export const VendedorEstadisticasPage = () => {
           </div>
         )}
         <div className="w-full">
-          <div className="rounded-2xl bg-white p-5 shadow-sm dark:bg-slate-955/60 flex flex-col justify-between min-h-[290px]">
+          <div className="rounded-2xl bg-white p-5 shadow-sm dark:bg-black dark:border dark:border-white/10 flex flex-col justify-between min-h-[290px]">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-neutral-900 pb-3">
               <div>
                 <h3 className="text-lg font-light tracking-wide text-slate-900 dark:text-white uppercase border-l-4 border-blue-600 pl-2.5">
@@ -915,34 +900,33 @@ export const VendedorEstadisticasPage = () => {
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white p-5 shadow-sm dark:bg-slate-955/60">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-neutral-900 pb-3">
+        <div className="rounded-2xl bg-white p-6 shadow-sm dark:bg-black dark:border dark:border-white/10">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-neutral-900 pb-4">
             <div>
-              <h3 className="text-lg font-light tracking-wide text-slate-900 dark:text-white uppercase border-l-4 border-blue-600 pl-2.5">
-                Detalle de Ventas
+              <h3 className="text-xl font-bold tracking-wide text-slate-900 dark:text-white uppercase border-l-4 border-blue-600 pl-3">
+                Detalle de Ventas Periódicas
               </h3>
-              <p className="text-xs font-normal text-slate-900 dark:text-white mt-0.5">Ventas por período</p>
             </div>
           </div>
           <div className="mt-4 overflow-x-auto rounded-xl">
-            <table className="w-full border-collapse text-left text-sm">
+            <table className="w-full border-collapse text-left text-base">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/50 text-slate-900 dark:border-neutral-900 dark:bg-neutral-900/20 dark:text-white">
-                  <th className="py-3 px-3.5 font-medium uppercase tracking-wider text-xs">Intervalo</th>
-                  <th className="py-3 px-3.5 font-medium uppercase tracking-wider text-xs text-right">Ventas Totales</th>
-                  <th className="py-3 px-3.5 font-medium uppercase tracking-wider text-xs text-right">Pedidos</th>
-                  <th className="py-3 px-3.5 font-medium uppercase tracking-wider text-xs text-right">Monto Promedio</th>
+                  <th className="py-3.5 px-3.5 font-bold uppercase tracking-wider text-sm">Intervalo</th>
+                  <th className="py-3.5 px-3.5 font-bold uppercase tracking-wider text-sm text-right">Ventas Totales</th>
+                  <th className="py-3.5 px-3.5 font-bold uppercase tracking-wider text-sm text-right">Pedidos</th>
+                  <th className="py-3.5 px-3.5 font-bold uppercase tracking-wider text-sm text-right">Monto Promedio</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-neutral-900">
+              <tbody className="divide-y divide-slate-150 dark:divide-neutral-900">
                 {periodData.map((item) => (
                   <tr key={item.key} className="text-slate-955 dark:text-white hover:bg-slate-50/30 dark:hover:bg-neutral-900/40 transition-colors">
-                    <td className="py-3 px-3.5 font-normal">{item.fullLabel}</td>
-                    <td className="py-3 px-3.5 text-right font-normal text-slate-900 dark:text-white">
+                    <td className="py-3.5 px-3.5 font-normal">{item.fullLabel}</td>
+                    <td className="py-3.5 px-3.5 text-right font-normal text-slate-900 dark:text-white">
                       {formatCurrency(item.revenue)}
                     </td>
-                    <td className="py-3 px-3.5 text-right font-normal">{item.ordersCount}</td>
-                    <td className="py-3 px-3.5 text-right font-normal text-emerald-600 dark:text-emerald-400">
+                    <td className="py-3.5 px-3.5 text-right font-normal">{item.ordersCount}</td>
+                    <td className="py-3.5 px-3.5 text-right font-normal text-emerald-600 dark:text-emerald-400 font-semibold">
                       {formatCurrency(item.ordersCount > 0 ? item.revenue / item.ordersCount : 0)}
                     </td>
                   </tr>
@@ -960,11 +944,11 @@ export const VendedorEstadisticasPage = () => {
       <div className="space-y-6">
 
         {filteredOrders.length === 0 ? (
-          <div className="rounded-2xl bg-white p-8 text-center dark:bg-slate-955/60">
+          <div className="rounded-2xl bg-white p-8 text-center dark:bg-black dark:border dark:border-white/10">
             <p className="text-sm font-normal text-slate-900 dark:text-white">No se encontraron pedidos con el criterio de búsqueda</p>
           </div>
         ) : (
-          <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-slate-955/60">
+          <div className="rounded-2xl bg-white shadow-sm overflow-hidden dark:bg-black dark:border dark:border-white/10">
             <div className="max-h-[500px] overflow-y-auto pr-1 scrollbar-thin">
               <table className="w-full border-collapse text-left text-sm">
                 <thead className="sticky top-0 bg-white dark:bg-slate-955 z-10 border-b border-slate-200 dark:border-neutral-800">
@@ -1028,7 +1012,7 @@ export const VendedorEstadisticasPage = () => {
           globalStats ? (
             <div className="grid gap-8 sm:grid-cols-2">
               {/* Top Products */}
-              <div className="rounded-2xl bg-white p-6 md:p-8 shadow-sm dark:bg-slate-955/60">
+              <div className="rounded-2xl bg-white p-6 md:p-8 shadow-sm dark:bg-black dark:border dark:border-white/10">
                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-neutral-800 pb-3 mb-4">
                   <h4 className="text-base font-bold text-slate-955 dark:text-white uppercase tracking-wider">Productos más vendidos</h4>
                   <ArrowUpRight className="h-5 w-5 text-slate-955 dark:text-white" />
@@ -1070,7 +1054,7 @@ export const VendedorEstadisticasPage = () => {
               </div>
 
               {/* Seller performance ranking */}
-              <div className="rounded-2xl bg-white p-6 md:p-8 shadow-sm dark:bg-slate-955/60">
+              <div className="rounded-2xl bg-white p-6 md:p-8 shadow-sm dark:bg-black dark:border dark:border-white/10">
                 <div className="border-b border-slate-100 dark:border-neutral-900 pb-3 mb-4">
                   <h4 className="text-base font-bold text-slate-955 dark:text-white uppercase tracking-wider">Rendimiento por Vendedor</h4>
                 </div>
@@ -1105,82 +1089,93 @@ export const VendedorEstadisticasPage = () => {
               </div>
             </div>
           ) : isLoading ? (
-            <div className="py-16 flex flex-col items-center justify-center gap-3 bg-white dark:bg-slate-955/65 rounded-2xl shadow-sm">
+            <div className="py-16 flex flex-col items-center justify-center gap-3 bg-white dark:bg-black dark:border dark:border-white/10 rounded-2xl shadow-sm">
               <div className="h-9 w-9 rounded-full border-4 border-teal-500 border-t-transparent animate-spin"></div>
               <span className="text-sm font-semibold text-slate-955 dark:text-white">Cargando métricas globales...</span>
             </div>
           ) : (
-            <div className="py-16 flex flex-col items-center justify-center gap-3 bg-white dark:bg-slate-955/65 rounded-2xl shadow-sm">
+            <div className="py-16 flex flex-col items-center justify-center gap-3 bg-white dark:bg-black dark:border dark:border-white/10 rounded-2xl shadow-sm">
               <span className="text-sm font-semibold text-red-500">Error al cargar las métricas. Intente recargar la página.</span>
             </div>
           )
         ) : (
           /* Seller-specific Dispatch summary with extra sections */
-          <div className="space-y-8">
-            <div className="rounded-2xl bg-gradient-to-br from-white to-slate-50/50 p-6 md:p-8 shadow-sm dark:from-neutral-900/60 dark:to-neutral-955/40">
-              <div className="flex items-center gap-5">
-                <div className="h-14 w-14 rounded-2xl bg-cyan-50 dark:bg-cyan-950/40 flex items-center justify-center text-cyan-600 dark:text-cyan-400 shrink-0">
-                  <Package className="h-7 w-7" />
-                </div>
-                <div>
-                  <h4 className="text-base font-bold text-slate-955 dark:text-white uppercase tracking-wider">Eficiencia de Despacho</h4>
-                  <p className="text-sm md:text-base text-slate-955 dark:text-white leading-relaxed mt-1">
-                    Se han despachado de forma exitosa <span className="font-bold text-slate-955 dark:text-white">{activeSellerStats.totalDelivered}</span> de los <span className="font-bold text-slate-955 dark:text-white">{activeSellerStats.totalOrdersAssigned}</span> pedidos asignados. Esto equivale a un total de <span className="font-bold text-emerald-600 dark:text-emerald-400">{totalItemsSold}</span> componentes físicos de hardware suministrados por el empleado.
-                  </p>
-                </div>
-              </div>
-            </div>
+          (() => {
+            const dispatchedOrders = orders.filter((o) => o.status === 'SHIPPED' || o.status === 'DELIVERED');
+            const dispatchedCount = dispatchedOrders.length;
+            const dispatchedRevenue = dispatchedOrders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
+            const ordersVal = activeSellerStats?.totalOrdersAssigned ?? orders.length;
 
-            <div className="grid gap-8 sm:grid-cols-2">
-              <div className="rounded-2xl bg-white p-6 md:p-8 shadow-sm dark:bg-neutral-950/60">
-                <span className="text-sm font-bold text-slate-955 dark:text-white uppercase tracking-widest block">Monto Promedio por Pedido</span>
-                <p className="text-3xl md:text-4xl font-extrabold text-slate-955 dark:text-white mt-3">
-                  {formatCurrency(activeSellerStats.totalDelivered > 0 ? activeSellerStats.totalRevenue / activeSellerStats.totalDelivered : 0)}
-                </p>
-                <p className="text-xs md:text-sm text-slate-955 dark:text-white font-normal mt-1.5">Suma media facturada para las entregas completadas</p>
-              </div>
-
-              <div className="rounded-2xl bg-white p-6 md:p-8 shadow-sm dark:bg-slate-955/60">
-                <span className="text-sm font-bold text-slate-955 dark:text-white uppercase tracking-widest block">Volumen de Entrega</span>
-                <p className="text-3xl md:text-4xl font-extrabold text-slate-955 dark:text-white mt-3">
-                  {activeSellerStats.totalDelivered} <span className="text-sm font-medium text-slate-955 dark:text-white">pedidos</span>
-                </p>
-                <p className="text-xs md:text-sm text-slate-955 dark:text-white font-normal mt-1.5">Total de transacciones marcadas como "Entregado"</p>
-              </div>
-            </div>
-
-            {/* Dynamic Seller Top Components List */}
-            <div className="rounded-2xl bg-white p-6 md:p-8 shadow-sm dark:bg-neutral-950/60">
-              <h4 className="text-base font-bold text-slate-955 dark:text-white uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-neutral-800 pb-3">Componentes Despachados por el Empleado</h4>
-              {sellerProducts.length === 0 ? (
-                <p className="text-sm md:text-base font-medium text-slate-955 dark:text-white">No se han registrado entregas para cuantificar componentes despachados.</p>
-              ) : (
-                <div className="divide-y divide-slate-100 dark:divide-neutral-900">
-                  {sellerProducts.map((p, idx) => (
-                    <div key={idx} className="flex justify-between items-center py-4">
-                      <div>
-                        <span className="text-base md:text-lg font-semibold text-slate-955 dark:text-white block leading-tight">{p.name}</span>
-                        <span className="text-xs md:text-sm font-normal text-slate-955 dark:text-white mt-1 block">
-                          {p.sku && p.sku !== 'N/A' && p.sku !== 'null' && p.sku !== 'undefined' && <span>Código: {p.sku} • </span>} {formatCurrency(p.price)}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-base md:text-lg font-bold text-cyan-600 dark:text-cyan-400 block">{p.quantity} unds</span>
-                        <span className="text-xs font-medium text-slate-955 dark:text-white uppercase tracking-wider block">despachadas</span>
-                      </div>
+            return (
+              <div className="space-y-8">
+                {/* Efficiency card */}
+                <div className="rounded-2xl bg-white p-6 md:p-8 shadow-sm dark:bg-black dark:border dark:border-white/10">
+                  <div className="flex items-center gap-5">
+                    <div className="h-14 w-14 rounded-2xl bg-cyan-50 dark:bg-cyan-950/40 flex items-center justify-center text-cyan-600 dark:text-cyan-400 shrink-0">
+                      <Package className="h-7 w-7" />
                     </div>
-                  ))}
+                    <div>
+                      <h4 className="text-lg md:text-xl font-medium text-slate-955 dark:text-white uppercase tracking-wider">Eficiencia de Envío</h4>
+                      <p className="text-base md:text-lg lg:text-xl font-normal text-slate-955 dark:text-white leading-relaxed mt-2.5">
+                        Se han enviado de forma exitosa <span className="font-medium text-slate-955 dark:text-white">{dispatchedCount}</span> de los <span className="font-medium text-slate-955 dark:text-white">{ordersVal}</span> pedidos asignados. Esto equivale a un total de <span className="font-medium text-emerald-600 dark:text-emerald-400">{totalItemsSold}</span> componentes físicos de hardware enviados por el vendedor.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              )}
-            </div>
-          </div>
+
+                <div className="grid gap-8 sm:grid-cols-2">
+                  {/* Card 1: Monto Promedio */}
+                  <div className="rounded-2xl bg-white p-6 md:p-8 shadow-sm dark:bg-black dark:border dark:border-white/10">
+                    <span className="text-sm md:text-base font-normal text-slate-955 dark:text-white uppercase tracking-widest block">Monto Promedio por Pedido</span>
+                    <p className="text-4xl md:text-5xl font-normal text-slate-900 dark:text-white mt-3">
+                      {formatCurrency(dispatchedCount > 0 ? dispatchedRevenue / dispatchedCount : 0)}
+                    </p>
+                    <p className="text-sm md:text-base text-slate-500 dark:text-white/60 font-normal mt-2.5">Suma media facturada para los envíos y entregas</p>
+                  </div>
+
+                  {/* Card 2: Volumen de Envío */}
+                  <div className="rounded-2xl bg-white p-6 md:p-8 shadow-sm dark:bg-black dark:border dark:border-white/10">
+                    <span className="text-sm md:text-base font-normal text-slate-955 dark:text-white uppercase tracking-widest block">Volumen de Envío</span>
+                    <p className="text-4xl md:text-5xl font-normal text-slate-900 dark:text-white mt-3">
+                      {dispatchedCount} <span className="text-base font-normal text-slate-500 dark:text-white/60">pedidos</span>
+                    </p>
+                    <p className="text-sm md:text-base text-slate-500 dark:text-white/60 font-normal mt-2.5">Total de transacciones enviadas o entregadas</p>
+                  </div>
+                </div>
+
+                {/* Dynamic Seller Top Components List */}
+                <div className="rounded-2xl bg-white p-6 md:p-8 shadow-sm dark:bg-black dark:border dark:border-white/10">
+                  <h4 className="text-lg md:text-xl font-medium text-slate-955 dark:text-white uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-neutral-800 pb-3">Componentes Despachados por el Vendedor</h4>
+                  {sellerProducts.length === 0 ? (
+                    <p className="text-base md:text-lg font-medium text-slate-955 dark:text-white">No se han registrado envíos para cuantificar componentes despachados.</p>
+                  ) : (
+                    <div className="divide-y divide-slate-100 dark:divide-neutral-900">
+                      {sellerProducts.map((p, idx) => (
+                        <div key={idx} className="flex justify-between items-center py-4">
+                          <div>
+                            <span className="text-lg md:text-xl font-normal text-slate-955 dark:text-white block leading-tight">
+                              {p.name} <span className="text-sm md:text-base font-normal text-slate-500 dark:text-white/60 ml-2">({formatCurrency(p.price)})</span>
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-lg md:text-xl font-normal text-cyan-600 dark:text-cyan-400 block">{p.quantity} unds</span>
+                            <span className="text-xs font-normal text-slate-500 dark:text-white/60 uppercase tracking-wider block">despachadas</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()
         )}
       </div>
     );
   };
 
   return (
-    <div className="rounded-xl bg-white p-5 shadow-sm shadow-slate-200/70 dark:bg-neutral-900 dark:shadow-black/20">
+    <div className="rounded-xl bg-white p-5 shadow-sm shadow-slate-200/70 dark:bg-black dark:shadow-none dark:border dark:border-white/10">
       {/* Centered and well distributed horizontal navigation bar - Glued to the top */}
       <div className="flex justify-center w-full mb-3">
         <div className="flex flex-wrap gap-2.5 p-1.5 bg-slate-100/70 dark:bg-neutral-900/60 rounded-xl justify-center">
@@ -1222,7 +1217,7 @@ export const VendedorEstadisticasPage = () => {
 
       {/* Control bar (Filtros) - Only rendered when tab uses them */}
       {(activeTab === 'general' || activeTab === 'orders') && (
-        <div className="mb-4 rounded-2xl bg-white/70 dark:bg-slate-955/60 p-4 shadow-sm backdrop-blur-md">
+        <div className="mb-4 rounded-2xl bg-white/70 dark:bg-black dark:border dark:border-white/10 p-4 shadow-sm backdrop-blur-md">
           <div className="flex flex-wrap items-center justify-end gap-3 w-full">
               {/* Search input - only on Orders tab */}
               {activeTab === 'orders' && (

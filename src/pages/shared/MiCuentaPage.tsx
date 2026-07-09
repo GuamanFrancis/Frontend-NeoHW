@@ -51,6 +51,30 @@ export const MiCuentaPage = () => {
     }
   };
 
+  const getContactInfoDetails = () => {
+    const role = session?.user.role;
+    switch (role) {
+      case 'admin':
+        return {
+          title: 'Información de contacto',
+          description: 'Esta información se utiliza para la administración, soporte y gestión de la plataforma.',
+        };
+      case 'vendedor':
+        return {
+          title: 'Información de contacto',
+          description: 'Esta información se utiliza para la identificación y comunicación interna de ventas.',
+        };
+      case 'cliente':
+      default:
+        return {
+          title: 'Datos de contacto',
+          description: 'Esta información se utiliza para gestionar el envío y la entrega de tus productos.',
+        };
+    }
+  };
+
+  const contactInfo = getContactInfoDetails();
+
   const saveProfile = async () => {
     if (!session) {
       setFormError('Debes iniciar sesion para actualizar tu perfil.');
@@ -216,8 +240,8 @@ export const MiCuentaPage = () => {
                     <Mail className="h-5.5 w-5.5" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Datos de contacto</h3>
-                    <p className="text-base font-medium text-slate-600 dark:text-neutral-400 mt-0.5">Esta información se utiliza para gestionar el envío y la entrega de tus productos.</p>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">{contactInfo.title}</h3>
+                    <p className="text-base font-medium text-slate-600 dark:text-white/60 mt-0.5">{contactInfo.description}</p>
                   </div>
                 </div>
                 <div className="grid gap-6 sm:grid-cols-2">

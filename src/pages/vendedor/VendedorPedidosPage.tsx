@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Eye, Filter, Search, Truck, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
+import { Eye, Filter, Search, Truck, AlertTriangle, CheckCircle2, XCircle, Check, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../../components/ui/Button';
 import { PageCard } from '../../components/ui/PageCard';
 import { Modal } from '../../components/ui/Modal';
@@ -103,11 +104,22 @@ export const VendedorPedidosPage = () => {
   const [isDelivering, setIsDelivering] = useState(false);
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
 
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => {
+        setToastMessage(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
+
   const loadOrders = async () => {
     try {
       setIsLoading(true);
 
-      const res = await getOrders();
+      const res = await getOrders(undefined, undefined, 50);
 
       const mapped = res.data.map((order): MappedSellerOrder => {
         let itemsCount = 0;
@@ -205,26 +217,26 @@ export const VendedorPedidosPage = () => {
       setOrders((current) =>
         current.map((o) => (o.id === orderToDispatch.id ? { ...o, status: 'Enviado' } : o))
       );
+      setToastMessage(`El pedido ${orderToDispatch.trackingCode || orderToDispatch.id} se ha despachado con éxito.`);
       setOrderToDispatch(null);
       setIsDispatching(false);
       return;
     }
 
     try {
-      
       if (orderToDispatch.status !== 'En proceso') {
         throw new Error('Solo se pueden enviar pedidos que están en estado "En proceso" (pagados por el cliente).');
       }
 
-      
       if (!dispatchFile) {
-        throw new Error('Es obligatorio subir una Prueba de Envío (SHIPPING_PROOF) en formato PDF o Imagen para despachar este pedido.');
+        throw new Error('Es obligatorio subir una Prueba de Envío en formato PDF o Imagen para despachar este pedido.');
       }
 
       await uploadOrderDocument(orderToDispatch.id, dispatchFile, 'SHIPPING_PROOF');
       await updateOrderStatus(orderToDispatch.id, 'SHIPPED');
 
       await loadOrders();
+      setToastMessage(`El pedido ${orderToDispatch.trackingCode || orderToDispatch.id} se ha despachado con éxito.`);
       setOrderToDispatch(null);
     } catch (err) {
       console.error(err);
@@ -254,6 +266,7 @@ export const VendedorPedidosPage = () => {
       setOrders((current) =>
         current.map((o) => (o.id === orderToDeliver.id ? { ...o, status: 'Entregado' } : o))
       );
+      setToastMessage(`La entrega del pedido ${orderToDeliver.trackingCode || orderToDeliver.id} fue registrada con éxito.`);
       setOrderToDeliver(null);
       setIsDelivering(false);
       return;
@@ -265,11 +278,11 @@ export const VendedorPedidosPage = () => {
       }
 
       if (!deliveryPhotoFile) {
-        throw new Error('Debe subir la Foto de Entrega (DELIVERY_PHOTO) para entregar el pedido.');
+        throw new Error('Debe subir la Foto de Entrega para entregar el pedido.');
       }
 
       if (!customerSignatureFile) {
-        throw new Error('Debe subir la Firma del Cliente (CUSTOMER_SIGNATURE) para entregar el pedido.');
+        throw new Error('Debe subir la Firma del Cliente para entregar el pedido.');
       }
 
       await uploadOrderDocument(orderToDeliver.id, deliveryPhotoFile, 'DELIVERY_PHOTO');
@@ -277,6 +290,7 @@ export const VendedorPedidosPage = () => {
       await updateOrderStatus(orderToDeliver.id, 'DELIVERED');
 
       await loadOrders();
+      setToastMessage(`La entrega del pedido ${orderToDeliver.trackingCode || orderToDeliver.id} fue registrada con éxito.`);
       setOrderToDeliver(null);
     } catch (err) {
       console.error(err);
@@ -304,6 +318,7 @@ export const VendedorPedidosPage = () => {
       setOrders((current) =>
         current.map((o) => (o.id === orderToCancel.id ? { ...o, status: 'Cancelado' } : o))
       );
+      setToastMessage(`El pedido ${orderToCancel.trackingCode || orderToCancel.id} se ha cancelado con éxito.`);
       setOrderToCancel(null);
       setIsCancelling(false);
       return;
@@ -316,6 +331,7 @@ export const VendedorPedidosPage = () => {
 
       await updateOrderStatus(orderToCancel.id, 'CANCELLED');
       await loadOrders();
+      setToastMessage(`El pedido ${orderToCancel.trackingCode || orderToCancel.id} se ha cancelado con éxito.`);
       setOrderToCancel(null);
     } catch (err) {
       console.error(err);
@@ -445,10 +461,10 @@ export const VendedorPedidosPage = () => {
                   return (
                     <tr key={order.id} className="transition hover:bg-slate-50 dark:hover:bg-white/[0.03]">
                       <td className="px-5 py-4 min-w-[360px]">
-                        <div className="grid grid-cols-2 gap-x-4 text-sm font-normal text-slate-955 dark:text-white">
+                        <div className="grid grid-cols-2 gap-x-4 text-sm font-normal text-slate-900 dark:text-white dark:text-white">
                           <div>
                             <div className="flex items-baseline gap-1.5">
-                              <p className="text-sm font-medium text-slate-955 dark:text-white">{order.clientName}</p>
+                              <p className="text-sm font-medium text-slate-900 dark:text-white dark:text-white">{order.clientName}</p>
                               {new Date(order.createdAt).getTime() > Date.now() - 24 * 60 * 60 * 1000 && (
                                 <span className="relative flex h-2 w-2 shrink-0">
                                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -456,20 +472,20 @@ export const VendedorPedidosPage = () => {
                                 </span>
                               )}
                             </div>
-                            <p className="mt-1.5 text-sm font-normal text-slate-955/80 dark:text-white/80 max-w-[180px] break-all">{order.clientEmail}</p>
+                            <p className="mt-1.5 text-sm font-normal text-slate-600 dark:text-neutral-350 dark:text-white/80 max-w-[180px] break-all">{order.clientEmail}</p>
                           </div>
                           <div>
-                            <p className="text-sm font-normal text-slate-955 dark:text-white">
+                            <p className="text-sm font-normal text-slate-900 dark:text-white dark:text-white">
                               {order.clientPhone || 'No registrado'}
                             </p>
-                            <p className="mt-1.5 text-sm font-normal text-slate-955 dark:text-white leading-relaxed max-w-[200px]">
+                            <p className="mt-1.5 text-sm font-normal text-slate-900 dark:text-white dark:text-white leading-relaxed max-w-[200px]">
                               {order.addressStr}
                             </p>
                           </div>
                         </div>
                       </td>
                       <td className="px-5 py-4">
-                        <p className="font-mono text-sm font-bold text-slate-955 dark:text-white select-all">
+                        <p className="font-mono text-sm font-bold text-slate-900 dark:text-white dark:text-white select-all">
                           {order.trackingCode ? (
                             <span className="text-teal-600 dark:text-teal-400">{order.trackingCode}</span>
                           ) : (
@@ -478,10 +494,10 @@ export const VendedorPedidosPage = () => {
                         </p>
                       </td>
                       <td className="px-5 py-4">
-                        <p className="text-xs font-bold text-slate-955 dark:text-white">{formattedDate.day}</p>
-                        <p className="mt-1 text-[11px] text-slate-955 dark:text-white font-normal">{formattedDate.time}</p>
+                        <p className="text-xs font-bold text-slate-900 dark:text-white dark:text-white">{formattedDate.day}</p>
+                        <p className="mt-1 text-[11px] text-slate-900 dark:text-white dark:text-white font-normal">{formattedDate.time}</p>
                       </td>
-                      <td className="px-5 py-4 font-bold text-sm text-slate-955 dark:text-white">{formatCurrency(order.total)}</td>
+                      <td className="px-5 py-4 font-bold text-sm text-slate-900 dark:text-white dark:text-white">{formatCurrency(order.total)}</td>
                       <td className="px-5 py-4">
                         <span className={`text-sm font-semibold ${statusStyles[order.status as SellerOrderStatus]}`}>
                           {order.status}
@@ -535,7 +551,7 @@ export const VendedorPedidosPage = () => {
 
                 {isLoading && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-955 dark:text-white">
+                    <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-900 dark:text-white dark:text-white">
                       Cargando pedidos...
                     </td>
                   </tr>
@@ -543,7 +559,7 @@ export const VendedorPedidosPage = () => {
 
                 {!isLoading && pageOrders.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-955 dark:text-white">
+                    <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-900 dark:text-white dark:text-white">
                       No se encontraron pedidos con los filtros actuales.
                     </td>
                   </tr>
@@ -552,7 +568,7 @@ export const VendedorPedidosPage = () => {
             </table>
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-955 dark:border-neutral-800 dark:text-white md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-900 dark:text-white dark:border-neutral-800 dark:text-white md:flex-row md:items-center md:justify-between">
             <p>
               Mostrando {firstResult} a {lastResult} de {filteredOrders.length} pedidos
             </p>
@@ -614,6 +630,7 @@ export const VendedorPedidosPage = () => {
         open={modalMode === 'view' && Boolean(selectedOrder)}
         title="Detalles del Pedido"
         onClose={() => setModalMode(null)}
+        className="max-w-2xl p-8"
       >
         {selectedOrder && (
           <div className="space-y-6 text-slate-900 dark:text-white max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin">
@@ -622,7 +639,7 @@ export const VendedorPedidosPage = () => {
                 <span className="block font-semibold text-slate-900 dark:text-white text-base">
                   {selectedOrder.trackingCode ? 'Código de Rastreo' : 'Código de Pedido'}
                 </span>
-                <span className="block font-mono font-normal text-slate-955 dark:text-white text-base mt-0.5">
+                <span className="block font-mono font-normal text-slate-900 dark:text-white text-base mt-0.5">
                   {selectedOrder.trackingCode ? (
                     <span className="font-bold text-teal-600 dark:text-teal-400">{selectedOrder.trackingCode}</span>
                   ) : (
@@ -632,52 +649,52 @@ export const VendedorPedidosPage = () => {
               </div>
               <div>
                 <span className="block font-semibold text-slate-900 dark:text-white text-base">Fecha de Creación</span>
-                <span className="block font-normal text-slate-955 dark:text-white text-base mt-0.5">
+                <span className="block font-normal text-slate-900 dark:text-white text-base mt-0.5">
                   {formatOrderDate(selectedOrder.createdAt).day} a las {formatOrderDate(selectedOrder.createdAt).time}
                 </span>
               </div>
             </div>
 
-            <div className="border-t border-slate-150 dark:border-neutral-800" />
+            <div className="border-t border-slate-150 dark:border-white/10" />
 
             <div>
-              <span className="block font-bold uppercase tracking-wider text-slate-955 dark:text-white text-sm">Información del Cliente</span>
+              <span className="block font-bold uppercase tracking-wider text-slate-900 dark:text-white text-sm">Información del Cliente</span>
               <div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-3">
                 <div>
                   <span className="block font-semibold text-slate-900 dark:text-white text-base">Cliente</span>
-                  <span className="block font-normal text-slate-955 dark:text-white text-base mt-0.5">{selectedOrder.clientName}</span>
+                  <span className="block font-normal text-slate-900 dark:text-white text-base mt-0.5">{selectedOrder.clientName}</span>
                 </div>
                 <div>
                   <span className="block font-semibold text-slate-900 dark:text-white text-base">Email</span>
-                  <span className="block font-normal text-slate-955 dark:text-white text-base mt-0.5">{selectedOrder.clientEmail}</span>
+                  <span className="block font-normal text-slate-900 dark:text-white text-base mt-0.5">{selectedOrder.clientEmail}</span>
                 </div>
                 <div>
                   <span className="block font-semibold text-slate-900 dark:text-white text-base">Teléfono</span>
-                  <span className="block font-normal text-slate-955 dark:text-white text-base mt-0.5">{selectedOrder.clientPhone || 'No registrado'}</span>
+                  <span className="block font-normal text-slate-900 dark:text-white text-base mt-0.5">{selectedOrder.clientPhone || 'No registrado'}</span>
                 </div>
                 <div>
                   <span className="block font-semibold text-slate-900 dark:text-white text-base">Dirección de Envío</span>
-                  <span className="block font-normal text-slate-955 dark:text-white text-base mt-0.5">{selectedOrder.addressStr || 'No provista'}</span>
+                  <span className="block font-normal text-slate-900 dark:text-white text-base mt-0.5">{selectedOrder.addressStr || 'No provista'}</span>
                 </div>
               </div>
             </div>
 
             {selectedOrder.items && selectedOrder.items.length > 0 && (
               <>
-                <div className="border-t border-slate-150 dark:border-neutral-800" />
+                <div className="border-t border-slate-150 dark:border-white/10" />
                 <div>
-                  <span className="block font-bold uppercase tracking-wider text-slate-955 dark:text-white text-sm mb-3">Componentes Comprados</span>
-                  <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-neutral-800">
+                  <span className="block font-bold uppercase tracking-wider text-slate-900 dark:text-white text-sm mb-3">Componentes Comprados</span>
+                  <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-white/10">
                     <div className="max-h-[160px] overflow-y-auto scrollbar-thin">
                       <table className="w-full min-w-full text-left text-base">
-                        <thead className="bg-slate-50 text-slate-955 dark:bg-white/[0.02] dark:text-white border-b border-slate-200 dark:border-neutral-800 sticky top-0">
+                        <thead className="bg-slate-50 text-slate-900 dark:text-white dark:bg-black dark:text-white border-b border-slate-200 dark:border-white/10 sticky top-0">
                           <tr>
                             <th className="px-3 py-2.5 font-bold">Producto</th>
                             <th className="px-3 py-2.5 text-center font-bold">Cant.</th>
                             <th className="px-3 py-2.5 text-right font-bold">Precio Unit.</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-150 dark:divide-neutral-900/50">
+                        <tbody className="divide-y divide-slate-150 dark:divide-white/10">
                           {selectedOrder.items.map((item, idx) => (
                             <tr key={item.id || idx}>
                               <td className="px-3 py-2.5 font-normal text-slate-900 dark:text-white">
@@ -696,18 +713,19 @@ export const VendedorPedidosPage = () => {
                     </div>
                   </div>
                 </div>
-              </>            )}
+              </>
+            )}
 
-            <div className="border-t border-slate-150 dark:border-neutral-800" />
+            <div className="border-t border-slate-150 dark:border-white/10" />
 
-            <div className="border-t border-slate-150 dark:border-neutral-800 pt-4 space-y-2">
+            <div className="border-t border-slate-150 dark:border-white/10 pt-4 space-y-2">
               {selectedOrder.subtotal !== undefined && selectedOrder.taxAmount !== undefined && (
                 <>
-                  <div className="flex justify-between text-sm font-semibold text-slate-750 dark:text-neutral-300">
+                  <div className="flex justify-between text-sm font-semibold text-slate-700 dark:text-white/80">
                     <span>Subtotal</span>
                     <span>{formatCurrency(selectedOrder.subtotal)}</span>
                   </div>
-                  <div className="flex justify-between text-sm font-semibold text-slate-750 dark:text-neutral-300 pb-2 border-b border-slate-200 dark:border-neutral-800">
+                  <div className="flex justify-between text-sm font-semibold text-slate-700 dark:text-white/80 pb-2 border-b border-slate-200 dark:border-white/10">
                     <span>IVA (15%)</span>
                     <span>{formatCurrency(selectedOrder.taxAmount)}</span>
                   </div>
@@ -715,11 +733,11 @@ export const VendedorPedidosPage = () => {
               )}
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="block font-bold uppercase tracking-wider text-slate-955 dark:text-white text-sm">Total del Pedido</span>
-                  <span className="block text-2xl font-semibold text-slate-955 dark:text-white mt-1">{formatCurrency(selectedOrder.total)}</span>
+                  <span className="block font-bold uppercase tracking-wider text-slate-900 dark:text-white text-sm">Total del Pedido</span>
+                  <span className="block text-2xl font-semibold text-slate-900 dark:text-white mt-1">{formatCurrency(selectedOrder.total)}</span>
                 </div>
                 <div className="text-right">
-                  <span className="block font-bold uppercase tracking-wider text-slate-955 dark:text-white text-sm">Estado</span>
+                  <span className="block font-bold uppercase tracking-wider text-slate-900 dark:text-white text-sm">Estado</span>
                   <span className={`block text-lg font-semibold mt-1 ${statusStyles[selectedOrder.status as SellerOrderStatus]}`}>
                     {selectedOrder.status}
                   </span>
@@ -728,7 +746,7 @@ export const VendedorPedidosPage = () => {
             </div>
 
             <div className="flex justify-end pt-2">
-              <Button type="button" onClick={() => setModalMode(null)} className="h-11 px-6 font-bold text-sm bg-teal-500 hover:bg-teal-600 text-white rounded-lg transition-all active:scale-95 shadow-sm shadow-teal-500/20 border-0">
+              <Button type="button" onClick={() => setModalMode(null)} className="h-11 px-6 font-bold text-sm bg-teal-500 hover:bg-teal-650 text-white rounded-lg transition-all active:scale-95 shadow-sm shadow-teal-500/20 border-0">
                 Cerrar
               </Button>
             </div>
@@ -740,43 +758,44 @@ export const VendedorPedidosPage = () => {
         open={!!orderToDispatch}
         title="Preparar Despacho del Pedido"
         onClose={() => setOrderToDispatch(null)}
+        className="max-w-3xl p-8 md:p-10"
       >
         {orderToDispatch && (
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-teal-500/10 text-teal-600 shrink-0">
-                <Truck className="h-5 w-5" />
+          <div className="space-y-6 text-left">
+            <div className="flex items-start gap-4">
+              <div className="h-12 w-12 flex items-center justify-center rounded-xl bg-teal-500/10 text-teal-600 shrink-0">
+                <Truck className="h-6 w-6" />
               </div>
               <div className="flex-1">
-                <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">
-                  ¿Estás listo para despachar el pedido {orderToDispatch.id}?
+                <h4 className="text-lg md:text-xl font-medium text-slate-900 dark:text-white leading-snug">
+                  ¿Estás listo para despachar el pedido {orderToDispatch.trackingCode || orderToDispatch.id}?
                 </h4>
-                <p className="text-xs text-slate-955 dark:text-white mt-1 leading-relaxed">
-                  Para actualizar el estado a <span className="font-bold text-teal-500">Enviado (SHIPPED)</span>, es obligatorio cumplir con las reglas del negocio:
+                <p className="text-base text-slate-600 dark:text-white/80 mt-2 font-medium opacity-90">
+                  Para actualizar el estado a <span className="font-bold text-teal-500">Enviado</span>, es obligatorio cumplir con las reglas del negocio:
                 </p>
               </div>
             </div>
 
-            <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-neutral-800 dark:bg-neutral-900/40 text-xs font-semibold space-y-3">
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-6 dark:border-white/10 dark:bg-black text-base font-semibold space-y-5">
               <div className="flex items-center justify-between">
-                <span className="text-slate-955 dark:text-white">Requisito 1: Pago y Estado</span>
+                <span className="text-slate-800 dark:text-white font-bold">Requisito 1: Pago y Estado</span>
                 {orderToDispatch.status === 'En proceso' ? (
-                  <span className="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✓ Cumplido (En proceso)</span>
+                  <span className="bg-emerald-500/10 text-emerald-600 px-3 py-1 rounded-md text-xs uppercase font-bold tracking-wider">✓ Cumplido</span>
                 ) : (
-                  <span className="bg-rose-500/10 text-rose-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✗ Requerido ({orderToDispatch.status})</span>
+                  <span className="bg-rose-500/10 text-rose-500 px-3 py-1 rounded-md text-xs uppercase font-bold tracking-wider">✗ Requerido ({orderToDispatch.status})</span>
                 )}
               </div>
-              <p className="text-[10px] text-slate-955 dark:text-white leading-normal -mt-2">
+              <p className="text-sm text-slate-500 dark:text-white/70 leading-relaxed -mt-3 font-normal opacity-90">
                 El pedido debe estar pagado (estado "En proceso") para poder realizar el envío.
               </p>
 
-              <div className="border-t border-slate-200/40 dark:border-neutral-800 pt-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-slate-955 dark:text-white">Requisito 2: Prueba de Envío (SHIPPING_PROOF)</span>
+              <div className="border-t border-slate-200/45 dark:border-white/10 pt-5">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-slate-800 dark:text-white font-bold">Requisito 2: Prueba de Envío</span>
                   {dispatchFile ? (
-                    <span className="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✓ Cargado</span>
+                    <span className="bg-emerald-500/10 text-emerald-600 px-3 py-1 rounded-md text-xs uppercase font-bold tracking-wider">✓ Cargado</span>
                   ) : (
-                    <span className="bg-rose-500/10 text-rose-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✗ Obligatorio</span>
+                    <span className="bg-rose-500/10 text-rose-500 px-3 py-1 rounded-md text-xs uppercase font-bold tracking-wider">✗ Obligatorio</span>
                   )}
                 </div>
                 <input
@@ -788,39 +807,43 @@ export const VendedorPedidosPage = () => {
                       setDispatchFile(files[0]);
                     }
                   }}
-                  className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-[10px] file:font-bold file:bg-teal-500/10 file:text-teal-600 hover:file:bg-teal-500/20 file:cursor-pointer cursor-pointer border border-dashed border-slate-300 dark:border-neutral-700 rounded-lg p-2 bg-white dark:bg-neutral-950"
+                  className="w-full text-base text-slate-700 dark:text-white/90 file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-teal-500/10 file:text-teal-650 hover:file:bg-teal-500/20 file:cursor-pointer cursor-pointer border border-dashed border-slate-300 dark:border-white/10 rounded-xl p-3 bg-white dark:bg-black"
                   disabled={orderToDispatch.status !== 'En proceso'}
                 />
-                <p className="text-[9px] text-slate-955 dark:text-white mt-1 font-medium">
+                <p className="text-sm text-slate-500 dark:text-white/60 mt-2 font-medium opacity-85">
                   Soporta imágenes (JPEG, PNG, WEBP) o documentos PDF de hasta 5 MB.
                 </p>
               </div>
             </div>
 
             {dispatchError && (
-              <div className="flex items-start gap-2.5 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-red-600 dark:text-red-300 text-xs font-semibold">
-                <AlertTriangle className="h-4 w-4 shrink-0 text-red-500 mt-0.5" />
+              <div className="flex items-start gap-3 rounded-lg border border-red-500/20 bg-red-500/5 p-4 text-red-650 dark:text-red-300 text-sm font-semibold">
+                <AlertTriangle className="h-5 w-5 shrink-0 text-red-500 mt-0.5" />
                 <span>{dispatchError}</span>
               </div>
             )}
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-neutral-900">
-              <Button
+            <div className="flex justify-end gap-4 pt-5 border-t border-slate-100 dark:border-neutral-900">
+              <button
                 type="button"
-                variant="ghost"
                 onClick={() => setOrderToDispatch(null)}
                 disabled={isDispatching}
+                className="border border-slate-200 text-slate-700 hover:bg-slate-100 dark:border-white/10 dark:text-white dark:hover:bg-white/10 px-6 py-3 rounded-xl text-base font-bold transition cursor-pointer bg-transparent"
               >
                 Cancelar
-              </Button>
-              <Button
+              </button>
+              <button
                 type="button"
                 onClick={() => void handleConfirmDispatch()}
                 disabled={isDispatching || orderToDispatch.status !== 'En proceso' || !dispatchFile}
-                className="bg-teal-500 hover:bg-teal-650 text-white font-extrabold"
+                className={`border font-bold px-6 py-3 rounded-xl text-base transition-all duration-200 ${
+                  (isDispatching || orderToDispatch.status !== 'En proceso' || !dispatchFile)
+                    ? 'bg-slate-100 dark:bg-white/5 text-slate-450 dark:text-white/30 border-slate-200 dark:border-white/10 cursor-not-allowed opacity-60'
+                    : 'bg-teal-650 hover:bg-teal-700 text-white border-teal-650 hover:border-teal-700 cursor-pointer shadow-lg shadow-teal-500/20 active:scale-95'
+                }`}
               >
                 {isDispatching ? 'Despachando...' : 'Confirmar Envío'}
-              </Button>
+              </button>
             </div>
           </div>
         )}
@@ -830,40 +853,41 @@ export const VendedorPedidosPage = () => {
         open={!!orderToDeliver}
         title="Registrar Entrega del Pedido"
         onClose={() => setOrderToDeliver(null)}
+        className="max-w-3xl p-8 md:p-10"
       >
         {orderToDeliver && (
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 shrink-0">
-                <CheckCircle2 className="h-5 w-5" />
+          <div className="space-y-6 text-left">
+            <div className="flex items-start gap-4">
+              <div className="h-12 w-12 flex items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 shrink-0">
+                <CheckCircle2 className="h-6 w-6" />
               </div>
               <div className="flex-1">
-                <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">
-                  ¿Registrar entrega para el pedido {orderToDeliver.id}?
+                <h4 className="text-lg md:text-xl font-medium text-slate-900 dark:text-white leading-snug">
+                  ¿Registrar entrega para el pedido {orderToDeliver.trackingCode || orderToDeliver.id}?
                 </h4>
-                <p className="text-xs text-slate-955 dark:text-white mt-1 leading-relaxed">
-                  Para actualizar el estado a <span className="font-bold text-emerald-500">Entregado (DELIVERED)</span>, debes subir los soportes correspondientes:
+                <p className="text-base text-slate-605 dark:text-white/80 mt-2 font-medium opacity-90">
+                  Para actualizar el estado a <span className="font-bold text-emerald-500">Entregado</span>, debes subir los soportes correspondientes:
                 </p>
               </div>
             </div>
 
-            <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-neutral-800 dark:bg-neutral-900/40 text-xs font-semibold space-y-3">
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-6 dark:border-white/10 dark:bg-black text-base font-semibold space-y-5">
               <div className="flex items-center justify-between">
-                <span className="text-slate-955 dark:text-white">Estado del Pedido</span>
+                <span className="text-slate-800 dark:text-white font-bold">Estado del Pedido</span>
                 {orderToDeliver.status === 'Enviado' ? (
-                  <span className="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✓ Listo (Enviado)</span>
+                  <span className="bg-emerald-500/10 text-emerald-600 px-3 py-1 rounded-md text-xs uppercase font-bold tracking-wider">✓ Listo</span>
                 ) : (
-                  <span className="bg-rose-500/10 text-rose-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✗ Requerido ({orderToDeliver.status})</span>
+                  <span className="bg-rose-500/10 text-rose-500 px-3 py-1 rounded-md text-xs uppercase font-bold tracking-wider">✗ Requerido ({orderToDeliver.status})</span>
                 )}
               </div>
 
-              <div className="border-t border-slate-200/40 dark:border-neutral-800 pt-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-slate-955 dark:text-white">1. Foto de la Entrega (DELIVERY_PHOTO)</span>
+              <div className="border-t border-slate-200/45 dark:border-white/10 pt-5">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-slate-800 dark:text-white font-bold">1. Foto de la Entrega</span>
                   {deliveryPhotoFile ? (
-                    <span className="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✓ Cargado</span>
+                    <span className="bg-emerald-500/10 text-emerald-600 px-3 py-1 rounded-md text-xs uppercase font-bold tracking-wider">✓ Cargado</span>
                   ) : (
-                    <span className="bg-rose-500/10 text-rose-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✗ Requerido</span>
+                    <span className="bg-rose-500/10 text-rose-500 px-3 py-1 rounded-md text-xs uppercase font-bold tracking-wider">✗ Requerido</span>
                   )}
                 </div>
                 <input
@@ -875,18 +899,21 @@ export const VendedorPedidosPage = () => {
                       setDeliveryPhotoFile(files[0]);
                     }
                   }}
-                  className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-[10px] file:font-bold file:bg-teal-500/10 file:text-teal-600 hover:file:bg-teal-500/20 file:cursor-pointer cursor-pointer border border-dashed border-slate-300 dark:border-neutral-700 rounded-lg p-2 bg-white dark:bg-neutral-950"
+                  className="w-full text-base text-slate-700 dark:text-white/90 file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-teal-500/10 file:text-teal-655 hover:file:bg-teal-500/20 file:cursor-pointer cursor-pointer border border-dashed border-slate-300 dark:border-white/10 rounded-xl p-3 bg-white dark:bg-black"
                   disabled={orderToDeliver.status !== 'Enviado'}
                 />
+                <p className="text-sm text-slate-500 dark:text-white/60 mt-2 font-medium opacity-85">
+                  Soporta imágenes (JPEG, PNG, WEBP) de hasta 5 MB.
+                </p>
               </div>
 
-              <div className="border-t border-slate-200/40 dark:border-neutral-800 pt-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-slate-955 dark:text-white">2. Firma del Cliente (CUSTOMER_SIGNATURE)</span>
+              <div className="border-t border-slate-200/45 dark:border-white/10 pt-5">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-slate-800 dark:text-white font-bold">2. Firma del Cliente</span>
                   {customerSignatureFile ? (
-                    <span className="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✓ Cargado</span>
+                    <span className="bg-emerald-500/10 text-emerald-600 px-3 py-1 rounded-md text-xs uppercase font-bold tracking-wider">✓ Cargado</span>
                   ) : (
-                    <span className="bg-rose-500/10 text-rose-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold">✗ Requerido</span>
+                    <span className="bg-rose-500/10 text-rose-500 px-3 py-1 rounded-md text-xs uppercase font-bold tracking-wider">✗ Requerido</span>
                   )}
                 </div>
                 <input
@@ -898,36 +925,43 @@ export const VendedorPedidosPage = () => {
                       setCustomerSignatureFile(files[0]);
                     }
                   }}
-                  className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-[10px] file:font-bold file:bg-teal-500/10 file:text-teal-600 hover:file:bg-teal-500/20 file:cursor-pointer cursor-pointer border border-dashed border-slate-300 dark:border-neutral-700 rounded-lg p-2 bg-white dark:bg-neutral-950"
+                  className="w-full text-base text-slate-700 dark:text-white/90 file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-teal-500/10 file:text-teal-655 hover:file:bg-teal-500/20 file:cursor-pointer cursor-pointer border border-dashed border-slate-300 dark:border-white/10 rounded-xl p-3 bg-white dark:bg-black"
                   disabled={orderToDeliver.status !== 'Enviado'}
                 />
+                <p className="text-sm text-slate-500 dark:text-white/60 mt-2 font-medium opacity-85">
+                  Soporta imágenes (JPEG, PNG, WEBP) o documentos PDF de hasta 5 MB.
+                </p>
               </div>
             </div>
 
             {deliveryError && (
-              <div className="flex items-start gap-2.5 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-red-600 dark:text-red-300 text-xs font-semibold">
-                <AlertTriangle className="h-4 w-4 shrink-0 text-red-500 mt-0.5" />
+              <div className="flex items-start gap-3 rounded-lg border border-red-500/20 bg-red-500/5 p-4 text-red-650 dark:text-red-300 text-sm font-semibold">
+                <AlertTriangle className="h-5 w-5 shrink-0 text-red-500 mt-0.5" />
                 <span>{deliveryError}</span>
               </div>
             )}
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-neutral-900">
-              <Button
+            <div className="flex justify-end gap-4 pt-5 border-t border-slate-100 dark:border-neutral-900">
+              <button
                 type="button"
-                variant="ghost"
                 onClick={() => setOrderToDeliver(null)}
                 disabled={isDelivering}
+                className="border border-slate-200 text-slate-700 hover:bg-slate-100 dark:border-white/10 dark:text-white dark:hover:bg-white/10 px-6 py-3 rounded-xl text-base font-bold transition cursor-pointer bg-transparent"
               >
                 Cancelar
-              </Button>
-              <Button
+              </button>
+              <button
                 type="button"
                 onClick={() => void handleConfirmDelivery()}
                 disabled={isDelivering || orderToDeliver.status !== 'Enviado' || !deliveryPhotoFile || !customerSignatureFile}
-                className="bg-teal-500 hover:bg-teal-650 text-white font-extrabold"
+                className={`border font-bold px-6 py-3 rounded-xl text-base transition-all duration-200 ${
+                  (isDelivering || orderToDeliver.status !== 'Enviado' || !deliveryPhotoFile || !customerSignatureFile)
+                    ? 'bg-slate-100 dark:bg-white/5 text-slate-450 dark:text-white/30 border-slate-200 dark:border-white/10 cursor-not-allowed opacity-60'
+                    : 'bg-teal-650 hover:bg-teal-700 text-white border-teal-650 hover:border-teal-700 cursor-pointer shadow-lg shadow-teal-500/20 active:scale-95'
+                }`}
               >
                 {isDelivering ? 'Procesando...' : 'Confirmar Entrega'}
-              </Button>
+              </button>
             </div>
           </div>
         )}
@@ -937,52 +971,95 @@ export const VendedorPedidosPage = () => {
         open={!!orderToCancel}
         title="Cancelar Pedido de Cliente"
         onClose={() => setOrderToCancel(null)}
+        className="max-w-3xl p-8 md:p-10"
       >
         {orderToCancel && (
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 shrink-0">
-                <XCircle className="h-5 w-5" />
+          <div className="space-y-6 text-left">
+            <div className="flex items-start gap-4">
+              <div className="h-12 w-12 flex items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 shrink-0">
+                <XCircle className="h-6 w-6" />
               </div>
               <div className="flex-1">
-                <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">
-                  ¿Confirmas la cancelación del pedido {orderToCancel.id}?
+                <h4 className="text-lg md:text-xl font-medium text-slate-900 dark:text-white leading-snug">
+                  ¿Confirmas la cancelación del pedido {orderToCancel.trackingCode || orderToCancel.id}?
                 </h4>
-                <p className="text-xs text-slate-955 dark:text-white mt-1 leading-relaxed">
-                  Esta acción actualizará el estado del pedido a <span className="font-bold text-rose-500">Cancelado (CANCELLED)</span> y liberará los recursos. Esta acción no se puede deshacer.
+                <p className="text-base text-slate-655 dark:text-white/80 mt-2 leading-relaxed opacity-90 font-medium">
+                  Esta acción actualizará el estado del pedido a <span className="font-bold text-rose-500">Cancelado</span> y liberará los recursos. Esta acción no se puede deshacer.
                 </p>
               </div>
             </div>
 
             {cancelError && (
-              <div className="flex items-start gap-2.5 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-red-600 dark:text-red-300 text-xs font-semibold">
-                <AlertTriangle className="h-4 w-4 shrink-0 text-red-500 mt-0.5" />
+              <div className="flex items-start gap-3 rounded-lg border border-red-500/20 bg-red-500/5 p-4 text-red-650 dark:text-red-300 text-sm font-semibold">
+                <AlertTriangle className="h-5 w-5 shrink-0 text-red-500 mt-0.5" />
                 <span>{cancelError}</span>
               </div>
             )}
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-neutral-900">
-              <Button
+            <div className="flex justify-end gap-4 pt-5 border-t border-slate-100 dark:border-neutral-900">
+              <button
                 type="button"
-                variant="ghost"
                 onClick={() => setOrderToCancel(null)}
                 disabled={isCancelling}
+                className="border border-slate-200 text-slate-700 hover:bg-slate-100 dark:border-white/10 dark:text-white dark:hover:bg-white/10 px-6 py-3 rounded-xl text-base font-bold transition cursor-pointer bg-transparent"
               >
                 Cerrar
-              </Button>
-              <Button
+              </button>
+              <button
                 type="button"
                 onClick={() => void handleConfirmCancel()}
                 disabled={isCancelling}
-                className="bg-rose-500 hover:bg-rose-650 text-white font-extrabold"
+                className={`border font-bold px-6 py-3 rounded-xl text-base transition-all duration-200 ${
+                  isCancelling
+                    ? 'bg-slate-100 dark:bg-white/5 text-slate-450 dark:text-white/30 border-slate-200 dark:border-white/10 cursor-not-allowed opacity-60'
+                    : 'bg-rose-600 hover:bg-rose-700 text-white border-rose-600 hover:border-rose-700 cursor-pointer shadow-lg shadow-rose-500/20 active:scale-95'
+                }`}
               >
                 {isCancelling ? 'Cancelando...' : 'Confirmar Cancelación'}
-              </Button>
+              </button>
             </div>
           </div>
         )}
       </Modal>
+
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, x: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, x: 20, scale: 0.95, transition: { duration: 0.12 } }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            className="fixed top-6 right-6 z-[100] flex items-start gap-4 rounded-xl border border-emerald-250 bg-emerald-50/95 p-5 pr-12 shadow-lg backdrop-blur-sm dark:border-emerald-800/40 dark:bg-emerald-950/90 max-w-md w-full"
+          >
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400">
+              <Check className="h-5.5 w-5.5 stroke-[2.5]" />
+            </div>
+
+            <div className="flex-1 text-left min-w-0">
+              <h4 className="text-sm font-bold uppercase tracking-wider text-black dark:text-white">
+                {toastMessage.toLowerCase().includes('despachado')
+                  ? '¡PEDIDO DESPACHADO!'
+                  : toastMessage.toLowerCase().includes('entrega')
+                  ? '¡ENTREGA REGISTRADA!'
+                  : '¡PEDIDO CANCELADO!'}
+              </h4>
+              <p className="mt-0.5 text-sm font-semibold leading-relaxed text-slate-900 dark:text-slate-200">
+                {toastMessage}
+              </p>
+            </div>
+
+            <button
+              onClick={() => setToastMessage(null)}
+              className="absolute top-4.5 right-3.5 p-0.5 rounded-md hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-slate-500 hover:text-black dark:text-slate-400 dark:hover:text-white"
+              aria-label="Cerrar"
+            >
+              <X className="h-4 w-4 stroke-[2]" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </PageCard>
   );
 };
+
 
