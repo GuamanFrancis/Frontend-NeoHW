@@ -23,7 +23,7 @@ export const CheckoutStatusPage = ({ type }: CheckoutStatusProps) => {
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
-      if (orderId && isSuccess) {
+      if (orderId) {
         try {
           const res = await getMyOrders();
           const match = res.data.find((o) => o.id === orderId);
@@ -36,14 +36,14 @@ export const CheckoutStatusPage = ({ type }: CheckoutStatusProps) => {
       }
     };
     void fetchOrderDetails();
-  }, [orderId, isSuccess]);
+  }, [orderId]);
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-[#eef4fa] dark:bg-[#0a0a0a] px-4 transition-colors duration-300 font-sans">
-      <div className="w-full max-w-md rounded-2xl bg-white dark:bg-neutral-900 border border-slate-100 dark:border-neutral-800 text-center shadow-[0_20px_50px_rgba(0,0,0,0.06)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden relative">
+      <div className="w-full max-w-xl rounded-2xl bg-white dark:bg-neutral-900 border border-slate-100 dark:border-neutral-800 text-center shadow-[0_20px_50px_rgba(0,0,0,0.06)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden relative">
         
         {/* Banner Superior */}
-        <div className={`p-8 flex flex-col items-center justify-center ${
+        <div className={`p-10 md:p-12 flex flex-col items-center justify-center ${
           isSuccess 
             ? 'bg-teal-600' 
             : 'bg-rose-600'
@@ -64,11 +64,11 @@ export const CheckoutStatusPage = ({ type }: CheckoutStatusProps) => {
         </div>
 
         {/* Cuerpo de la Tarjeta */}
-        <div className="p-6 md:p-8 space-y-6">
+        <div className="p-8 md:p-10 space-y-6">
           
           {/* Detalles */}
           {(orderId || trackingCode) && (
-            <div className="rounded-xl bg-slate-50 dark:bg-neutral-950/50 border border-slate-100 dark:border-neutral-800 p-5 space-y-4 text-left">
+            <div className="rounded-xl bg-slate-50 dark:bg-neutral-950/50 border border-slate-100 dark:border-neutral-800 p-6 space-y-4 text-left">
               {trackingCode ? (
                 <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-neutral-800">
                   <span className="text-sm font-medium text-slate-500 dark:text-neutral-400">Código de Rastreo</span>
@@ -111,7 +111,7 @@ export const CheckoutStatusPage = ({ type }: CheckoutStatusProps) => {
           </p>
 
           {/* Botones de Acción */}
-          <div className="flex flex-col gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row gap-3 pt-2 w-full">
             {isSuccess ? (
               <>
                 <a

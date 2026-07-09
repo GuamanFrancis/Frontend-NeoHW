@@ -721,7 +721,7 @@ export const ClientePedidosPage = () => {
             </div>
             <div>
               <p className="text-base font-bold text-slate-955 dark:text-white">
-                ¿Está seguro de que desea cancelar este pedido?
+                ¿Está seguro de que desea cancelar el pedido {orderIdToCancel ? (allOrders.find((o) => o.id === orderIdToCancel)?.trackingCode || `#${orderIdToCancel.slice(0, 8).toUpperCase()}`) : ''}?
               </p>
               <p className="text-sm text-slate-955 dark:text-white mt-1 leading-relaxed">
                 Esta acción no se puede deshacer y cancelará el pedido permanentemente.
