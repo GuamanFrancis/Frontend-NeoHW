@@ -198,7 +198,7 @@ export const SimulatorPage = () => {
         </div>
   
         {!isAiOpen && (
-          <div className="fixed bottom-7 right-24 z-40 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white text-[11px] font-bold px-4 py-2.5 rounded-2xl shadow-xl animate-pulse flex items-center gap-1.5 pointer-events-none select-none border border-indigo-500/30">
+          <div className="fixed bottom-4 right-24 z-40 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white text-[11px] font-bold px-4 py-2.5 rounded-2xl shadow-xl animate-pulse flex items-center gap-1.5 pointer-events-none select-none border border-indigo-500/30">
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
@@ -210,7 +210,7 @@ export const SimulatorPage = () => {
         <button 
           type="button" 
           onClick={() => setIsAiOpen(!isAiOpen)} 
-          className="fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 hover:from-indigo-400 hover:to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer border-none" 
+          className="fixed bottom-3 right-6 z-40 h-14 w-14 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 hover:from-indigo-400 hover:to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer border-none" 
           title="Asistente de Compatibilidad IA"
         >
           {isAiOpen ? (

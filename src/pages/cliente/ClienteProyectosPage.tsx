@@ -298,7 +298,7 @@ export const ClienteProyectosPage = () => {
         <button
           type="button"
           onClick={() => navigate('/cliente/simulador')}
-          className="flex items-center justify-center gap-2 rounded-lg border border-teal-500 text-teal-600 bg-transparent hover:bg-teal-500 hover:text-white dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-400 dark:hover:text-neutral-955 font-bold px-4 py-2.5 transition shadow-sm text-sm cursor-pointer"
+          className="flex items-center justify-center gap-2 rounded-lg border border-slate-955 text-slate-955 bg-transparent hover:bg-teal-500 hover:border-teal-500 hover:text-slate-955 dark:border-white dark:text-white dark:hover:bg-teal-500 dark:hover:border-teal-500 dark:hover:text-white font-bold px-4 py-2.5 transition text-sm cursor-pointer"
         >
           <Cpu className="h-4 w-4" />
           Nuevo Ensamble
@@ -347,7 +347,7 @@ export const ClienteProyectosPage = () => {
                       type="button"
                       onClick={() => handleLoadInSimulator(project)}
                       title="Cargar en el simulador 3D"
-                      className="h-10 px-4 rounded-lg border border-teal-500 text-teal-600 bg-transparent hover:bg-teal-500 hover:text-white dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-400 dark:hover:text-neutral-955 transition text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                      className="h-10 px-4 rounded-lg border border-slate-955 text-slate-955 bg-transparent hover:bg-teal-500 hover:border-teal-500 hover:text-slate-955 dark:border-white dark:text-white dark:hover:bg-teal-500 dark:hover:border-teal-500 dark:hover:text-white transition text-xs font-bold flex items-center gap-1.5 cursor-pointer"
                     >
                       <Play className="h-3.5 w-3.5 fill-current" />
                       Simular
@@ -357,11 +357,11 @@ export const ClienteProyectosPage = () => {
                       onClick={() => handleBuyProject(project)}
                       disabled={buyingProjectId !== null}
                       title="Añadir todas las partes al carrito"
-                      className="h-10 px-4 rounded-lg border border-teal-500 text-teal-600 bg-transparent hover:bg-teal-500 hover:text-white dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-400 dark:hover:text-neutral-955 transition text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="h-10 px-4 rounded-lg border border-slate-955 text-slate-955 bg-transparent hover:bg-teal-500 hover:border-teal-500 hover:text-slate-955 dark:border-white dark:text-white dark:hover:bg-teal-500 dark:hover:border-teal-500 dark:hover:text-white transition text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {buyingProjectId === project.id ? (
                         <>
-                          <Loader2 className="h-3.5 w-3.5 animate-spin text-teal-500" />
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-500 dark:text-white" />
                           Cargando...
                         </>
                       ) : (
@@ -375,14 +375,14 @@ export const ClienteProyectosPage = () => {
                       type="button"
                       onClick={() => setProjectToDelete(project)}
                       title="Eliminar proyecto"
-                      className="h-10 w-10 flex items-center justify-center rounded-lg border border-red-500 text-red-500 bg-transparent hover:bg-red-500 hover:text-white transition cursor-pointer"
+                      className="h-10 w-10 flex items-center justify-center rounded-lg border border-red-600 text-red-600 bg-transparent hover:bg-red-600 hover:text-white dark:border-white dark:text-white dark:hover:bg-red-600 dark:hover:border-red-600 dark:hover:text-white transition cursor-pointer"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
                     <button
                       type="button"
                       onClick={() => toggleExpand(project.id)}
-                      className="h-10 w-10 flex items-center justify-center rounded-lg border border-teal-500 text-teal-600 bg-transparent hover:bg-teal-500 hover:text-white dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-400 dark:hover:text-neutral-955 transition cursor-pointer"
+                      className="h-10 w-10 flex items-center justify-center rounded-lg border border-slate-955 text-slate-955 bg-transparent hover:bg-teal-500 hover:border-teal-500 hover:text-slate-955 dark:border-white dark:text-white dark:hover:bg-teal-500 dark:hover:border-teal-500 dark:hover:text-white transition cursor-pointer"
                     >
                       {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </button>

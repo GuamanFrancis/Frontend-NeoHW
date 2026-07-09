@@ -117,7 +117,7 @@ const ProductGridCard = ({
             <button
               type="button"
               onClick={() => onOpenDrawer(item)}
-              className="flex-1 rounded-lg border border-slate-955 dark:border-neutral-700 px-2 py-2 text-center text-xs font-medium hover:bg-slate-50 dark:hover:bg-neutral-900 transition text-slate-955 dark:text-white"
+              className="flex-1 rounded-lg border border-slate-955 dark:border-white px-2 py-2 text-center text-xs font-medium hover:bg-teal-500 hover:border-teal-500 hover:text-slate-955 dark:text-white dark:hover:bg-teal-500 dark:hover:border-teal-500 dark:hover:text-white transition cursor-pointer bg-transparent"
             >
               Ver detalles
             </button>
@@ -127,8 +127,8 @@ const ProductGridCard = ({
               disabled={item.status === 'agotado'}
               className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition ${
                 item.status === 'agotado'
-                  ? 'border border-slate-200 dark:border-neutral-805 text-slate-955/40 dark:text-white/30 cursor-not-allowed bg-transparent'
-                  : 'border border-slate-955 dark:border-neutral-700 text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 bg-transparent cursor-pointer'
+                  ? 'border border-slate-205 dark:border-neutral-805 text-slate-955/40 dark:text-white/30 cursor-not-allowed bg-transparent'
+                  : 'border border-slate-955 dark:border-white text-slate-955 dark:text-white hover:bg-teal-500 hover:border-teal-500 hover:text-slate-955 dark:hover:bg-teal-500 dark:hover:border-teal-500 dark:hover:text-white bg-transparent cursor-pointer'
               }`}
             >
               <ShoppingCart className="h-3.5 w-3.5" />
@@ -202,7 +202,7 @@ const ProductGridCard = ({
           <button
             type="button"
             onClick={() => onOpenDrawer(item)}
-            className="flex-1 rounded-lg border border-slate-955 dark:border-neutral-700 px-3 py-2 text-center text-xs font-medium hover:bg-slate-50 dark:hover:bg-neutral-900 transition text-slate-955 dark:text-white whitespace-nowrap"
+            className="flex-1 rounded-lg border border-slate-955 dark:border-white px-3 py-2 text-center text-xs font-medium hover:bg-teal-500 hover:border-teal-500 hover:text-slate-955 dark:text-white dark:hover:bg-teal-500 dark:hover:border-teal-500 dark:hover:text-white transition whitespace-nowrap cursor-pointer bg-transparent"
           >
             Ver detalles
           </button>
@@ -212,8 +212,8 @@ const ProductGridCard = ({
             disabled={item.status === 'agotado'}
             className={`flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition whitespace-nowrap ${
               item.status === 'agotado'
-                ? 'border border-slate-200 dark:border-neutral-805 text-slate-955/40 dark:text-white/30 cursor-not-allowed bg-transparent'
-                : 'border border-slate-955 dark:border-neutral-700 text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 bg-transparent cursor-pointer'
+                ? 'border border-slate-205 dark:border-neutral-805 text-slate-955/40 dark:text-white/30 cursor-not-allowed bg-transparent'
+                : 'border border-slate-955 dark:border-white text-slate-955 dark:text-white hover:bg-teal-500 hover:border-teal-500 hover:text-slate-955 dark:hover:bg-teal-500 dark:hover:border-teal-500 dark:hover:text-white bg-transparent cursor-pointer'
             }`}
           >
             <ShoppingCart className="h-3.5 w-3.5" />

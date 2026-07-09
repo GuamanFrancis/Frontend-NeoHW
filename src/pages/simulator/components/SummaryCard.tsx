@@ -175,7 +175,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
             type="button"
             onClick={onSendToCart}
             disabled={!hasSelectedComponents || isCartLoading}
-            className="w-full h-11 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-955 font-semibold uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm shadow-teal-500/10 disabled:opacity-40 disabled:cursor-not-allowed border-none text-xs"
+            className="w-full h-11 rounded-xl border border-slate-955 text-slate-955 bg-transparent hover:bg-teal-500 hover:border-teal-500 hover:text-slate-955 dark:border-white dark:text-white dark:hover:bg-teal-500 dark:hover:border-teal-500 dark:hover:text-white font-semibold uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-xs"
           >
             {isCartLoading ? (
               <>

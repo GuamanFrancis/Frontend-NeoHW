@@ -2,10 +2,10 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { getStoredSession } from '../../services/session';
 
 const vendedorMenu = [
-  { label: 'Pedidos de clientes', path: '/vendedor/pedidos' },
-  { label: 'Estadisticas de ventas', path: '/vendedor/estadisticas' },
-  { label: 'Inventario', path: '/vendedor/inventario' },
   { label: 'Mi cuenta', path: '/vendedor/cuenta' },
+  { label: 'Pedidos de clientes', path: '/vendedor/pedidos' },
+  { label: 'Inventario', path: '/vendedor/inventario' },
+  { label: 'Estadisticas de ventas', path: '/vendedor/estadisticas' },
 ];
 
 export const VendedorDashboard = () => {

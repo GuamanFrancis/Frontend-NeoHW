@@ -87,6 +87,16 @@ export const AdminUsuariosPage = () => {
     toastTitle,
   } = useAdminUsers();
 
+  const [maxVisitedPage, setMaxVisitedPage] = useState(1);
+
+  useEffect(() => {
+    if (currentPage === 1) {
+      setMaxVisitedPage(1);
+    } else {
+      setMaxVisitedPage((prev) => Math.max(prev, currentPage));
+    }
+  }, [currentPage]);
+
   const [showUnlockWarning, setShowUnlockWarning] = useState(false);
 
   useEffect(() => {
@@ -265,7 +275,7 @@ export const AdminUsuariosPage = () => {
                 {'<'}
               </button>
 
-              {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+              {Array.from({ length: Math.min(totalPages, maxVisitedPage) }, (_, index) => index + 1).map((page) => (
                 <button
                   type="button"
                   key={page}

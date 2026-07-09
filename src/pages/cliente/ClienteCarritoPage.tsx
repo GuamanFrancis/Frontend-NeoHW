@@ -498,7 +498,7 @@ export const ClienteCarritoPage = () => {
                           <button
                             type="button"
                             onClick={() => handleRemoveItem(product.id, product.name)}
-                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-red-500 text-red-500 bg-transparent hover:bg-red-500 hover:text-white transition cursor-pointer"
+                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-red-655 text-red-655 bg-transparent hover:bg-red-655 hover:text-white dark:border-white dark:text-white dark:hover:bg-red-600 dark:hover:border-red-600 dark:hover:text-white transition cursor-pointer"
                             aria-label="Quitar del carrito"
                           >
                             <Trash2 className="h-4.5 w-4.5" />
@@ -515,7 +515,7 @@ export const ClienteCarritoPage = () => {
             <button
               type="button"
               onClick={() => navigate('/cliente/catalogo')}
-              className="flex items-center justify-center gap-2 rounded-lg border border-teal-500 text-teal-600 bg-transparent hover:bg-teal-500 hover:text-white dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-400 dark:hover:text-neutral-950 transition px-5 py-2 text-sm font-semibold cursor-pointer"
+              className="flex items-center justify-center gap-2 rounded-lg border border-slate-955 text-slate-955 bg-transparent hover:bg-teal-500 hover:border-teal-500 hover:text-slate-955 dark:border-white dark:text-white dark:hover:bg-teal-500 dark:hover:border-teal-500 dark:hover:text-white transition px-5 py-2 text-sm font-semibold cursor-pointer"
             >
               <ArrowLeft className="h-4 w-4" />
               Seguir comprando
@@ -523,7 +523,7 @@ export const ClienteCarritoPage = () => {
             <button
               type="button"
               onClick={handleClearCart}
-              className="flex items-center justify-center gap-2 rounded-lg border border-red-500 text-red-500 bg-transparent hover:bg-red-500 hover:text-white transition px-5 py-2 text-sm font-semibold cursor-pointer"
+              className="flex items-center justify-center gap-2 rounded-lg border border-red-600 text-red-600 bg-transparent hover:bg-red-600 hover:text-white dark:border-white dark:text-white dark:hover:bg-red-600 dark:hover:border-red-600 dark:hover:text-white transition px-5 py-2 text-sm font-semibold cursor-pointer"
             >
               <Trash2 className="h-4 w-4" />
               Vaciar carrito
@@ -609,7 +609,7 @@ export const ClienteCarritoPage = () => {
             <button
                type="button"
                onClick={handleOpenCheckout}
-               className="flex w-full items-center justify-center gap-2 rounded-lg border border-teal-500 text-teal-600 bg-transparent hover:bg-teal-500 hover:text-white dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-400 dark:hover:text-neutral-955 font-bold px-6 py-3 transition mt-2 text-sm cursor-pointer"
+               className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-955 text-slate-955 bg-transparent hover:bg-slate-955 hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-neutral-950 font-bold px-6 py-3 transition mt-2 text-sm cursor-pointer"
              >
                <CreditCard className="h-4.5 w-4.5" />
                Completar Datos de Envío y Pagar
@@ -773,10 +773,10 @@ export const ClienteCarritoPage = () => {
             <button
               type="submit"
               disabled={loadingCheckout}
-              className="border border-teal-500 text-teal-600 bg-transparent hover:bg-teal-500 hover:text-white dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-400 dark:hover:text-neutral-955 min-w-[140px] font-bold text-sm h-10 px-4 rounded-lg flex items-center justify-center transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="border border-slate-955 text-slate-955 bg-transparent hover:bg-slate-955 hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-neutral-950 min-w-[140px] font-bold text-sm h-10 px-4 rounded-lg flex items-center justify-center transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loadingCheckout ? (
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-teal-500 border-t-transparent" />
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-550 dark:border-white border-t-transparent" />
               ) : (
                 "Proceder al Pago con Stripe"
               )}

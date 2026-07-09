@@ -48,6 +48,16 @@ export const VendedorInventarioPage = () => {
 
   const [selectedComponent, setSelectedComponent] = useState<CatalogComponent | null>(null);
 
+  const [maxVisitedPage, setMaxVisitedPage] = useState(1);
+
+  useEffect(() => {
+    if (currentPage === 1) {
+      setMaxVisitedPage(1);
+    } else {
+      setMaxVisitedPage((prev) => Math.max(prev, currentPage));
+    }
+  }, [currentPage]);
+
   const loadCategories = async () => {
     try {
       const cats = await getCategories();
@@ -271,7 +281,7 @@ export const VendedorInventarioPage = () => {
                 {'<'}
               </button>
 
-              {Array.from({ length: totalPages }).map((_, index) => {
+              {Array.from({ length: Math.min(totalPages, maxVisitedPage) }).map((_, index) => {
                 const page = index + 1;
                 return (
                   <button
@@ -403,7 +413,12 @@ export const VendedorInventarioPage = () => {
             </div>
 
             <div className="flex justify-end pt-2">
-              <Button type="button" onClick={() => setSelectedComponent(null)} className="h-11 px-6 font-bold text-sm bg-teal-500 hover:bg-teal-600 text-white rounded-lg transition-all active:scale-95 shadow-sm shadow-teal-500/20 border-0">
+              <Button
+                type="button"
+                onClick={() => setSelectedComponent(null)}
+                variant="outlineHoverSolid"
+                className="h-11 px-6 font-bold text-sm border border-teal-500 text-teal-600 bg-transparent hover:bg-teal-500 hover:text-white dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-400 dark:hover:text-neutral-950 transition cursor-pointer"
+              >
                 Cerrar
               </Button>
             </div>

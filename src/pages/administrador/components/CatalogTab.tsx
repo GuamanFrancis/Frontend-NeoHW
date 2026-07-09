@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Eye, PackageSearch, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { FormInput } from '../../../components/ui/FormInput';
@@ -91,7 +91,6 @@ export const CatalogTab = ({
   firstResult,
   lastResult,
   totalPages,
-  pagesToShow,
   isLoading,
   isSaving,
   modalMode,
@@ -116,6 +115,16 @@ export const CatalogTab = ({
   updateAttributeValue,
 }: CatalogTabProps) => {
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
+  const [maxVisitedPage, setMaxVisitedPage] = useState(1);
+
+  useEffect(() => {
+    if (currentPage === 1) {
+      setMaxVisitedPage(1);
+    } else {
+      setMaxVisitedPage((prev) => Math.max(prev, currentPage));
+    }
+  }, [currentPage]);
+
   return (
     <>
       <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
@@ -278,26 +287,20 @@ export const CatalogTab = ({
                 {'<'}
               </button>
 
-              {pagesToShow.map((page, index) =>
-                page === 'ellipsis' ? (
-                  <span key={`ellipsis-${index}`} className="px-2 text-slate-500">
-                    ...
-                  </span>
-                ) : (
-                  <button
-                    key={page}
-                    type="button"
-                    onClick={() => setCurrentPage(page)}
-                    className={
-                      page === currentPage
-                        ? 'h-8 min-w-8 rounded-lg bg-teal-500 px-2 text-xs font-bold text-white'
-                        : actionButtonClass
-                    }
-                  >
-                    {page}
-                  </button>
-                )
-              )}
+              {Array.from({ length: Math.min(totalPages, maxVisitedPage) }, (_, index) => index + 1).map((page) => (
+                <button
+                  key={page}
+                  type="button"
+                  onClick={() => setCurrentPage(page)}
+                  className={
+                    page === currentPage
+                      ? 'h-8 min-w-8 rounded-lg bg-teal-500 px-2 text-xs font-bold text-white cursor-pointer'
+                      : actionButtonClass
+                  }
+                >
+                  {page}
+                </button>
+              ))}
 
               <button
                 type="button"
@@ -577,7 +580,12 @@ export const CatalogTab = ({
             </div>
 
             <div className="flex justify-end pt-2">
-              <Button type="button" onClick={closeModal} variant="outlineHoverSolid" className="h-11 px-6 font-bold text-sm">
+              <Button
+                type="button"
+                onClick={closeModal}
+                variant="outlineHoverSolid"
+                className="h-11 px-6 font-bold text-sm border border-teal-500 text-teal-600 bg-transparent hover:bg-teal-500 hover:text-white dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-400 dark:hover:text-neutral-950 transition cursor-pointer"
+              >
                 Cerrar
               </Button>
             </div>

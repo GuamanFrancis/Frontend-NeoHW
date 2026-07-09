@@ -17,6 +17,7 @@ export default defineConfig(({ mode }) => {
     '/ai',
     '/orders',
     '/payments',
+    '/statistics',
   ] as const;
 
   return {

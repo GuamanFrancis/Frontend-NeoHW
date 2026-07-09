@@ -85,8 +85,19 @@ export const VendedorPedidosPage = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<SellerOrderStatus | 'todos'>('todos');
   const [dateFilter, setDateFilter] = useState<DateFilter>('ultimos-30');
-  const [pageSize, setPageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+
+  const [maxVisitedPage, setMaxVisitedPage] = useState(1);
+
+  useEffect(() => {
+    if (currentPage === 1) {
+      setMaxVisitedPage(1);
+    } else {
+      setMaxVisitedPage((prev) => Math.max(prev, currentPage));
+    }
+  }, [currentPage]);
+
   const [selectedOrder, setSelectedOrder] = useState<MappedSellerOrder | null>(null);
   const [modalMode, setModalMode] = useState<'view' | null>(null);
   const [orderToCancel, setOrderToCancel] = useState<MappedSellerOrder | null>(null);
@@ -584,7 +595,7 @@ export const VendedorPedidosPage = () => {
                 {'<'}
               </button>
 
-              {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+              {Array.from({ length: Math.min(totalPages, maxVisitedPage) }, (_, index) => index + 1).map((page) => (
                 <button
                   key={page}
                   type="button"
@@ -746,7 +757,12 @@ export const VendedorPedidosPage = () => {
             </div>
 
             <div className="flex justify-end pt-2">
-              <Button type="button" onClick={() => setModalMode(null)} className="h-11 px-6 font-bold text-sm bg-teal-500 hover:bg-teal-650 text-white rounded-lg transition-all active:scale-95 shadow-sm shadow-teal-500/20 border-0">
+              <Button
+                type="button"
+                onClick={() => setModalMode(null)}
+                variant="outlineHoverSolid"
+                className="h-11 px-6 font-bold text-sm border border-teal-500 text-teal-600 bg-transparent hover:bg-teal-500 hover:text-white dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-400 dark:hover:text-neutral-950 transition cursor-pointer"
+              >
                 Cerrar
               </Button>
             </div>

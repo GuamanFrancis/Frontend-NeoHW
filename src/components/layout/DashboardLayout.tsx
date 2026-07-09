@@ -30,26 +30,7 @@ const ROLE_MAP: Record<string, string> = {
   cliente: 'Cliente',
 };
 
-const ABBREVIATED_LABELS: Record<string, string> = {
-  'Mi cuenta': 'Cuenta',
-  'Mi perfil': 'Perfil',
-  'Explorar catálogo': 'Catálogo',
-  'Ver catálogo': 'Catálogo',
-  'Simulador IA': 'Simulador',
-  'Armar mi PC': 'Simulador',
-  'Mis proyectos': 'Proyectos',
-  'Mis ensambles': 'Ensambles',
-  'Historial de compras': 'Historial',
-  'Mis compras': 'Compras',
-  'Carrito de compras': 'Carrito',
-  'Mi carrito': 'Carrito',
-  'Pedidos de clientes': 'Pedidos',
-  'Estadisticas de ventas': 'Estadísticas',
-  'Inventario': 'Inventario',
-  'Ver inventario': 'Inventario',
-  'Gestionar usuarios': 'Usuarios',
-  'Gestionar catalogo': 'Catálogo',
-};
+
 
 export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayoutProps) => {
   const [showMenu, setShowMenu] = useState(false);
@@ -122,7 +103,7 @@ export const DashboardLayout = ({ roleName, userName, menuItems }: DashboardLayo
                   }`
                 }
               >
-                {ABBREVIATED_LABELS[item.label] || item.label}
+                {item.label}
               </NavLink>
             ))}
           </nav>

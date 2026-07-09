@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Save, User, Mail, Phone, Lock, Check, X, AlertTriangle, Trash2 } from 'lucide-react';
 import { FormInput } from '../../components/ui/FormInput';
-import { Button } from '../../components/ui/Button';
 import { normalizeBackendUser } from '../../services/authService';
 import { getStoredSession, updateStoredSession, clearStoredSession } from '../../services/session';
 import { updateUser, deactivateUser } from '../../services/usersService';
@@ -277,16 +276,15 @@ export const MiCuentaPage = () => {
                   <span>Tu informacion esta segura con nosotros.</span>
                 </div>
                 
-                <Button 
-                  type="button" 
-                  variant="outlineHoverSolid"
-                  onClick={() => void saveProfile()} 
-                  disabled={isSaving}
-                  className="h-12 px-9 text-base font-bold"
-                >
-                  <Save className="h-5 w-5 shrink-0" />
-                  {isSaving ? 'Guardando...' : 'Guardar cambios'}
-                </Button>
+                 <button 
+                   type="button" 
+                   onClick={() => void saveProfile()} 
+                   disabled={isSaving}
+                   className="h-12 px-9 rounded-lg border border-slate-955 text-slate-955 bg-transparent hover:bg-teal-500 hover:border-teal-500 hover:text-slate-955 dark:border-white dark:text-white dark:hover:bg-teal-500 dark:hover:border-teal-500 dark:hover:text-white text-base font-bold transition flex items-center justify-center gap-3 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                 >
+                   <Save className="h-5 w-5 shrink-0" />
+                   {isSaving ? 'Guardando...' : 'Guardar cambios'}
+                 </button>
               </div>
             </div>
           </div>
@@ -320,7 +318,7 @@ export const MiCuentaPage = () => {
                   type="button"
                   onClick={() => void handleDeleteClick()}
                   disabled={isCheckingOrders}
-                  className="border border-red-655 text-red-655 bg-transparent hover:bg-red-655 hover:text-white dark:border-red-500 dark:text-red-400 dark:hover:bg-red-500 dark:hover:text-white font-semibold h-12 px-8 rounded-lg transition text-base flex items-center gap-2.5 shadow-sm"
+                  className="border border-red-655 text-red-655 bg-transparent hover:bg-red-655 hover:text-white dark:border-white dark:text-white dark:hover:bg-red-600 dark:hover:border-red-600 dark:hover:text-white font-semibold h-12 px-8 rounded-lg transition text-base flex items-center gap-2.5 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   <Trash2 className="h-5 w-5 shrink-0" />
                   {isCheckingOrders ? 'Verificando pedidos...' : 'Eliminar mi cuenta'}
@@ -377,7 +375,7 @@ export const MiCuentaPage = () => {
                     setDeleteConfirmText('');
                   }
                 }}
-                className="border border-red-500/30 bg-transparent text-red-500 hover:bg-red-50/50 dark:border-red-500/20 dark:hover:bg-red-950/10 font-semibold px-4 py-2 transition disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm shadow-sm"
+                className="border border-red-655 text-red-655 bg-transparent hover:bg-red-655 hover:text-white dark:border-white dark:text-white dark:hover:bg-red-600 dark:hover:border-red-600 dark:hover:text-white font-semibold px-4 py-2 transition disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm shadow-sm cursor-pointer"
               >
                 {isDeleting ? 'Eliminando...' : 'Confirmar eliminación'}
               </button>
