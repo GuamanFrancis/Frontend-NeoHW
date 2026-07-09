@@ -24,6 +24,7 @@ export type CartItemMapped = {
   id: string;
   product: CatalogComponent;
   quantity: number;
+  createdAt?: string;
 };
 
 export const getCart = async (): Promise<CartItemMapped[]> => {
@@ -33,7 +34,8 @@ export const getCart = async (): Promise<CartItemMapped[]> => {
       id: item.id,
       product: normalizeProduct(item.product),
       quantity: Number(item.quantity) || 1,
-    }));
+      createdAt: item.createdAt,
+    })).sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
   }
   return [];
 };
