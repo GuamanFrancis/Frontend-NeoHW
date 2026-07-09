@@ -258,7 +258,7 @@ export const useAdminStats = () => {
   const sellerMap = useMemo(() => {
     const map: Record<string, string> = {};
     users.forEach((u) => {
-      if (u.role === 'vendedor') {
+      if (u.role === 'SELLER' || u.role === 'vendedor') {
         const fn = u.firstName || '';
         const ln = u.lastName || '';
         const name = [fn, ln].filter(Boolean).join(' ') || u.email;
