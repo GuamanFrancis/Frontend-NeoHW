@@ -104,6 +104,18 @@ export const useAdminUsers = () => {
   const [modalError, setModalError] = useState('');
   const [userToDeactivate, setUserToDeactivate] = useState<AdminUser | null>(null);
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastTitle, setToastTitle] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => {
+        setToastMessage(null);
+        setToastTitle(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
 
   useEffect(() => {
     let isMounted = true;
@@ -246,6 +258,15 @@ export const useAdminUsers = () => {
           currentUsers.map((user) => (user.id === selectedUser.id ? mapBackendUser(freshUser) : user)),
         );
       }
+      
+      const changes: string[] = [];
+      if (formValues.name !== originalName) changes.push('nombre');
+      if (formValues.phone !== originalPhone) changes.push('teléfono');
+      if (requestedRole !== selectedUser.backendRole) changes.push('rol');
+
+      const summary = changes.length > 0 ? `Se modificó: ${changes.join(', ')}.` : 'No se detectaron cambios.';
+      setToastTitle('¡USUARIO ACTUALIZADO!');
+      setToastMessage(`Los datos del usuario ${selectedUser.email} han sido actualizados con éxito. ${summary}`);
       closeModal();
     } catch {
       setModalError('No se pudo guardar el usuario. Revisa permisos y datos ingresados.');
@@ -266,10 +287,12 @@ export const useAdminUsers = () => {
       setPageError('');
       const updatedUser = await deactivateUser(userToDeactivate.id);
       setUsers((currentUsers) =>
-        currentUsers.map((currentUser) => (
+        currentUsers.map((currentUser) =>
           currentUser.id === userToDeactivate.id ? mapBackendUser(updatedUser) : currentUser
-        )),
+        )
       );
+      setToastTitle('¡USUARIO DESACTIVADO!');
+      setToastMessage(`La cuenta del usuario ${userToDeactivate.email} ha sido suspendida de forma inmediata.`);
     } catch {
       setPageError('No se pudo desactivar el usuario seleccionado.');
     } finally {
@@ -318,5 +341,9 @@ export const useAdminUsers = () => {
     setCurrentPage,
     setPageSize,
     setFormValues,
+    toastMessage,
+    setToastMessage,
+    toastTitle,
+    setToastTitle,
   };
 };

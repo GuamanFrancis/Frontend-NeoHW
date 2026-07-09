@@ -1,7 +1,8 @@
-import { PackageSearch, Plus } from 'lucide-react';
+import { PackageSearch, Plus, Check, X } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { PageCard } from '../../components/ui/PageCard';
 import { useAdminCatalog } from './hooks/useAdminCatalog';
+import { motion, AnimatePresence } from 'framer-motion';
 import { CatalogTab } from './components/CatalogTab';
 import { AttributesTab } from './components/AttributesTab';
 import { CategoriesTab } from './components/CategoriesTab';
@@ -92,6 +93,7 @@ export const AdminCatalogoPage = () => {
     disassociateAttr,
     handleConfirmDisassociateAttribute,
     openCreateCatModal,
+    openEditCatModal,
     saveCategoryAction,
     deleteCategoryAction,
     handleConfirmDeleteCategory,
@@ -100,6 +102,9 @@ export const AdminCatalogoPage = () => {
     deleteCompatibilityRuleAction,
     handleConfirmDeleteRule,
     setActiveTab,
+    toastMessage,
+    setToastMessage,
+    toastTitle,
   } = useAdminCatalog();
 
   return (
@@ -140,19 +145,25 @@ export const AdminCatalogoPage = () => {
             </button>
           </div>
           {activeTab === 'componentes' && (
-            <Button type="button" className="h-10 px-4 text-sm" onClick={openCreateModal}>
+            <Button type="button" variant="outlineHoverSolid" className="h-10 px-4 text-sm" onClick={openCreateModal}>
               <Plus className="h-4 w-4" />
               Nuevo componente
             </Button>
           )}
+          {activeTab === 'atributos' && (
+            <Button type="button" variant="outlineHoverSolid" className="h-10 px-4 text-sm" onClick={openCreateAttrModal}>
+              <Plus className="h-4 w-4" />
+              Nuevo Atributo
+            </Button>
+          )}
           {activeTab === 'categorias' && (
-            <Button type="button" className="h-10 px-4 text-sm" onClick={openCreateCatModal}>
+            <Button type="button" variant="outlineHoverSolid" className="h-10 px-4 text-sm" onClick={openCreateCatModal}>
               <Plus className="h-4 w-4" />
               Nueva Categoría
             </Button>
           )}
           {activeTab === 'reglas' && (
-            <Button type="button" className="h-10 px-4 text-sm" onClick={openCreateRuleModal}>
+            <Button type="button" variant="outlineHoverSolid" className="h-10 px-4 text-sm" onClick={openCreateRuleModal}>
               <Plus className="h-4 w-4" />
               Nueva Regla
             </Button>
@@ -161,7 +172,7 @@ export const AdminCatalogoPage = () => {
       }
     >
       {loadError && (
-        <div className="mb-4 rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-200">
+        <div className="mb-4 rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm font-medium text-slate-900 dark:text-white">
           {loadError}
         </div>
       )}
@@ -225,7 +236,6 @@ export const AdminCatalogoPage = () => {
           attrToDisassociate={attrToDisassociate}
           setAttrToDisassociate={setAttrToDisassociate}
           categorySelectOptions={categorySelectOptions}
-          openCreateAttrModal={openCreateAttrModal}
           openEditAttrModal={openEditAttrModal}
           saveAttribute={saveAttribute}
           removeAttribute={removeAttribute}
@@ -252,6 +262,7 @@ export const AdminCatalogoPage = () => {
           saveCategoryAction={saveCategoryAction}
           deleteCategoryAction={deleteCategoryAction}
           handleConfirmDeleteCategory={handleConfirmDeleteCategory}
+          openEditCatModal={openEditCatModal}
         />
       )}
 
@@ -272,6 +283,39 @@ export const AdminCatalogoPage = () => {
           handleConfirmDeleteRule={handleConfirmDeleteRule}
         />
       )}
+
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, x: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, x: 20, scale: 0.95, transition: { duration: 0.12 } }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            className="fixed top-6 right-6 z-[100] flex items-start gap-4 rounded-xl border border-emerald-250 bg-emerald-50/95 p-5 pr-12 shadow-lg backdrop-blur-sm dark:border-emerald-800/40 dark:bg-emerald-950/90 max-w-md w-full"
+          >
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400">
+              <Check className="h-5.5 w-5.5 stroke-[2.5]" />
+            </div>
+
+            <div className="flex-1 text-left min-w-0">
+              <h4 className="text-sm font-bold uppercase tracking-wider text-black dark:text-white">
+                {toastTitle || '¡ÉXITO!'}
+              </h4>
+              <p className="mt-0.5 text-sm font-semibold leading-relaxed text-slate-900 dark:text-slate-200">
+                {toastMessage}
+              </p>
+            </div>
+
+            <button
+              onClick={() => setToastMessage(null)}
+              className="absolute top-4.5 right-3.5 p-0.5 rounded-md hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-slate-500 hover:text-black dark:text-slate-400 dark:hover:text-white"
+              aria-label="Cerrar"
+            >
+              <X className="h-4 w-4 stroke-[2]" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </PageCard>
   );
 };

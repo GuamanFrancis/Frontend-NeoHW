@@ -217,27 +217,27 @@ export const CatalogTab = ({
                       <div className="flex justify-end gap-2.5">
                         <button
                           type="button"
-                          className={actionButtonClass}
+                          className={`${actionButtonClass} group`}
                           onClick={() => void openEditModal(component)}
                           aria-label="Editar componente"
                         >
-                          <Pencil className="h-5.5 w-5.5 text-slate-700 dark:text-slate-200" />
+                          <Pencil className="h-5.5 w-5.5 text-slate-705 dark:text-slate-200 group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors" />
                         </button>
                         <button
                           type="button"
-                          className={actionButtonClass}
+                          className={`${actionButtonClass} group`}
                           onClick={() => openViewModal(component)}
                           aria-label="Ver componente"
                         >
-                          <Eye className="h-5.5 w-5.5 text-slate-700 dark:text-slate-200" />
+                          <Eye className="h-5.5 w-5.5 text-slate-705 dark:text-slate-200 group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors" />
                         </button>
                         <button
                           type="button"
-                          className="flex h-10 w-10 items-center justify-center rounded-lg border border-red-300 text-red-600 transition hover:border-red-500 hover:bg-red-50 hover:text-red-700 dark:border-red-500/35 dark:text-red-300 dark:hover:border-red-400 dark:hover:bg-red-500/10 dark:hover:text-red-200 cursor-pointer"
+                          className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-700 transition hover:border-rose-500/50 hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-rose-500/30 dark:hover:bg-rose-950/20 dark:hover:text-rose-400 cursor-pointer group"
                           onClick={() => openDeleteModal(component)}
                           aria-label="Eliminar componente"
                         >
-                          <Trash2 className="h-5.5 w-5.5" />
+                          <Trash2 className="h-5.5 w-5.5 text-rose-500 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
                         </button>
                       </div>
                     </td>
@@ -330,12 +330,13 @@ export const CatalogTab = ({
         open={modalMode === 'create' || modalMode === 'edit'}
         title={modalMode === 'create' ? 'Nuevo componente' : 'Editar componente'}
         onClose={closeModal}
+        className="max-w-3xl p-6 md:p-8"
         footer={
           <>
             <Button type="button" variant="ghost" onClick={closeModal}>
               Cancelar
             </Button>
-            <Button type="button" onClick={() => void saveComponent()} disabled={isSaving}>
+            <Button type="button" variant="outlineHoverSolid" onClick={() => void saveComponent()} disabled={isSaving}>
               {isSaving ? 'Guardando...' : 'Guardar'}
             </Button>
           </>
@@ -482,7 +483,7 @@ export const CatalogTab = ({
         </div>
 
         {modalError && (
-          <div className="mt-4 rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-200">
+          <div className="mt-4 rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm font-medium text-slate-900 dark:text-white">
             {modalError}
           </div>
         )}
@@ -492,6 +493,7 @@ export const CatalogTab = ({
         open={modalMode === 'view' && Boolean(selectedComponent)}
         title="Detalles de Componente"
         onClose={closeModal}
+        className="max-w-3xl p-6 md:p-8"
       >
         {selectedComponent && (
           <div className="space-y-6 text-slate-900 dark:text-white max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin">
@@ -575,7 +577,7 @@ export const CatalogTab = ({
             </div>
 
             <div className="flex justify-end pt-2">
-              <Button type="button" onClick={closeModal} className="h-11 px-6 font-bold text-sm bg-teal-500 hover:bg-teal-600 text-white rounded-lg transition-all active:scale-95 shadow-sm shadow-teal-500/20 border-0">
+              <Button type="button" onClick={closeModal} variant="outlineHoverSolid" className="h-11 px-6 font-bold text-sm">
                 Cerrar
               </Button>
             </div>
@@ -587,6 +589,7 @@ export const CatalogTab = ({
         open={modalMode === 'delete' && Boolean(selectedComponent)}
         title="¿Eliminar Componente?"
         onClose={closeModal}
+        className="max-w-3xl p-6 md:p-8"
       >
         <div className="space-y-4">
           <div className="flex items-start gap-3">
@@ -603,7 +606,7 @@ export const CatalogTab = ({
             </div>
           </div>
           {modalError && (
-            <div className="mt-2 rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-200">
+            <div className="mt-2 rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm font-medium text-slate-900 dark:text-white">
               {modalError}
             </div>
           )}
@@ -614,10 +617,10 @@ export const CatalogTab = ({
             <button
               type="button"
               onClick={() => void removeComponent()}
-              className="rounded-lg bg-red-500 hover:bg-red-650 text-white font-bold px-4 py-2.5 transition text-sm shadow-sm"
+              className="rounded-lg border border-red-500 text-red-500 bg-transparent hover:bg-red-500 hover:text-white dark:border-red-400 dark:text-red-400 dark:hover:bg-red-500 dark:hover:text-white px-5 py-2.5 font-bold transition text-base shadow-sm cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
               disabled={isSaving}
             >
-              {isSaving ? 'Eliminando...' : 'Sí, eliminar'}
+              {isSaving ? 'Eliminando...' : 'Eliminar'}
             </button>
           </div>
         </div>

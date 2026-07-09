@@ -106,11 +106,11 @@ export const RulesTab = ({
                         <div className="flex justify-end">
                           <button
                             type="button"
-                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-300 text-red-600 transition hover:border-red-500 hover:bg-red-50 hover:text-red-700 dark:border-red-500/35 dark:text-red-300 dark:hover:border-red-400 dark:hover:bg-red-500/10 dark:hover:text-red-200"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-750 transition hover:border-rose-500/50 hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-rose-500/30 dark:hover:bg-rose-950/20 dark:hover:text-rose-400 cursor-pointer group"
                             onClick={() => deleteCompatibilityRuleAction(rule)}
                             aria-label="Desactivar regla"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4 text-rose-500 group-hover:text-rose-600 dark:group-hover:text-rose-450 transition-colors" />
                           </button>
                         </div>
                       </td>
@@ -127,12 +127,13 @@ export const RulesTab = ({
         open={ruleModalMode === 'create'}
         title="Nueva Regla de Compatibilidad"
         onClose={() => setRuleModalMode(null)}
+        className="max-w-3xl p-6 md:p-8"
         footer={
           <>
             <Button type="button" variant="ghost" onClick={() => setRuleModalMode(null)}>
               Cancelar
             </Button>
-            <Button type="button" onClick={() => void saveCompatibilityRuleAction()} disabled={isSavingRule}>
+            <Button type="button" variant="outlineHoverSolid" onClick={() => void saveCompatibilityRuleAction()} disabled={isSavingRule}>
               {isSavingRule ? 'Creando...' : 'Crear Regla'}
             </Button>
           </>
@@ -199,7 +200,7 @@ export const RulesTab = ({
           />
         </div>
         {ruleModalError && (
-          <div className="mt-4 rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-200">
+          <div className="mt-4 rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm font-medium text-slate-900 dark:text-white">
             {ruleModalError}
           </div>
         )}
@@ -209,6 +210,7 @@ export const RulesTab = ({
         open={!!ruleToDelete}
         title="¿Desactivar Regla de Compatibilidad?"
         onClose={() => setRuleToDelete(null)}
+        className="max-w-3xl p-6 md:p-8"
       >
         <div className="space-y-4">
           <div className="flex items-start gap-3">
@@ -235,9 +237,9 @@ export const RulesTab = ({
             <button
               type="button"
               onClick={() => void handleConfirmDeleteRule()}
-              className="rounded-lg bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2.5 transition text-sm shadow-sm"
+              className="rounded-lg border border-red-500 text-red-500 bg-transparent hover:bg-red-500 hover:text-white dark:border-red-400 dark:text-red-400 dark:hover:bg-red-500 dark:hover:text-white px-5 py-2.5 font-bold transition text-base shadow-sm cursor-pointer"
             >
-              Sí, desactivar
+              Desactivar
             </button>
           </div>
         </div>

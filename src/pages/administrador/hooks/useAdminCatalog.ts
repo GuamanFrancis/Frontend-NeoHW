@@ -5,7 +5,7 @@ import {
   getCatalogComponents,
   updateCatalogComponent,
 } from '../../../services/catalogService';
-import { getCategories, getLeafCategories, createCategory, deleteCategory } from '../../../services/categoryService';
+import { getCategories, getLeafCategories, createCategory, updateCategory, deleteCategory } from '../../../services/categoryService';
 import type { BackendCategory, CatalogComponent, CatalogSavePayload, CatalogStockStatus } from '../../../types/catalog';
 import {
   getAttributes,
@@ -115,9 +115,22 @@ export const useAdminCatalog = () => {
   const [selectedComponent, setSelectedComponent] = useState<CatalogComponent | null>(null);
   const [formValues, setFormValues] = useState<CatalogFormValues>(emptyForm);
   const [loadError, setLoadError] = useState('');
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastTitle, setToastTitle] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => {
+        setToastMessage(null);
+        setToastTitle(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
 
   const [activeTab, setActiveTab] = useState<'componentes' | 'atributos' | 'categorias' | 'reglas'>('componentes');
-  const [catModalMode, setCatModalMode] = useState<'create' | null>(null);
+  const [catModalMode, setCatModalMode] = useState<'create' | 'edit' | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<BackendCategory | null>(null);
   const [isSavingCat, setIsSavingCat] = useState(false);
   const [catModalError, setCatModalError] = useState('');
   const [catToDelete, setCatToDelete] = useState<BackendCategory | null>(null);
@@ -621,10 +634,14 @@ export const useAdminCatalog = () => {
 
       if (modalMode === 'create' && updatedComponent) {
         setComponents((currentComponents) => [updatedComponent!, ...currentComponents]);
+        setToastTitle('¡COMPONENTE CREADO!');
+        setToastMessage(`El componente "${updatedComponent.name}" ha sido registrado en el catálogo.`);
       } else if (modalMode === 'edit' && updatedComponent) {
         setComponents((currentComponents) =>
           currentComponents.map((component) => (component.id === selectedComponent?.id ? updatedComponent! : component)),
         );
+        setToastTitle('¡COMPONENTE ACTUALIZADO!');
+        setToastMessage(`Los datos del componente "${updatedComponent.name}" han sido actualizados.`);
       }
 
       closeModal();
@@ -649,6 +666,8 @@ export const useAdminCatalog = () => {
       setComponents((currentComponents) =>
         currentComponents.filter((component) => component.id !== selectedComponent.id),
       );
+      setToastTitle('¡COMPONENTE ELIMINADO!');
+      setToastMessage(`El componente "${selectedComponent.name}" ha sido eliminado del catálogo.`);
       closeModal();
     } catch {
       setModalError('No se pudo eliminar el componente. Revisa permisos y endpoint del backend.');
@@ -713,9 +732,13 @@ export const useAdminCatalog = () => {
       if (attrModalMode === 'create') {
         const created = await createAttribute(payload);
         setGlobalAttributes(current => [created, ...current]);
+        setToastTitle('¡ATRIBUTO CREADO!');
+        setToastMessage(`El atributo técnico "${created.name}" ha sido registrado con éxito.`);
       } else if (attrModalMode === 'edit' && selectedAttribute) {
         const updated = await updateAttribute(selectedAttribute.id, payload);
         setGlobalAttributes(current => current.map(a => a.id === selectedAttribute.id ? updated : a));
+        setToastTitle('¡ATRIBUTO ACTUALIZADO!');
+        setToastMessage(`El atributo técnico "${updated.name}" ha sido actualizado.`);
       }
       setAttrModalMode(null);
     } catch (err: any) {
@@ -735,6 +758,8 @@ export const useAdminCatalog = () => {
       await deleteAttribute(attrToDelete.id);
       setGlobalAttributes(current => current.filter(a => a.id !== attrToDelete.id));
       setCategoryAttrs(current => current.filter(a => a.id !== attrToDelete.id));
+      setToastTitle('¡ATRIBUTO ELIMINADO!');
+      setToastMessage(`El atributo técnico "${attrToDelete.name}" ha sido eliminado de forma permanente.`);
       setAttrToDelete(null);
     } catch (err: any) {
       alert('Error al eliminar atributo: ' + (err.response?.data?.message || err.message));
@@ -747,6 +772,9 @@ export const useAdminCatalog = () => {
       await associateAttributeToCategory(selectedCategoryIdForAttr, attributeId);
       const attrs = await getAttributesByCategory(selectedCategoryIdForAttr);
       setCategoryAttrs(attrs);
+      const attrObj = globalAttributes.find(a => a.id === attributeId);
+      setToastTitle('¡ATRIBUTO VINCULADO!');
+      setToastMessage(`El atributo "${attrObj?.name || ''}" ha sido asociado a la categoría.`);
     } catch (err: any) {
       alert('Error al asociar atributo: ' + (err.response?.data?.message || err.message));
     }
@@ -761,6 +789,8 @@ export const useAdminCatalog = () => {
     try {
       await removeAttributeFromCategory(selectedCategoryIdForAttr, attrToDisassociate.id);
       setCategoryAttrs(current => current.filter(a => a.id !== attrToDisassociate.id));
+      setToastTitle('¡ATRIBUTO DESASOCIADO!');
+      setToastMessage(`El atributo "${attrToDisassociate.name}" fue desvinculado de la categoría.`);
       setAttrToDisassociate(null);
     } catch (err: any) {
       alert('Error al desasociar atributo: ' + (err.response?.data?.message || err.message));
@@ -769,8 +799,20 @@ export const useAdminCatalog = () => {
 
   const openCreateCatModal = () => {
     setCatForm({ name: '', description: '', parentId: '' });
+    setSelectedCategory(null);
     setCatModalError('');
     setCatModalMode('create');
+  };
+
+  const openEditCatModal = (cat: BackendCategory) => {
+    setSelectedCategory(cat);
+    setCatForm({
+      name: cat.name,
+      description: cat.description || '',
+      parentId: cat.parentId || '',
+    });
+    setCatModalError('');
+    setCatModalMode('edit');
   };
 
   const saveCategoryAction = async () => {
@@ -786,9 +828,19 @@ export const useAdminCatalog = () => {
     try {
       setIsSavingCat(true);
       setCatModalError('');
-      const created = await createCategory(payload);
-      setCategories(current => [created, ...current]);
+      if (catModalMode === 'create') {
+        const created = await createCategory(payload);
+        setCategories(current => [created, ...current]);
+        setToastTitle('¡CATEGORÍA CREADA!');
+        setToastMessage(`La categoría "${created.name}" ha sido registrada con éxito.`);
+      } else if (catModalMode === 'edit' && selectedCategory) {
+        const updated = await updateCategory(selectedCategory.id, payload);
+        setCategories(current => current.map(c => c.id === selectedCategory.id ? updated : c));
+        setToastTitle('¡CATEGORÍA ACTUALIZADA!');
+        setToastMessage(`La categoría "${updated.name}" ha sido actualizada con éxito.`);
+      }
       setCatModalMode(null);
+      setSelectedCategory(null);
     } catch (err: any) {
       const errMsg = err.response?.data?.message || 'Error al guardar la categoría.';
       setCatModalError(Array.isArray(errMsg) ? errMsg.join(', ') : errMsg);
@@ -806,6 +858,8 @@ export const useAdminCatalog = () => {
     try {
       await deleteCategory(catToDelete.id);
       setCategories(current => current.filter(c => c.id !== catToDelete.id));
+      setToastTitle('¡CATEGORÍA DESACTIVADA!');
+      setToastMessage(`La categoría "${catToDelete.name}" ha sido desactivada temporalmente.`);
       setCatToDelete(null);
     } catch (err: any) {
       alert('Error al desactivar la categoría: ' + (err.response?.data?.message || err.message));
@@ -851,6 +905,8 @@ export const useAdminCatalog = () => {
       setRuleModalError('');
       const createdRule = await createCompatibilityRule(payload);
       setCompatibilityRulesList((current) => [createdRule, ...current]);
+      setToastTitle('¡REGLA CREADA!');
+      setToastMessage(`La regla "${createdRule.name}" ha sido guardada con éxito.`);
       setRuleModalMode(null);
     } catch (err: any) {
       const errMsg = err.response?.data?.message || 'Error al guardar la regla de compatibilidad.';
@@ -869,6 +925,8 @@ export const useAdminCatalog = () => {
     try {
       await deleteCompatibilityRule(ruleToDelete.id);
       setCompatibilityRulesList((current) => current.filter((r) => r.id !== ruleToDelete.id));
+      setToastTitle('¡REGLA DESACTIVADA!');
+      setToastMessage(`La regla "${ruleToDelete.name}" ha sido eliminada del motor de compatibilidad.`);
       setRuleToDelete(null);
     } catch (err: any) {
       alert('Error al desactivar la regla: ' + (err.response?.data?.message || err.message));
@@ -983,6 +1041,7 @@ export const useAdminCatalog = () => {
     disassociateAttr,
     handleConfirmDisassociateAttribute,
     openCreateCatModal,
+    openEditCatModal,
     saveCategoryAction,
     deleteCategoryAction,
     handleConfirmDeleteCategory,
@@ -990,5 +1049,8 @@ export const useAdminCatalog = () => {
     saveCompatibilityRuleAction,
     deleteCompatibilityRuleAction,
     handleConfirmDeleteRule,
+    toastMessage,
+    setToastMessage,
+    toastTitle,
   };
 };

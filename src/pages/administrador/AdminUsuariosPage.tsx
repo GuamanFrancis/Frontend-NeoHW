@@ -6,7 +6,10 @@ import {
   Power,
   Search,
   UsersRound,
+  Check,
+  X,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../../components/ui/Button';
 import { FormInput } from '../../components/ui/FormInput';
 import { FormSelect } from '../../components/ui/FormSelect';
@@ -79,6 +82,9 @@ export const AdminUsuariosPage = () => {
     setCurrentPage,
     setPageSize,
     setFormValues,
+    toastMessage,
+    setToastMessage,
+    toastTitle,
   } = useAdminUsers();
 
   const [showUnlockWarning, setShowUnlockWarning] = useState(false);
@@ -97,7 +103,7 @@ export const AdminUsuariosPage = () => {
     >
       <div className="space-y-4">
         {pageError && (
-          <div className="rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-200">
+          <div className="rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm font-medium text-slate-900 dark:text-white">
             {pageError}
           </div>
         )}
@@ -193,31 +199,31 @@ export const AdminUsuariosPage = () => {
                       <div className="flex justify-end gap-2">
                         <button
                           type="button"
-                          className={actionButtonClass}
+                          className={`${actionButtonClass} group`}
                           onClick={() => void openViewModal(user)}
                           aria-label="Ver usuario"
                         >
-                          <Eye className="h-5.5 w-5.5 text-slate-750 dark:text-slate-200" />
+                          <Eye className="h-5.5 w-5.5 text-slate-750 dark:text-slate-200 group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors" />
                         </button>
                         <button
                           type="button"
-                          className={actionButtonClass}
+                          className={`${actionButtonClass} group`}
                           onClick={() => openEditModal(user)}
                           disabled={user.status === 'Inactivo'}
                           title={user.status === 'Inactivo' ? 'No se puede editar un usuario inactivo' : 'Editar usuario'}
                           aria-label="Editar usuario"
                         >
-                          <Pencil className="h-5.5 w-5.5 text-slate-750 dark:text-slate-200" />
+                          <Pencil className="h-5.5 w-5.5 text-slate-750 dark:text-slate-200 group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors" />
                         </button>
                         <button
                           type="button"
-                          className={actionButtonClass}
+                          className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-700 transition hover:border-rose-500/50 hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-rose-500/30 dark:hover:bg-rose-950/20 dark:hover:text-rose-400 cursor-pointer group"
                           onClick={() => requestDeactivateUser(user)}
                           disabled={user.status === 'Inactivo'}
                           title={user.status === 'Inactivo' ? 'El usuario ya se encuentra inactivo' : 'Desactivar usuario'}
                           aria-label="Desactivar usuario"
                         >
-                          <Power className="h-5.5 w-5.5 text-rose-500" />
+                          <Power className="h-5.5 w-5.5 text-rose-500 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
                         </button>
                       </div>
                     </td>
@@ -305,12 +311,13 @@ export const AdminUsuariosPage = () => {
         open={modalMode === 'edit'}
         title="Editar usuario"
         onClose={closeModal}
+        className="max-w-3xl p-6 md:p-8"
         footer={
           <>
             <Button type="button" variant="ghost" onClick={closeModal}>
               Cancelar
             </Button>
-            <Button type="button" onClick={() => void saveUser()} disabled={!canSaveUser}>
+            <Button type="button" variant="outlineHoverSolid" onClick={() => void saveUser()} disabled={!canSaveUser}>
               {isSaving ? 'Guardando...' : 'Guardar'}
             </Button>
           </>
@@ -331,7 +338,7 @@ export const AdminUsuariosPage = () => {
             label="Telefono"
             value={formValues.phone}
             onChange={(event) => setFormValues({ ...formValues, phone: event.target.value })}
-            placeholder="Ej: +593 99 999 9999"
+            placeholder="Ej: 099 999 9999"
             disabled={!isUnlocked}
           />
 
@@ -340,7 +347,7 @@ export const AdminUsuariosPage = () => {
               <button
                 type="button"
                 onClick={() => setShowUnlockWarning(true)}
-                className="text-xs font-semibold text-teal-600 hover:text-teal-700 dark:text-teal-400"
+                className="text-sm font-semibold text-teal-600 hover:text-teal-700 dark:text-teal-400 cursor-pointer"
               >
                 Habilitar edición de datos personales
               </button>
@@ -349,7 +356,7 @@ export const AdminUsuariosPage = () => {
 
           {showUnlockWarning && !isUnlocked && (
             <div className="sm:col-span-2 rounded-xl border border-slate-200 bg-slate-50/50 p-4 dark:border-neutral-800 dark:bg-neutral-900/30 text-xs">
-              <p className="font-bold text-rose-600 dark:text-rose-400 text-sm">Advertencia de seguridad</p>
+              <p className="font-bold text-slate-955 dark:text-white text-sm">Advertencia de seguridad</p>
               <p className="mt-1.5 text-sm font-normal text-slate-955 dark:text-white">
                 Vas a modificar la información personal del usuario (Nombre y/o Teléfono). Asegúrate de que los datos sean correctos.
               </p>
@@ -357,7 +364,7 @@ export const AdminUsuariosPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowUnlockWarning(false)}
-                  className="rounded-lg px-4 py-2 font-bold text-sm text-slate-955 hover:bg-slate-200/50 dark:text-white dark:hover:bg-neutral-800"
+                  className="rounded-lg px-5 py-2.5 font-bold text-base text-slate-955 hover:bg-slate-200/50 dark:text-white dark:hover:bg-neutral-800 cursor-pointer"
                 >
                   Cancelar
                 </button>
@@ -367,7 +374,7 @@ export const AdminUsuariosPage = () => {
                     setIsUnlocked(true);
                     setShowUnlockWarning(false);
                   }}
-                  className="rounded-lg bg-teal-500 px-4 py-2 font-bold text-sm text-white hover:bg-teal-600 transition"
+                  className="rounded-lg border border-teal-500 text-teal-600 bg-transparent hover:bg-teal-500 hover:text-white dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-400 dark:hover:text-neutral-950 px-5 py-2.5 font-bold text-base transition cursor-pointer"
                 >
                   Entendido, continuar
                 </button>
@@ -390,15 +397,14 @@ export const AdminUsuariosPage = () => {
             value={formValues.role}
             onChange={(event) => setFormValues({ ...formValues, role: event.target.value as UserRole })}
           />
-          <FormSelect
+          <FormInput
             label="Estado"
-            options={statusOptions}
             value={formValues.status}
             disabled
           />
 
           {modalError && (
-            <div className="sm:col-span-2 rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-200">
+            <div className="sm:col-span-2 rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm font-medium text-slate-900 dark:text-white">
               {modalError}
             </div>
           )}
@@ -409,6 +415,7 @@ export const AdminUsuariosPage = () => {
         open={modalMode === 'view' && Boolean(selectedUser)}
         title="Detalles del Usuario"
         onClose={closeModal}
+        className="max-w-3xl p-6 md:p-8"
       >
         {selectedUser && (
           <div className="space-y-6 text-slate-900 dark:text-white max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin">
@@ -455,7 +462,7 @@ export const AdminUsuariosPage = () => {
             </div>
 
             <div className="flex justify-end pt-2">
-              <Button type="button" onClick={closeModal} className="h-11 px-6 font-bold text-sm bg-teal-500 hover:bg-teal-600 text-white rounded-lg transition-all active:scale-95 shadow-sm shadow-teal-500/20 border-0">
+              <Button type="button" onClick={closeModal} variant="outlineHoverSolid" className="h-11 px-6 font-bold text-sm">
                 Entendido
               </Button>
             </div>
@@ -467,6 +474,7 @@ export const AdminUsuariosPage = () => {
         open={Boolean(userToDeactivate)}
         title="¿Desactivar Usuario?"
         onClose={cancelDeactivateUser}
+        className="max-w-3xl p-6 md:p-8"
       >
         <div className="space-y-4">
           <div className="flex items-start gap-3">
@@ -483,7 +491,7 @@ export const AdminUsuariosPage = () => {
             </div>
           </div>
           {userToDeactivate && (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-200">
+            <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-slate-955 dark:text-white">
               <p className="font-bold mb-2">Información de la cuenta a suspender:</p>
               <div className="space-y-1">
                 <p className="font-mono text-xs">
@@ -502,13 +510,46 @@ export const AdminUsuariosPage = () => {
             <button
               type="button"
               onClick={() => void confirmDeactivateUser()}
-              className="rounded-lg bg-red-500 hover:bg-red-650 text-white font-bold px-4 py-2.5 transition text-sm shadow-sm"
+              className="rounded-lg border border-red-500 text-red-500 bg-transparent hover:bg-red-500 hover:text-white dark:border-red-400 dark:text-red-400 dark:hover:bg-red-500 dark:hover:text-white px-5 py-2.5 font-bold transition text-base shadow-sm cursor-pointer"
             >
               Desactivar cuenta
             </button>
           </div>
         </div>
       </Modal>
+
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, x: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, x: 20, scale: 0.95, transition: { duration: 0.12 } }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            className="fixed top-6 right-6 z-[100] flex items-start gap-4 rounded-xl border border-emerald-250 bg-emerald-50/95 p-5 pr-12 shadow-lg backdrop-blur-sm dark:border-emerald-800/40 dark:bg-emerald-950/90 max-w-md w-full"
+          >
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400">
+              <Check className="h-5.5 w-5.5 stroke-[2.5]" />
+            </div>
+
+            <div className="flex-1 text-left min-w-0">
+              <h4 className="text-sm font-bold uppercase tracking-wider text-black dark:text-white">
+                {toastTitle || '¡ÉXITO!'}
+              </h4>
+              <p className="mt-0.5 text-sm font-semibold leading-relaxed text-slate-900 dark:text-slate-200">
+                {toastMessage}
+              </p>
+            </div>
+
+            <button
+              onClick={() => setToastMessage(null)}
+              className="absolute top-4.5 right-3.5 p-0.5 rounded-md hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-slate-500 hover:text-black dark:text-slate-400 dark:hover:text-white"
+              aria-label="Cerrar"
+            >
+              <X className="h-4 w-4 stroke-[2]" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </PageCard>
   );
 };

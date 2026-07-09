@@ -1,4 +1,4 @@
-import { Trash2, AlertTriangle } from 'lucide-react';
+import { Trash2, AlertTriangle, Pencil } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { FormInput } from '../../../components/ui/FormInput';
 import { FormSelect } from '../../../components/ui/FormSelect';
@@ -7,8 +7,8 @@ import type { BackendCategory } from '../../../types/catalog';
 
 type CategoriesTabProps = {
   categories: BackendCategory[];
-  catModalMode: 'create' | null;
-  setCatModalMode: (mode: 'create' | null) => void;
+  catModalMode: 'create' | 'edit' | null;
+  setCatModalMode: (mode: 'create' | 'edit' | null) => void;
   isSavingCat: boolean;
   catModalError: string;
   catToDelete: BackendCategory | null;
@@ -26,6 +26,7 @@ type CategoriesTabProps = {
   saveCategoryAction: () => void;
   deleteCategoryAction: (cat: BackendCategory) => void;
   handleConfirmDeleteCategory: () => void;
+  openEditCatModal: (cat: BackendCategory) => void;
 };
 
 export const CategoriesTab = ({
@@ -41,6 +42,7 @@ export const CategoriesTab = ({
   saveCategoryAction,
   deleteCategoryAction,
   handleConfirmDeleteCategory,
+  openEditCatModal,
 }: CategoriesTabProps) => {
   return (
     <>
@@ -85,14 +87,22 @@ export const CategoriesTab = ({
                         {cat.parentId ? categories.find(c => c.id === cat.parentId)?.name || 'Categoría superior' : 'Ninguna'}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex justify-end">
+                        <div className="flex justify-end gap-1.5">
                           <button
                             type="button"
-                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-300 text-red-600 transition hover:border-red-500 hover:bg-red-50 hover:text-red-700 dark:border-red-500/35 dark:text-red-300 dark:hover:border-red-400 dark:hover:bg-red-500/10 dark:hover:text-red-200"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-750 transition hover:border-teal-500/60 hover:bg-teal-50 hover:text-teal-700 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-teal-400/60 dark:hover:bg-teal-400/10 cursor-pointer group"
+                            onClick={() => openEditCatModal(cat)}
+                            aria-label="Editar categoría"
+                          >
+                            <Pencil className="h-4 w-4 text-slate-750 dark:text-slate-200 group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors" />
+                          </button>
+                          <button
+                            type="button"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-750 transition hover:border-rose-500/50 hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-rose-500/30 dark:hover:bg-rose-950/20 dark:hover:text-rose-400 cursor-pointer group"
                             onClick={() => deleteCategoryAction(cat)}
                             aria-label="Desactivar categoría"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4 text-rose-500 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
                           </button>
                         </div>
                       </td>
@@ -106,22 +116,23 @@ export const CategoriesTab = ({
       </div>
 
       <Modal
-        open={catModalMode === 'create'}
-        title="Nueva Categoría de Hardware"
+        open={catModalMode === 'create' || catModalMode === 'edit'}
+        title={catModalMode === 'create' ? 'Nueva Categoría de Hardware' : 'Editar Categoría de Hardware'}
         onClose={() => setCatModalMode(null)}
+        className="max-w-3xl p-6 md:p-8"
         footer={
           <>
             <Button type="button" variant="ghost" onClick={() => setCatModalMode(null)}>
               Cancelar
             </Button>
-            <Button type="button" onClick={() => void saveCategoryAction()} disabled={isSavingCat}>
+            <Button type="button" variant="outlineHoverSolid" onClick={() => void saveCategoryAction()} disabled={isSavingCat}>
               {isSavingCat ? 'Guardando...' : 'Guardar'}
             </Button>
           </>
         }
       >
         <p className="text-sm font-normal text-slate-955 dark:text-white mb-4">
-          Define las propiedades de la nueva categoría para clasificar el hardware de la tienda.
+          Define las propiedades de la categoría para clasificar el hardware de la tienda.
         </p>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
@@ -153,7 +164,7 @@ export const CategoriesTab = ({
           </div>
         </div>
         {catModalError && (
-          <div className="mt-4 rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-200">
+          <div className="mt-4 rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm font-medium text-slate-900 dark:text-white">
             {catModalError}
           </div>
         )}
@@ -163,6 +174,7 @@ export const CategoriesTab = ({
         open={!!catToDelete}
         title="¿Desactivar Categoría?"
         onClose={() => setCatToDelete(null)}
+        className="max-w-3xl p-6 md:p-8"
       >
         <div className="space-y-4">
           <div className="flex items-start gap-3">
@@ -189,9 +201,9 @@ export const CategoriesTab = ({
             <button
               type="button"
               onClick={() => void handleConfirmDeleteCategory()}
-              className="rounded-lg bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2.5 transition text-sm shadow-sm"
+              className="rounded-lg border border-red-500 text-red-500 bg-transparent hover:bg-red-500 hover:text-white dark:border-red-400 dark:text-red-400 dark:hover:bg-red-500 dark:hover:text-white px-5 py-2.5 font-bold transition text-base shadow-sm cursor-pointer"
             >
-              Sí, desactivar
+              Desactivar
             </button>
           </div>
         </div>

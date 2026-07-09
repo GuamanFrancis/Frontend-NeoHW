@@ -26,7 +26,6 @@ type AttributesTabProps = {
   attrToDisassociate: BackendAttribute | null;
   setAttrToDisassociate: (attr: BackendAttribute | null) => void;
   categorySelectOptions: Array<{ label: string; value: string }>;
-  openCreateAttrModal: () => void;
   openEditAttrModal: (attr: BackendAttribute) => void;
   saveAttribute: () => void;
   removeAttribute: (attr: BackendAttribute) => void;
@@ -57,7 +56,6 @@ export const AttributesTab = ({
   attrToDisassociate,
   setAttrToDisassociate,
   categorySelectOptions,
-  openCreateAttrModal,
   openEditAttrModal,
   saveAttribute,
   removeAttribute,
@@ -73,14 +71,11 @@ export const AttributesTab = ({
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
         <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-slate-950 dark:text-white">Atributos Globales</h3>
-            <Button type="button" className="h-8 px-3 text-xs" onClick={openCreateAttrModal}>
-              <Plus className="h-3 w-3 mr-1" /> Nuevo Atributo
-            </Button>
+            <h3 className="text-xl font-bold text-slate-955 dark:text-white">Atributos Globales</h3>
           </div>
           
           <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-neutral-800">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 uppercase text-slate-955 dark:bg-white/[0.02] dark:text-white">
                 <tr>
                   <th className="px-3 py-2 font-bold">Atributo</th>
@@ -103,7 +98,7 @@ export const AttributesTab = ({
                       <td className="px-3 py-2 font-semibold text-slate-955 dark:text-white">{attr.name}</td>
                       <td className="px-3 py-2 text-slate-955 dark:text-white">{attr.slug}</td>
                       <td className="px-3 py-2">
-                        <span className="inline-flex rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700 dark:bg-neutral-800 dark:text-neutral-300">
+                        <span className="inline-flex rounded bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-700 dark:bg-neutral-800 dark:text-neutral-300">
                           {attr.dataType}
                         </span>
                       </td>
@@ -113,18 +108,18 @@ export const AttributesTab = ({
                           <button
                             type="button"
                             onClick={() => openEditAttrModal(attr)}
-                            className="flex h-6 w-6 items-center justify-center rounded text-slate-600 hover:bg-slate-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                            className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 text-slate-750 transition hover:border-teal-500/60 hover:bg-teal-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-teal-400/60 dark:hover:bg-teal-400/10 cursor-pointer group"
                             title="Editar"
                           >
-                            <Pencil className="h-3 w-3" />
+                            <Pencil className="h-4 w-4 text-slate-750 dark:text-slate-200 group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors" />
                           </button>
                           <button
                             type="button"
                             onClick={() => removeAttribute(attr)}
-                            className="flex h-6 w-6 items-center justify-center rounded text-red-500 hover:bg-red-500/10"
+                            className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 text-rose-500 transition hover:border-rose-500/50 hover:bg-rose-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-rose-500/30 dark:hover:bg-rose-950/20 cursor-pointer group"
                             title="Eliminar"
                           >
-                            <Trash2 className="h-3 w-3" />
+                            <Trash2 className="h-4 w-4 text-rose-500 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
                           </button>
                         </div>
                       </td>
@@ -138,7 +133,7 @@ export const AttributesTab = ({
 
         <div className="space-y-6">
           <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950">
-            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white mb-4">Paso 1: Selecciona una Categoría</h3>
+            <h3 className="text-base font-extrabold text-slate-900 dark:text-white mb-4">Paso 1: Selecciona una Categoría</h3>
             <FormSelect
               label="Categoría"
               value={selectedCategoryIdForAttr}
@@ -150,25 +145,26 @@ export const AttributesTab = ({
           {selectedCategoryIdForAttr && (
             <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950">
               <div className="mb-4">
-                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">Paso 2: Especificaciones de Categoría</h3>
-                  <p className="text-xs text-slate-955 dark:text-white mt-1">Vincula o remueve atributos de esta categoría de hardware.</p>
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Paso 2: Especificaciones de Categoría</h3>
+                  <p className="text-sm text-slate-955 dark:text-white mt-1">Vincula o remueve atributos de esta categoría de hardware.</p>
               </div>
 
               <div className="border-t border-slate-100 dark:border-neutral-900 pt-3 mb-4">
-                <h4 className="text-xs font-bold text-slate-955 dark:text-white uppercase mb-2">Atributos Vinculados</h4>
+                <h4 className="text-sm font-bold text-slate-955 dark:text-white uppercase mb-2">Atributos Vinculados</h4>
                 <div className="grid gap-2">
                   {categoryAttrs.length === 0 ? (
-                    <p className="text-xs text-slate-955 dark:text-white text-center py-2">Ningún atributo vinculado a esta categoría.</p>
+                    <p className="text-sm text-slate-955 dark:text-white text-center py-2">Ningún atributo vinculado a esta categoría.</p>
                   ) : (
                     categoryAttrs.map(attr => (
                       <div key={attr.id} className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-1.5 dark:border-neutral-800">
-                        <span className="text-xs font-bold text-slate-955 dark:text-white">{attr.name} <span className="text-[10px] text-slate-900 dark:text-neutral-300">({attr.dataType})</span></span>
+                        <span className="text-sm font-bold text-slate-955 dark:text-white">{attr.name} <span className="text-xs text-slate-900 dark:text-neutral-350">({attr.dataType})</span></span>
                         <button
                           type="button"
                           onClick={() => disassociateAttr(attr)}
-                          className="flex h-6 w-6 items-center justify-center rounded text-red-500 hover:bg-red-500/10"
+                          className="flex h-7 w-7 items-center justify-center rounded border border-slate-200 text-rose-500 hover:border-rose-500/50 hover:bg-rose-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-rose-500/30 dark:hover:bg-rose-950/20 cursor-pointer group"
+                          title="Desasociar"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-3.5 w-3.5 text-rose-500 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
                         </button>
                       </div>
                     ))
@@ -177,7 +173,7 @@ export const AttributesTab = ({
               </div>
 
               <div className="border-t border-slate-100 dark:border-neutral-900 pt-3">
-                <h4 className="text-xs font-bold text-slate-955 dark:text-white uppercase mb-2">Asociar Nuevo Atributo</h4>
+                <h4 className="text-sm font-bold text-slate-955 dark:text-white uppercase mb-2">Asociar Nuevo Atributo</h4>
                 <div className="grid gap-2">
                   {globalAttributes
                     .filter(attr => !categoryAttrs.some(ca => ca.id === attr.id))
@@ -186,7 +182,7 @@ export const AttributesTab = ({
                         key={attr.id}
                         type="button"
                         onClick={() => void associateAttr(attr.id)}
-                        className="flex items-center justify-between rounded-lg border border-dashed border-slate-350 px-3 py-1.5 text-left text-xs hover:border-teal-500 hover:bg-teal-50/10 dark:border-neutral-700 dark:hover:border-teal-400 transition"
+                        className="flex items-center justify-between rounded-lg border border-dashed border-slate-350 px-3 py-1.5 text-left text-sm hover:border-teal-500 hover:bg-teal-50/10 dark:border-neutral-700 dark:hover:border-teal-400 transition cursor-pointer"
                       >
                         <span className="font-semibold text-slate-700 dark:text-neutral-300">{attr.name}</span>
                         <Plus className="h-3 w-3 text-slate-400" />
@@ -203,12 +199,13 @@ export const AttributesTab = ({
         open={attrModalMode !== null}
         title={attrModalMode === 'create' ? 'Nuevo Atributo Técnico' : 'Editar Atributo Técnico'}
         onClose={() => setAttrModalMode(null)}
+        className="max-w-3xl p-6 md:p-8"
         footer={
           <>
             <Button type="button" variant="ghost" onClick={() => setAttrModalMode(null)}>
               Cancelar
             </Button>
-            <Button type="button" onClick={() => void saveAttribute()} disabled={isSavingAttr}>
+            <Button type="button" variant="outlineHoverSolid" onClick={() => void saveAttribute()} disabled={isSavingAttr}>
               {isSavingAttr ? 'Guardando...' : 'Guardar'}
             </Button>
           </>
@@ -268,6 +265,7 @@ export const AttributesTab = ({
         open={!!attrToDelete}
         title="¿Eliminar Atributo Global?"
         onClose={() => setAttrToDelete(null)}
+        className="max-w-3xl p-6 md:p-8"
       >
         <div className="space-y-4">
           <div className="flex items-start gap-3">
@@ -294,9 +292,9 @@ export const AttributesTab = ({
             <button
               type="button"
               onClick={() => void handleConfirmDeleteAttribute()}
-              className="rounded-lg bg-red-500 hover:bg-red-650 text-white font-bold px-4 py-2 transition text-xs shadow-sm"
+              className="rounded-lg border border-red-500 text-red-500 bg-transparent hover:bg-red-500 hover:text-white dark:border-red-400 dark:text-red-400 dark:hover:bg-red-500 dark:hover:text-white px-5 py-2.5 font-bold transition text-base shadow-sm cursor-pointer"
             >
-              Sí, eliminar
+              Eliminar
             </button>
           </div>
         </div>
@@ -306,6 +304,7 @@ export const AttributesTab = ({
         open={!!attrToDisassociate}
         title="¿Desasociar Atributo?"
         onClose={() => setAttrToDisassociate(null)}
+        className="max-w-3xl p-6 md:p-8"
       >
         <div className="space-y-4">
           <div className="flex items-start gap-3">
@@ -332,9 +331,9 @@ export const AttributesTab = ({
             <button
               type="button"
               onClick={() => void handleConfirmDisassociateAttribute()}
-              className="rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2.5 transition text-sm shadow-sm"
+              className="rounded-lg border border-amber-500 text-amber-600 bg-transparent hover:bg-amber-500 hover:text-white dark:border-amber-400 dark:text-amber-400 dark:hover:bg-amber-400 dark:hover:text-neutral-950 px-5 py-2.5 font-bold transition text-base shadow-sm cursor-pointer"
             >
-              Sí, desasociar
+              Desasociar
             </button>
           </div>
         </div>
