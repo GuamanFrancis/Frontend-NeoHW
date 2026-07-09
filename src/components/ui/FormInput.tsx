@@ -21,7 +21,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
             </span>
           )}
         </span>
-        <span className={`mt-1.5 flex h-12 items-center rounded-lg border bg-white px-3.5 text-slate-500 transition focus-within:ring-2 dark:bg-neutral-950/50 dark:text-neutral-300 ${error ? 'border-red-400 focus-within:ring-red-400/20' : 'border-slate-300 focus-within:border-teal-500 focus-within:ring-teal-400/20 dark:border-neutral-700 dark:focus-within:border-teal-400'}`}>
+        <span className={`mt-1.5 flex h-12 items-center rounded-lg border bg-white px-3.5 text-slate-500 transition focus-within:ring-2 dark:bg-neutral-950/50 dark:text-neutral-300 ${error ? 'border-red-400 focus-within:ring-red-400/20' : 'border-slate-200 focus-within:border-teal-500 focus-within:ring-teal-500/10 dark:border-neutral-800 dark:focus-within:border-teal-400'}`}>
           {icon}
           <input
             ref={ref}

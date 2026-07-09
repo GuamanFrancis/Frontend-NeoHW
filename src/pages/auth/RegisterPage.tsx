@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, User, Phone } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Eye, EyeOff, LockKeyhole, Mail, User, Phone } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { Button } from '../../components/ui/Button';
 import { FormInput } from '../../components/ui/FormInput';
@@ -72,17 +72,27 @@ export const RegisterPage = () => {
 
 
   return (
-    <AuthLayout cardClassName="py-8 lg:py-7 !max-w-[480px]">
+    <AuthLayout cardClassName="py-2">
+      <div className="mb-4 text-left">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-900 hover:shadow dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white group"
+        >
+          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5 text-teal-600 dark:text-teal-400" />
+          <span>Volver al inicio</span>
+        </Link>
+      </div>
+
       <div className="text-center">
-        <h2 className="text-3xl font-extrabold leading-tight text-slate-950 dark:text-white">
+        <h2 className="text-3xl font-extrabold leading-tight text-slate-955 dark:text-white">
           Crear cuenta
         </h2>
-        <p className="mt-2 text-base font-medium text-slate-600 dark:text-neutral-300">
+        <p className="mt-1 text-sm font-medium text-slate-500 dark:text-neutral-400">
           Completa tus datos para registrarte
         </p>
       </div>
 
-      <form className="mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)}>
+      <form className="mt-4 space-y-3" onSubmit={handleSubmit(onSubmit)}>
         <div className="grid grid-cols-2 gap-4">
           <FormInput
             label="Nombre"
@@ -191,7 +201,7 @@ export const RegisterPage = () => {
           </div>
         )}
 
-        <Button type="submit" fullWidth disabled={isSubmitting}>
+        <Button type="submit" variant="outlineHoverSolid" fullWidth disabled={isSubmitting}>
           {isSubmitting ? 'Creando cuenta...' : 'Crear cuenta'}
           <ArrowRight className="h-7 w-7" />
         </Button>
@@ -199,7 +209,7 @@ export const RegisterPage = () => {
 
 
 
-      <div className="mt-5 text-center text-sm font-medium text-slate-600 dark:text-neutral-300 sm:text-base">
+      <div className="mt-4 text-center text-sm font-medium text-slate-600 dark:text-neutral-300 sm:text-base">
         Ya tienes cuenta?{' '}
         <Link
           to={searchParams.get('redirect') ? `/login?redirect=${encodeURIComponent(searchParams.get('redirect') || '')}` : "/login"}

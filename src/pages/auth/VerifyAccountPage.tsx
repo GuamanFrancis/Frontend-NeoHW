@@ -102,13 +102,13 @@ export const VerifyAccountPage = () => {
   };
 
   return (
-    <AuthLayout cardClassName="py-8 lg:py-7 !max-w-[480px]">
+    <AuthLayout cardClassName="py-2">
       <form className="mt-7 space-y-5" onSubmit={handleVerify}>
         <div className="text-center">
-          <h2 className="text-3xl font-extrabold leading-tight text-slate-950 dark:text-white">
+          <h2 className="text-3xl font-extrabold leading-tight text-slate-955 dark:text-white">
             Verificar cuenta
           </h2>
-          <p className="mt-2 text-sm font-medium text-slate-600 dark:text-neutral-300 leading-relaxed">
+          <p className="mt-2 text-sm font-medium text-slate-500 dark:text-neutral-400 leading-relaxed">
             Hemos enviado un código de verificación a: <br />
             <span className="font-bold text-slate-900 dark:text-white">{maskEmail(email)}</span>
           </p>
@@ -136,7 +136,7 @@ export const VerifyAccountPage = () => {
           </div>
         )}
 
-        <Button type="submit" fullWidth disabled={isSubmitting} className="xl:h-14 xl:text-lg">
+        <Button type="submit" variant="outlineHoverSolid" fullWidth disabled={isSubmitting} className="xl:h-14 xl:text-lg">
           {isSubmitting ? 'Verificando...' : 'Verificar cuenta'}
           <ArrowRight className="h-7 w-7" />
         </Button>

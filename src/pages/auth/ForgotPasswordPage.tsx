@@ -105,15 +105,15 @@ export const ForgotPasswordPage = () => {
   };
 
   return (
-    <AuthLayout cardClassName="py-8 lg:py-7 !max-w-[480px]">
+    <AuthLayout cardClassName="py-2">
       {step === 1 && (
         <form className="mt-7 space-y-5" onSubmit={handleRequestCode} noValidate>
           <div className="text-center">
-            <h2 className="text-3xl font-extrabold leading-tight text-slate-950 dark:text-white xl:text-4xl">
+            <h2 className="text-3xl font-extrabold leading-tight text-slate-955 dark:text-white xl:text-4xl">
               Recuperar cuenta
             </h2>
-            <p className="mt-2 text-sm font-medium text-slate-600 dark:text-neutral-300">
-              Ingresa tu correo para recibir un código de recuperación
+            <p className="mt-2 text-sm font-medium text-slate-500 dark:text-neutral-400">
+              Ingrese el correo electrónico con el que se registró en el sistema
             </p>
           </div>
 
@@ -127,7 +127,7 @@ export const ForgotPasswordPage = () => {
               icon={<Mail className="h-6 w-6 flex-none text-slate-500 dark:text-neutral-300" />}
             />
             <p className="text-xs text-slate-500 dark:text-neutral-450 mt-2 leading-relaxed">
-              Nota: Por motivos de seguridad, solo recibirás un código si este correo coincide con una cuenta activa registrada en la plataforma.
+              Le enviaremos un código de recuperación para restablecer su contraseña.
             </p>
           </div>
 
@@ -137,7 +137,7 @@ export const ForgotPasswordPage = () => {
             </div>
           )}
 
-          <Button type="submit" fullWidth disabled={isSubmitting} className="xl:h-14 xl:text-lg">
+          <Button type="submit" variant="outlineHoverSolid" fullWidth disabled={isSubmitting} className="xl:h-14 xl:text-lg">
             {isSubmitting ? 'Enviando...' : 'Enviar código'}
             <ArrowRight className="h-7 w-7" />
           </Button>
@@ -154,10 +154,10 @@ export const ForgotPasswordPage = () => {
       {step === 2 && (
         <form className="mt-7 space-y-5" onSubmit={handleVerifyCode} noValidate>
           <div className="text-center">
-            <h2 className="text-3xl font-extrabold leading-tight text-slate-950 dark:text-white xl:text-4xl">
+            <h2 className="text-3xl font-extrabold leading-tight text-slate-955 dark:text-white xl:text-4xl">
               Ingresar código
             </h2>
-            <p className="mt-2 text-sm font-medium text-slate-600 dark:text-neutral-300">
+            <p className="mt-2 text-sm font-medium text-slate-500 dark:text-neutral-400">
               Escribe el código enviado a <span className="font-bold text-slate-900 dark:text-white">{email}</span>
             </p>
           </div>
@@ -184,7 +184,7 @@ export const ForgotPasswordPage = () => {
             </div>
           )}
 
-          <Button type="submit" fullWidth disabled={isSubmitting} className="xl:h-14 xl:text-lg">
+          <Button type="submit" variant="outlineHoverSolid" fullWidth disabled={isSubmitting} className="xl:h-14 xl:text-lg">
             {isSubmitting ? 'Verificando...' : 'Verificar código'}
             <ArrowRight className="h-7 w-7" />
           </Button>
@@ -209,10 +209,10 @@ export const ForgotPasswordPage = () => {
       {step === 3 && (
         <form className="mt-7 space-y-5" onSubmit={handleResetPassword} noValidate>
           <div className="text-center">
-            <h2 className="text-3xl font-extrabold leading-tight text-slate-950 dark:text-white xl:text-4xl">
+            <h2 className="text-3xl font-extrabold leading-tight text-slate-955 dark:text-white xl:text-4xl">
               Nueva contraseña
             </h2>
-            <p className="mt-2 text-sm font-medium text-slate-600 dark:text-neutral-300">
+            <p className="mt-2 text-sm font-medium text-slate-500 dark:text-neutral-400">
               Ingresa la nueva contraseña para tu cuenta
             </p>
           </div>
@@ -259,7 +259,7 @@ export const ForgotPasswordPage = () => {
             </div>
           )}
 
-          <Button type="submit" fullWidth disabled={isSubmitting} className="xl:h-14 xl:text-lg">
+          <Button type="submit" variant="outlineHoverSolid" fullWidth disabled={isSubmitting} className="xl:h-14 xl:text-lg">
             {isSubmitting ? 'Actualizando...' : 'Restablecer contraseña'}
             <ArrowRight className="h-7 w-7" />
           </Button>
@@ -275,15 +275,15 @@ export const ForgotPasswordPage = () => {
           </div>
 
           <div>
-            <h2 className="text-3xl font-extrabold leading-tight text-slate-950 dark:text-white xl:text-4xl">
+            <h2 className="text-3xl font-extrabold leading-tight text-slate-955 dark:text-white xl:text-4xl">
               ¡Contraseña restablecida!
             </h2>
-            <p className="mt-2 text-sm font-medium text-slate-600 dark:text-neutral-300">
+            <p className="mt-2 text-sm font-medium text-slate-500 dark:text-neutral-400">
               Tu contraseña ha sido actualizada de forma exitosa.
             </p>
           </div>
 
-          <Button type="button" fullWidth onClick={() => navigate('/login')} className="xl:h-14 xl:text-lg">
+          <Button type="button" variant="outlineHoverSolid" fullWidth onClick={() => navigate('/login')} className="xl:h-14 xl:text-lg">
             Ir al inicio de sesión
             <ArrowRight className="h-7 w-7" />
           </Button>

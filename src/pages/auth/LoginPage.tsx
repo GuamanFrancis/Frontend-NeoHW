@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { Button } from '../../components/ui/Button';
 import { FormInput } from '../../components/ui/FormInput';
@@ -67,12 +67,22 @@ export const LoginPage = () => {
 
 
   return (
-    <AuthLayout cardClassName="py-8 lg:py-7 !max-w-[480px]">
+    <AuthLayout cardClassName="py-2">
+      <div className="mb-6 text-left">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-900 hover:shadow dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white group"
+        >
+          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5 text-teal-600 dark:text-teal-400" />
+          <span>Volver al inicio</span>
+        </Link>
+      </div>
+
       <div className="text-center">
         <h2 className="text-3xl font-extrabold leading-tight text-slate-950 dark:text-white xl:text-4xl">
-          Iniciar sesion
+          Iniciar sesión
         </h2>
-        <p className="mt-2 text-base font-medium text-slate-600 dark:text-neutral-300">
+        <p className="mt-2 text-sm font-medium text-slate-500 dark:text-neutral-400">
           Ingresa tus credenciales para continuar
         </p>
       </div>
@@ -138,8 +148,8 @@ export const LoginPage = () => {
           </div>
         )}
 
-        <Button type="submit" fullWidth disabled={isSubmitting} className="xl:h-14 xl:text-lg">
-          {isSubmitting ? 'Ingresando...' : 'Iniciar sesion'}
+        <Button type="submit" variant="outlineHoverSolid" fullWidth disabled={isSubmitting} className="xl:h-14 xl:text-lg">
+          {isSubmitting ? 'Ingresando...' : 'Iniciar sesión'}
           <ArrowRight className="h-7 w-7" />
         </Button>
       </form>
