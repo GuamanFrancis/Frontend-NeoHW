@@ -43,6 +43,7 @@ export type OrderBackend = {
   shippingAddress: string | Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
+  assignedSellerId?: string | null;
   items: OrderItemBackend[];
   documents?: {
     id: string;

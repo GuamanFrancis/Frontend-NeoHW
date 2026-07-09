@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { getOrders, type OrderBackend } from '../../../services/ordersService';
 import { getGlobalStats, type GlobalStats } from '../../../services/statisticsService';
 import { getCatalogComponents } from '../../../services/catalogService';
+import { getUsers } from '../../../services/usersService';
 
 export const useAdminStats = () => {
   const [activeTab, setActiveTab] = useState<'general' | 'orders' | 'performance'>('general');
@@ -14,6 +15,7 @@ export const useAdminStats = () => {
   const [chartType, setChartType] = useState<'linea' | 'barras'>('linea');
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
   const [stockStats, setStockStats] = useState<{ available: number; lowStock: number; outOfStock: number } | null>(null);
+  const [users, setUsers] = useState<any[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -78,6 +80,16 @@ export const useAdminStats = () => {
         }
       } catch (err) {
         console.error('Error fetching catalog components:', err);
+      }
+
+      // 4. Fetch all users for seller lookup
+      try {
+        const usersRes = await getUsers(1, 250);
+        if (active && usersRes && Array.isArray(usersRes.users)) {
+          setUsers(usersRes.users);
+        }
+      } catch (err) {
+        console.error('Error fetching users for seller lookup:', err);
       }
 
       if (active) setIsLoading(false);
@@ -242,6 +254,30 @@ export const useAdminStats = () => {
     });
   }, [periodData, maxValue]);
 
+  // Construct a robust mapping of seller ID -> full name or email
+  const sellerMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    users.forEach((u) => {
+      if (u.role === 'vendedor') {
+        const fn = u.firstName || '';
+        const ln = u.lastName || '';
+        const name = [fn, ln].filter(Boolean).join(' ') || u.email;
+        map[u.id] = name;
+      }
+    });
+    if (globalStats?.sellerPerformance) {
+      globalStats.sellerPerformance.forEach((sp) => {
+        if (sp.seller) {
+          const fn = sp.seller.firstName || '';
+          const ln = sp.seller.lastName || '';
+          const name = [fn, ln].filter(Boolean).join(' ') || sp.seller.email;
+          map[sp.seller.id] = name;
+        }
+      });
+    }
+    return map;
+  }, [users, globalStats]);
+
   return {
     activeTab,
     setActiveTab,
@@ -265,5 +301,6 @@ export const useAdminStats = () => {
     linePath,
     areaPath,
     barPoints,
+    sellerMap,
   };
 };

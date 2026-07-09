@@ -85,6 +85,7 @@ export const AdminEstadisticasPage = () => {
     linePath,
     areaPath,
     barPoints,
+    sellerMap,
   } = useAdminStats();
 
   const [ordersLimit, setOrdersLimit] = useState<number>(50);
@@ -601,6 +602,7 @@ export const AdminEstadisticasPage = () => {
                     <tr className="border-b border-slate-150 bg-slate-55 text-slate-900 dark:border-neutral-900 dark:bg-neutral-900/20 dark:text-white">
                       <th className="py-4 px-5 font-bold uppercase tracking-wider text-sm text-slate-500 dark:text-neutral-300">CÓDIGO DE PEDIDO</th>
                       <th className="py-4 px-5 font-bold uppercase tracking-wider text-sm text-slate-500 dark:text-neutral-300">CLIENTE</th>
+                      <th className="py-4 px-5 font-bold uppercase tracking-wider text-sm text-slate-500 dark:text-neutral-300">VENDEDOR ASIGNADO</th>
                       <th className="py-4 px-5 font-bold uppercase tracking-wider text-sm text-slate-500 dark:text-neutral-300">FECHA DE REGISTRO</th>
                       <th className="py-4 px-5 font-bold uppercase tracking-wider text-sm text-slate-500 dark:text-neutral-300 text-right">MONTO TOTAL</th>
                       <th className="py-4 px-5 font-bold uppercase tracking-wider text-sm text-slate-500 dark:text-neutral-300 text-right">ESTADO</th>
@@ -623,6 +625,9 @@ export const AdminEstadisticasPage = () => {
                         <tr key={order.id} className="hover:bg-slate-50/30 dark:hover:bg-neutral-900/40 transition-colors">
                           <td className="py-4 px-5 text-base text-slate-900 dark:text-neutral-200 font-semibold">{orderCode}</td>
                           <td className="py-4 px-5 text-base text-slate-900 dark:text-neutral-200 font-semibold">{getClientName(order)}</td>
+                          <td className="py-4 px-5 text-base text-slate-900 dark:text-neutral-200 font-semibold">
+                            {order.assignedSellerId ? (sellerMap[order.assignedSellerId] || 'Sin registrar') : 'No asignado'}
+                          </td>
                           <td className="py-4 px-5 text-base text-slate-900 dark:text-neutral-200 font-semibold">{formattedDate}</td>
                           <td className="py-4 px-5 text-base text-slate-900 dark:text-white font-black text-right">
                             {formatCurrency(Number(order.totalAmount || 0))}
