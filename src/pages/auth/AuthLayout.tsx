@@ -10,17 +10,17 @@ type AuthLayoutProps = {
 export const AuthLayout = ({ children, cardClassName = '' }: AuthLayoutProps) => {
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950 dark:bg-neutral-950 dark:text-white lg:h-screen lg:overflow-hidden">
-      <section className="grid min-h-screen grid-cols-1 lg:h-screen lg:grid-cols-12">
+      <section className="grid min-h-screen grid-cols-1 lg:h-screen lg:grid-cols-2">
         <motion.div
           initial={{ opacity: 0, x: -24 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.7, ease: 'easeOut' }}
-          className="lg:col-span-5 h-full"
+          className="h-full"
         >
           <AuthSidePanel />
         </motion.div>
 
-        <section className="lg:col-span-7 flex items-center justify-center bg-white px-5 py-6 dark:bg-neutral-950 sm:px-8 lg:h-full lg:overflow-y-auto lg:px-6 lg:py-6">
+        <section className="flex items-center justify-center bg-white px-5 py-6 dark:bg-neutral-950 sm:px-8 lg:h-full lg:overflow-y-auto lg:px-6 lg:py-6">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
