@@ -3,13 +3,15 @@ import { useNavigate, useLocation } from 'react-router';
 import {
   ArrowLeft,
   Trash2,
-  Lock,
   ShoppingCart,
   Plus,
   Minus,
   AlertTriangle,
-  Check
+  Check,
+  X,
+  CreditCard
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../../context/CartContext';
 import { createOrderFromCart } from '../../services/ordersService';
 import { Modal } from '../../components/ui/Modal';
@@ -50,12 +52,19 @@ export const ClienteCarritoPage = () => {
   const location = useLocation();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  const getToastHeader = (msg: string) => {
+    const m = msg.toLowerCase();
+    if (m.includes('guardado')) return '¡PROYECTO GUARDADO!';
+    if (m.includes('carrito') || m.includes('añadidos') || m.includes('agregado')) return '¡CARRITO ACTUALIZADO!';
+    return '¡ÉXITO!';
+  };
+
   useEffect(() => {
     if (location.state?.message) {
       setToastMessage(location.state.message);
-      navigate(location.pathname, { replace: true, state: {} });
+      window.history.replaceState({}, '');
     }
-  }, [location.state, location.pathname, navigate]);
+  }, [location.state]);
 
   useEffect(() => {
     if (toastMessage) {
@@ -81,6 +90,24 @@ export const ClienteCarritoPage = () => {
       void syncCart();
     }
   }, [syncCart]);
+
+  const handleRemoveItem = async (productId: string, productName: string) => {
+    try {
+      await removeFromCart(productId);
+      setToastMessage(`¡Producto "${productName}" eliminado del carrito!`);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleClearCart = async () => {
+    try {
+      await clearCart();
+      setToastMessage("¡El carrito de compras ha sido vaciado!");
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [street, setStreet] = useState('');
@@ -279,12 +306,38 @@ export const ClienteCarritoPage = () => {
   if (cartItems.length === 0) {
     return (
       <>
-        {toastMessage && (
-          <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 rounded-2xl border border-teal-500/40 bg-slate-900/95 dark:bg-neutral-900/95 px-6 py-4 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md text-white font-sans max-w-md w-full sm:w-auto text-center justify-center animate-bounce">
-            <Check className="h-5 w-5 text-teal-400 shrink-0 animate-pulse" />
-            <span className="text-sm font-bold tracking-wide">{toastMessage}</span>
-          </div>
-        )}
+        <AnimatePresence>
+          {toastMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: -20, x: 50, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, x: 20, scale: 0.95, transition: { duration: 0.12 } }}
+              transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+              className="fixed top-6 right-6 z-[100] flex items-start gap-4 rounded-xl border border-emerald-250 bg-emerald-50/95 p-5 pr-12 shadow-lg backdrop-blur-sm dark:border-emerald-800/40 dark:bg-emerald-950/90 max-w-md w-full"
+            >
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400">
+                <Check className="h-5.5 w-5.5 stroke-[2.5]" />
+              </div>
+
+              <div className="flex-1 text-left min-w-0">
+                <h4 className="text-sm font-bold uppercase tracking-wider text-black dark:text-white">
+                  {getToastHeader(toastMessage)}
+                </h4>
+                <p className="mt-0.5 text-sm font-semibold leading-relaxed text-slate-900 dark:text-slate-200">
+                  {toastMessage}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setToastMessage(null)}
+                className="absolute top-4.5 right-3.5 p-0.5 rounded-md hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-slate-500 hover:text-black dark:text-slate-400 dark:hover:text-white"
+                aria-label="Cerrar"
+              >
+                <X className="h-4 w-4 stroke-[2]" />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <div className="w-full pt-4 pb-16 text-slate-800 dark:text-neutral-200">
           <div className="flex h-96 flex-col items-center justify-between rounded-2xl border border-dashed border-slate-200 dark:border-neutral-800 bg-white/50 p-8 text-center dark:bg-neutral-900/10 max-w-2xl mx-auto py-16">
             <ShoppingCart className="h-16 w-16 text-slate-800 dark:text-neutral-200 opacity-40" />
@@ -310,19 +363,45 @@ export const ClienteCarritoPage = () => {
 
   return (
     <>
-      {toastMessage && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 rounded-2xl border border-teal-500/40 bg-slate-900/95 dark:bg-neutral-900/95 px-6 py-4 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md text-white font-sans max-w-md w-full sm:w-auto text-center justify-center animate-bounce">
-          <Check className="h-5 w-5 text-teal-400 shrink-0 animate-pulse" />
-          <span className="text-sm font-bold tracking-wide">{toastMessage}</span>
-        </div>
-      )}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, x: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, x: 20, scale: 0.95, transition: { duration: 0.12 } }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            className="fixed top-6 right-6 z-[100] flex items-start gap-4 rounded-xl border border-emerald-250 bg-emerald-50/95 p-5 pr-12 shadow-lg backdrop-blur-sm dark:border-emerald-800/40 dark:bg-emerald-950/90 max-w-md w-full"
+          >
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400">
+              <Check className="h-5.5 w-5.5 stroke-[2.5]" />
+            </div>
+
+            <div className="flex-1 text-left min-w-0">
+              <h4 className="text-sm font-bold uppercase tracking-wider text-black dark:text-white">
+                {getToastHeader(toastMessage)}
+              </h4>
+              <p className="mt-0.5 text-sm font-semibold leading-relaxed text-slate-900 dark:text-slate-200">
+                {toastMessage}
+              </p>
+            </div>
+
+            <button
+              onClick={() => setToastMessage(null)}
+              className="absolute top-4.5 right-3.5 p-0.5 rounded-md hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-slate-500 hover:text-black dark:text-slate-400 dark:hover:text-white"
+              aria-label="Cerrar"
+            >
+              <X className="h-4 w-4 stroke-[2]" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="w-full pt-4 pb-16 text-slate-800 dark:text-neutral-200">
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
         <div className="lg:col-span-8 space-y-6">
           <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white dark:border-neutral-900 dark:bg-neutral-950/20 shadow-sm">
             <table className="w-full border-collapse text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-neutral-900 text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider">
+                <tr className="border-b border-slate-250 dark:border-neutral-800 text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                   <th className="py-4 px-4">Producto</th>
                   <th className="py-4 px-4 text-right">Precio unitario</th>
                   <th className="py-4 px-4 text-center">Cantidad</th>
@@ -354,28 +433,23 @@ export const ClienteCarritoPage = () => {
                           </div>
                           <div className="min-w-0">
                             <h4
-                              className="font-semibold text-sm text-slate-800 dark:text-neutral-200 cursor-pointer hover:underline transition"
+                              className="font-bold text-base text-slate-900 dark:text-white cursor-pointer hover:underline transition"
                               title={product.name}
                               onClick={() => handleOpenDetail(product)}
                             >
                               {product.name}
                             </h4>
                             {product.category && product.category !== 'Sin categoria' && product.category !== 'Sin categoría' && (
-                              <div className="text-[11px] text-slate-600 dark:text-neutral-300 font-semibold uppercase tracking-wider mt-0.5">
+                              <div className="text-xs text-slate-900 dark:text-white font-bold uppercase tracking-wider mt-0.5">
                                 {product.category}
-                              </div>
-                            )}
-                            {product.sku && (
-                              <div className="text-xs text-slate-500 dark:text-neutral-400 font-normal mt-0.5">
-                                SKU: {product.sku}
                               </div>
                             )}
                           </div>
                         </div>
                       </td>
-                      <td className="py-4 px-4 text-right font-medium text-sm text-slate-700 dark:text-neutral-300 whitespace-nowrap">
+                      <td className="py-4 px-4 text-right font-bold text-sm text-slate-900 dark:text-white whitespace-nowrap">
                         <div>${product.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                        <div className="text-[10px] text-slate-500 dark:text-neutral-400 font-normal mt-0.5">USD</div>
+                        <div className="text-[10px] text-slate-900 dark:text-white font-medium mt-0.5">USD</div>
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex justify-center">
@@ -389,7 +463,7 @@ export const ClienteCarritoPage = () => {
                             >
                               <Minus className="h-3.5 w-3.5" />
                             </button>
-                            <span className="w-9 text-center font-medium text-sm text-slate-700 dark:text-neutral-300">
+                            <span className="w-9 text-center font-bold text-sm text-slate-900 dark:text-white">
                               {quantity}
                             </span>
                             <button
@@ -406,25 +480,25 @@ export const ClienteCarritoPage = () => {
                       </td>
                       <td className="py-4 px-4 text-center whitespace-nowrap">
                         <div className="flex flex-col items-center justify-center gap-0.5">
-                          <div className="flex items-center gap-1.5 font-semibold text-xs">
+                          <div className="flex items-center gap-1.5 font-semibold text-sm">
                             <span className={`h-1.5 w-1.5 rounded-full fill-current bg-current ${statusColors[product.status]}`} />
                             <span className={statusColors[product.status]}>{statusLabels[product.status]}</span>
                           </div>
-                          <div className="text-xs text-slate-700 dark:text-neutral-300 font-normal">
+                          <div className="text-sm text-slate-900 dark:text-white font-semibold">
                             Stock: {product.stock}
                           </div>
                         </div>
                       </td>
-                      <td className="py-4 px-4 text-right font-semibold text-sm text-slate-800 dark:text-neutral-200 whitespace-nowrap">
+                      <td className="py-4 px-4 text-right font-bold text-sm text-slate-900 dark:text-white whitespace-nowrap">
                         <div>${itemSubtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                        <div className="text-[10px] text-slate-500 dark:text-neutral-400 font-normal mt-0.5">USD</div>
+                        <div className="text-[10px] text-slate-900 dark:text-white font-medium mt-0.5">USD</div>
                       </td>
                       <td className="py-4 px-4 min-w-[50px]">
                         <div className="flex items-center justify-end">
                           <button
                             type="button"
-                            onClick={() => removeFromCart(product.id)}
-                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-transparent text-slate-600 hover:text-rose-600 dark:text-neutral-300 dark:hover:text-rose-400 hover:bg-slate-50 dark:hover:bg-neutral-900 transition"
+                            onClick={() => handleRemoveItem(product.id, product.name)}
+                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-red-500 text-red-500 bg-transparent hover:bg-red-500 hover:text-white transition cursor-pointer"
                             aria-label="Quitar del carrito"
                           >
                             <Trash2 className="h-4.5 w-4.5" />
@@ -441,15 +515,15 @@ export const ClienteCarritoPage = () => {
             <button
               type="button"
               onClick={() => navigate('/cliente/catalogo')}
-              className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-neutral-800 px-5 py-2 text-sm font-medium text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-900/50 transition"
+              className="flex items-center justify-center gap-2 rounded-lg border border-teal-500 text-teal-600 bg-transparent hover:bg-teal-500 hover:text-white dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-400 dark:hover:text-neutral-950 transition px-5 py-2 text-sm font-semibold cursor-pointer"
             >
               <ArrowLeft className="h-4 w-4" />
               Seguir comprando
             </button>
             <button
               type="button"
-              onClick={() => clearCart()}
-              className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-neutral-800 px-5 py-2 text-sm font-medium text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-900/50 transition"
+              onClick={handleClearCart}
+              className="flex items-center justify-center gap-2 rounded-lg border border-red-500 text-red-500 bg-transparent hover:bg-red-500 hover:text-white transition px-5 py-2 text-sm font-semibold cursor-pointer"
             >
               <Trash2 className="h-4 w-4" />
               Vaciar carrito
@@ -533,14 +607,13 @@ export const ClienteCarritoPage = () => {
               </div>
             </div>
             <button
-              type="button"
-              onClick={handleOpenCheckout}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-neutral-800 bg-transparent text-slate-700 dark:text-neutral-300 font-semibold px-6 py-3 hover:bg-slate-50 dark:hover:bg-neutral-900/50 transition mt-2 text-sm"
-            >
-              <Lock className="h-4.5 w-4.5" />
-              Completar Datos de Envío y Pagar
-              <span className="font-light ml-1">→</span>
-            </button>
+               type="button"
+               onClick={handleOpenCheckout}
+               className="flex w-full items-center justify-center gap-2 rounded-lg border border-teal-500 text-teal-600 bg-transparent hover:bg-teal-500 hover:text-white dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-400 dark:hover:text-neutral-955 font-bold px-6 py-3 transition mt-2 text-sm cursor-pointer"
+             >
+               <CreditCard className="h-4.5 w-4.5" />
+               Completar Datos de Envío y Pagar
+             </button>
           </div>
         </div>
       </div>
@@ -693,17 +766,17 @@ export const ClienteCarritoPage = () => {
               type="button"
               onClick={() => setIsCheckoutOpen(false)}
               disabled={loadingCheckout}
-              className="border border-slate-200 dark:border-neutral-800 text-slate-700 dark:text-neutral-300 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-neutral-900/50 h-10 px-4 rounded-lg flex items-center justify-center transition"
+              className="border border-slate-300 hover:bg-slate-150 hover:text-slate-900 dark:border-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-white font-semibold text-sm h-10 px-4 rounded-lg flex items-center justify-center transition cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loadingCheckout}
-              className="border border-slate-200 dark:border-neutral-800 bg-transparent hover:bg-slate-50 dark:hover:bg-neutral-900/50 text-slate-700 dark:text-neutral-300 min-w-[140px] font-semibold text-sm h-10 px-4 rounded-lg flex items-center justify-center transition"
+              className="border border-teal-500 text-teal-600 bg-transparent hover:bg-teal-500 hover:text-white dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-400 dark:hover:text-neutral-955 min-w-[140px] font-bold text-sm h-10 px-4 rounded-lg flex items-center justify-center transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loadingCheckout ? (
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-500 border-t-transparent" />
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-teal-500 border-t-transparent" />
               ) : (
                 "Proceder al Pago con Stripe"
               )}

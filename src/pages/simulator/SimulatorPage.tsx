@@ -13,8 +13,9 @@ import {
   Info,
   MessageSquare,
   X,
-  CheckCircle2,
+  Check,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import Scene from './components/Scene';
@@ -49,6 +50,7 @@ export const SimulatorPage = () => {
     setModalProducts,
     loadingProducts,
     toastMessage,
+    setToastMessage,
     catalogSearch,
     setCatalogSearch,
     isAuthRequiredModalOpen,
@@ -84,6 +86,14 @@ export const SimulatorPage = () => {
     setAutoRotate,
     setCameraAction
   } = useSimulator();
+
+  const getToastHeader = (msg: string) => {
+    const m = msg.toLowerCase();
+    if (m.includes('cargado')) return '¡PROYECTO CARGADO!';
+    if (m.includes('guardado')) return '¡PROYECTO GUARDADO!';
+    if (m.includes('carrito') || m.includes('añadido') || m.includes('agregado')) return '¡CARRITO ACTUALIZADO!';
+    return '¡ÉXITO!';
+  };
 
   const camBtn = useCallback((type: CameraAction['type'], icon: React.ReactNode, label: string) => {
     const isActive = type === 'toggle-rotate' && autoRotate;
@@ -255,12 +265,38 @@ export const SimulatorPage = () => {
           </div>
         </Modal>
   
-        {toastMessage && (
-          <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 rounded-2xl border border-teal-500/40 bg-slate-900/95 dark:bg-neutral-900/95 px-6 py-4 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md text-white font-sans max-w-md w-full sm:w-auto text-center justify-center animate-bounce">
-            <CheckCircle2 className="h-5 w-5 text-teal-400 shrink-0 animate-pulse" />
-            <span className="text-sm font-bold tracking-wide">{toastMessage}</span>
-          </div>
-        )}
+        <AnimatePresence>
+          {toastMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: -20, x: 50, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, x: 20, scale: 0.95, transition: { duration: 0.12 } }}
+              transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+              className="fixed top-6 right-6 z-[100] flex items-start gap-4 rounded-xl border border-emerald-250 bg-emerald-50/95 p-5 pr-12 shadow-lg backdrop-blur-sm dark:border-emerald-800/40 dark:bg-emerald-950/90 max-w-md w-full"
+            >
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400">
+                <Check className="h-5.5 w-5.5 stroke-[2.5]" />
+              </div>
+
+              <div className="flex-1 text-left min-w-0">
+                <h4 className="text-sm font-bold uppercase tracking-wider text-black dark:text-white">
+                  {getToastHeader(toastMessage)}
+                </h4>
+                <p className="mt-0.5 text-sm font-semibold leading-relaxed text-slate-900 dark:text-slate-200">
+                  {toastMessage}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setToastMessage(null)}
+                className="absolute top-4.5 right-3.5 p-0.5 rounded-md hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-slate-500 hover:text-black dark:text-slate-400 dark:hover:text-white"
+                aria-label="Cerrar"
+              >
+                <X className="h-4 w-4 stroke-[2]" />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <ComponenteDetalleDrawer
           componente={selectedDetailProduct}

@@ -10,14 +10,17 @@ import {
   ChevronUp,
   DollarSign,
   AlertTriangle,
-  CheckCircle2,
-  PackageOpen
+  PackageOpen,
+  Check,
+  X,
+  Loader2
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { useCart } from '../../context/CartContext';
 import type { CatalogComponent } from '../../types/catalog';
 import { ComponenteDetalleDrawer } from './ComponenteDetalleDrawer';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getProjects } from '../../services/projectsService';
 import type { BackendProject } from '../../services/projectsService';
 import { getCatalogComponentById } from '../../services/catalogService';
@@ -128,6 +131,7 @@ export const ClienteProyectosPage = () => {
   
   const [projectToDelete, setProjectToDelete] = useState<SavedProject | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [buyingProjectId, setBuyingProjectId] = useState<string | null>(null);
   const [selectedComponent, setSelectedComponent] = useState<CatalogComponent | null>(null);
 
   useEffect(() => {
@@ -194,6 +198,7 @@ export const ClienteProyectosPage = () => {
   };
 
   const handleBuyProject = async (project: SavedProject) => {
+    if (buyingProjectId) return;
     const items = Object.values(project.componentsMap);
     if (items.length === 0) {
       showToast('Este proyecto no tiene componentes seleccionados.');
@@ -203,8 +208,16 @@ export const ClienteProyectosPage = () => {
     const eligibleItems = items.filter((prod) => prod && prod.stock > 0);
 
     if (eligibleItems.length > 0) {
-      await addMultipleToCart(eligibleItems);
-      navigate('/cliente/carrito');
+      try {
+        setBuyingProjectId(project.id);
+        await addMultipleToCart(eligibleItems);
+        navigate('/cliente/carrito');
+      } catch (err) {
+        console.error(err);
+        showToast('Error al añadir componentes al carrito.');
+      } finally {
+        setBuyingProjectId(null);
+      }
     } else {
       showToast('No se pudieron agregar los componentes al carrito (sin stock disponible).');
     }
@@ -236,7 +249,7 @@ export const ClienteProyectosPage = () => {
           <button
             type="button"
             onClick={() => navigate('/cliente/simulador')}
-            className="flex items-center justify-center gap-2 rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 font-semibold px-6 py-3 transition shadow-sm mt-6 text-sm cursor-pointer"
+            className="flex items-center justify-center gap-2 rounded-lg border border-teal-500 text-teal-600 bg-transparent hover:bg-teal-500 hover:text-white dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-400 dark:hover:text-neutral-955 font-bold px-6 py-3 transition shadow-sm mt-6 text-sm cursor-pointer"
           >
             <Cpu className="h-4 w-4" />
             Ir al Simulador 3D IA
@@ -248,18 +261,44 @@ export const ClienteProyectosPage = () => {
 
   return (
     <div className="w-full pb-16 text-slate-900 dark:text-neutral-100 pt-2">
-      {toastMessage && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 rounded-2xl border border-teal-500/40 bg-slate-900/95 dark:bg-neutral-900/95 px-6 py-4 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md text-white font-sans max-w-md w-full sm:w-auto text-center justify-center animate-bounce">
-          <CheckCircle2 className="h-5 w-5 text-teal-400 shrink-0 animate-pulse" />
-          <span className="text-sm font-bold tracking-wide">{toastMessage}</span>
-        </div>
-      )}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, x: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, x: 20, scale: 0.95, transition: { duration: 0.12 } }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            className="fixed top-6 right-6 z-[100] flex items-start gap-4 rounded-xl border border-emerald-250 bg-emerald-50/95 p-5 pr-12 shadow-lg backdrop-blur-sm dark:border-emerald-800/40 dark:bg-emerald-950/90 max-w-md w-full"
+          >
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400">
+              <Check className="h-5.5 w-5.5 stroke-[2.5]" />
+            </div>
+
+            <div className="flex-1 text-left min-w-0">
+              <h4 className="text-sm font-bold uppercase tracking-wider text-black dark:text-white">
+                {toastMessage.toLowerCase().includes('eliminado') ? '¡ENSAMBLE ELIMINADO!' : '¡PROYECTO ACTUALIZADO!'}
+              </h4>
+              <p className="mt-0.5 text-sm font-semibold leading-relaxed text-slate-900 dark:text-slate-200">
+                {toastMessage}
+              </p>
+            </div>
+
+            <button
+              onClick={() => setToastMessage(null)}
+              className="absolute top-4.5 right-3.5 p-0.5 rounded-md hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-slate-500 hover:text-black dark:text-slate-400 dark:hover:text-white"
+              aria-label="Cerrar"
+            >
+              <X className="h-4 w-4 stroke-[2]" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="mb-3 flex items-center justify-end pb-2 border-b border-slate-100 dark:border-neutral-900">
         <button
           type="button"
           onClick={() => navigate('/cliente/simulador')}
-          className="flex items-center justify-center gap-2 rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 font-semibold px-4 py-2.5 transition shadow-sm text-sm cursor-pointer"
+          className="flex items-center justify-center gap-2 rounded-lg border border-teal-500 text-teal-600 bg-transparent hover:bg-teal-500 hover:text-white dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-400 dark:hover:text-neutral-955 font-bold px-4 py-2.5 transition shadow-sm text-sm cursor-pointer"
         >
           <Cpu className="h-4 w-4" />
           Nuevo Ensamble
@@ -308,7 +347,7 @@ export const ClienteProyectosPage = () => {
                       type="button"
                       onClick={() => handleLoadInSimulator(project)}
                       title="Cargar en el simulador 3D"
-                      className="h-10 px-4 rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 transition text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                      className="h-10 px-4 rounded-lg border border-teal-500 text-teal-600 bg-transparent hover:bg-teal-500 hover:text-white dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-400 dark:hover:text-neutral-955 transition text-xs font-bold flex items-center gap-1.5 cursor-pointer"
                     >
                       <Play className="h-3.5 w-3.5 fill-current" />
                       Simular
@@ -316,24 +355,34 @@ export const ClienteProyectosPage = () => {
                     <button
                       type="button"
                       onClick={() => handleBuyProject(project)}
+                      disabled={buyingProjectId !== null}
                       title="Añadir todas las partes al carrito"
-                      className="h-10 px-4 rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 transition text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer"
+                      className="h-10 px-4 rounded-lg border border-teal-500 text-teal-600 bg-transparent hover:bg-teal-500 hover:text-white dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-400 dark:hover:text-neutral-955 transition text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <ShoppingCart className="h-3.5 w-3.5" />
-                      Comprar todo
+                      {buyingProjectId === project.id ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-teal-500" />
+                          Cargando...
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingCart className="h-3.5 w-3.5" />
+                          Comprar todo
+                        </>
+                      )}
                     </button>
                     <button
                       type="button"
                       onClick={() => setProjectToDelete(project)}
                       title="Eliminar proyecto"
-                      className="h-10 w-10 flex items-center justify-center rounded-lg border border-slate-200 dark:border-neutral-800 text-slate-955 dark:text-white hover:text-red-500 hover:bg-red-500/10 dark:hover:text-red-400 transition cursor-pointer"
+                      className="h-10 w-10 flex items-center justify-center rounded-lg border border-red-500 text-red-500 bg-transparent hover:bg-red-500 hover:text-white transition cursor-pointer"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
                     <button
                       type="button"
                       onClick={() => toggleExpand(project.id)}
-                      className="h-10 w-10 flex items-center justify-center rounded-lg border border-slate-200 dark:border-neutral-800 text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 transition cursor-pointer"
+                      className="h-10 w-10 flex items-center justify-center rounded-lg border border-teal-500 text-teal-600 bg-transparent hover:bg-teal-500 hover:text-white dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-400 dark:hover:text-neutral-955 transition cursor-pointer"
                     >
                       {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </button>

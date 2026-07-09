@@ -371,7 +371,7 @@ export const ClientePedidosPage = () => {
               <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white dark:border-neutral-900 dark:bg-neutral-950">
                 <table className="w-full border-collapse text-left text-sm">
                   <thead>
-                    <tr className="border-b border-slate-100 text-xs font-bold text-slate-955 uppercase tracking-wider dark:border-neutral-900 dark:text-white">
+                    <tr className="border-b border-slate-100 text-sm font-bold text-slate-900 uppercase tracking-wider dark:border-neutral-900 dark:text-white">
                       <th className="py-3 px-4">ID Pedido</th>
                       <th className="py-3 px-4">Fecha</th>
                       <th className="py-3 px-4">Componentes</th>
@@ -382,20 +382,17 @@ export const ClientePedidosPage = () => {
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-neutral-900">
                     {displayedOrders.map((order) => {
-                      const productNames = order.items.map(item => item.product.name).join(', ');
-                      const itemsCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
-
                       return (
                         <tr key={order.id} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-colors">
-                          <td className="py-3 px-4 font-bold text-slate-955 whitespace-nowrap dark:text-white">
+                          <td className="py-3 px-4 font-bold text-slate-900 whitespace-nowrap dark:text-white text-sm">
                             <div className="flex items-center gap-1.5">
-                              <span className="font-mono text-slate-955 dark:text-white select-all font-bold">
+                              <span className="font-mono text-slate-900 dark:text-white select-all font-bold">
                                 {order.trackingCode ? order.trackingCode : `#${order.id.slice(0, 8)}...`}
                               </span>
                               <button
                                 type="button"
                                 onClick={() => handleCopyId(order.trackingCode || order.id)}
-                                className="text-slate-955 hover:text-teal-500 transition dark:text-white dark:hover:text-teal-400"
+                                className="text-slate-900 hover:text-teal-500 transition dark:text-white dark:hover:text-teal-400"
                                 title={order.trackingCode ? "Copiar código de rastreo" : "Copiar ID de pedido"}
                               >
                                 {copiedId === (order.trackingCode || order.id) ? (
@@ -406,14 +403,19 @@ export const ClientePedidosPage = () => {
                               </button>
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-slate-955 font-semibold dark:text-white whitespace-nowrap">
+                          <td className="py-3 px-4 text-slate-900 font-semibold dark:text-white whitespace-nowrap text-sm">
                             {formatDate(order.createdAt)}
                           </td>
-                          <td className="py-3 px-4 max-w-xs truncate text-slate-955 font-medium dark:text-white" title={productNames}>
-                            <span className="font-bold text-slate-955 dark:text-white mr-1">({itemsCount})</span>
-                            {productNames}
+                          <td className="py-3 px-4 text-slate-900 font-semibold dark:text-white min-w-[250px]">
+                            <div className="flex flex-col gap-1.5 py-1">
+                              {order.items.map((item, idx) => (
+                                <div key={idx} className="text-sm font-semibold leading-relaxed text-slate-900 dark:text-white">
+                                  • {item.product.name} <span className="text-slate-900 dark:text-white font-medium ml-1"> - Cantidad: {item.quantity}</span>
+                                </div>
+                              ))}
+                            </div>
                           </td>
-                          <td className="py-3 px-4 text-right font-bold text-slate-955 whitespace-nowrap dark:text-white text-base">
+                          <td className="py-3 px-4 text-right font-bold text-slate-900 whitespace-nowrap dark:text-white text-sm">
                             ${order.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
                           </td>
                           <td className="py-3 px-4 text-center whitespace-nowrap">

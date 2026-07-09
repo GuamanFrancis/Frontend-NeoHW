@@ -453,7 +453,7 @@ export const useSimulator = () => {
       // Limpiar el simulador en segundo plano
       handleReset();
       
-      navigate('/cliente/carrito', { state: { message: "¡Componentes añadidos al carrito y proyecto guardado!" } });
+      navigate('/cliente/carrito', { state: { message: "¡Componentes añadidos al carrito y ensamble guardado en la sección 'Ensambles'!" } });
     } catch (err) {
       console.error('Error al procesar carrito:', err);
       alert('Ocurrió un error al añadir al carrito.');

@@ -125,6 +125,7 @@ export const useClienteCatalog = () => {
 
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const timer = requestAnimationFrame(() => {
@@ -275,9 +276,13 @@ export const useClienteCatalog = () => {
 
   const handleAddToCart = (componente: CatalogComponent) => {
     addToCart(componente);
-    setCartSuccessMessage(`¡${componente.name} añadido al carrito!`);
-    setTimeout(() => {
+    setCartSuccessMessage(componente.name);
+    if (cartTimerRef.current) {
+      clearTimeout(cartTimerRef.current);
+    }
+    cartTimerRef.current = setTimeout(() => {
       setCartSuccessMessage(null);
+      cartTimerRef.current = null;
     }, 3000);
   };
 
@@ -346,6 +351,7 @@ export const useClienteCatalog = () => {
     handleAddToCart,
     handleOpenDrawer,
     handleCloseDrawer,
+    setCartSuccessMessage,
     resetFilters,
     categories,
   };

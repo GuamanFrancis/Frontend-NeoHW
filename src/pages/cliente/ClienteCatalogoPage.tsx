@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
   LayoutGrid,
   List,
-  Check,
   ChevronDown,
   ShoppingCart,
   AlertCircle,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Check,
+  X
 } from 'lucide-react';
 import type { CatalogComponent } from '../../types/catalog';
 import { ComponenteDetalleDrawer } from './ComponenteDetalleDrawer';
@@ -258,12 +260,38 @@ export const ClienteCatalogoPage = () => {
 
   return (
     <div className="mx-auto max-w-[95rem] pb-16 text-slate-900 dark:text-neutral-100">
-      {catalog.cartSuccessMessage && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 rounded-2xl border border-teal-500/40 bg-slate-900/95 dark:bg-neutral-900/95 px-6 py-4 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md text-white font-sans max-w-md w-full sm:w-auto text-center justify-center animate-bounce">
-          <Check className="h-5 w-5 text-teal-400 shrink-0 animate-pulse" />
-          <span className="text-sm font-bold tracking-wide">{catalog.cartSuccessMessage}</span>
-        </div>
-      )}
+      <AnimatePresence>
+        {catalog.cartSuccessMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, x: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, x: 20, scale: 0.95, transition: { duration: 0.12 } }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            className="fixed top-6 right-6 z-[100] flex items-start gap-3.5 rounded-xl border border-emerald-250 bg-emerald-50/95 p-4.5 pr-11 shadow-lg backdrop-blur-sm dark:border-emerald-800/40 dark:bg-emerald-950/90 max-w-sm w-full"
+          >
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400">
+              <Check className="h-4.5 w-4.5 stroke-[2.5]" />
+            </div>
+
+            <div className="flex-1 text-left min-w-0">
+              <h4 className="text-xs font-black uppercase tracking-wider text-black dark:text-white">
+                ¡PRODUCTO AÑADIDO!
+              </h4>
+              <p className="mt-0.5 text-xs font-semibold leading-relaxed text-slate-900 dark:text-slate-200">
+                {catalog.cartSuccessMessage} se ha agregado al carrito.
+              </p>
+            </div>
+
+            <button
+              onClick={() => catalog.setCartSuccessMessage(null)}
+              className="absolute top-4.5 right-3.5 p-0.5 rounded-md hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-slate-500 hover:text-black dark:text-slate-400 dark:hover:text-white"
+              aria-label="Cerrar"
+            >
+              <X className="h-4 w-4 stroke-[2]" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen bg-neutral-950 h-56 sm:h-72 md:h-88 lg:h-[26rem] xl:h-[32rem] overflow-hidden -mt-5 sm:-mt-6 mb-8 group/banner">
         {bannerImages.map((img, idx) => (
           <div
