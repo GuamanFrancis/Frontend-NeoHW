@@ -138,7 +138,7 @@ VITE_API_URL=
 
 # URL de destino para el proxy de desarrollo de Vite (redirecciona las llamadas locales a la API).
 # Utilizar 'http://localhost:3000' si el backend se ejecuta localmente.
-# Utilizar la URL de producción si se desea probar contra el backend desplegado (ej. 'https://neohw-backend-production.up.railway.app').
+# Utilizar la URL de producción si se desea probar contra el backend desplegado (ej. 'https://neohw-backend.onrender.com').
 VITE_DEV_PROXY_TARGET=http://localhost:3000
 
 # ID de Cliente de Google OAuth 2.0 (requerido para habilitar el inicio de sesión / registro con Google).
