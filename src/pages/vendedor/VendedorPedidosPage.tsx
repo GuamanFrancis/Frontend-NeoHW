@@ -823,7 +823,7 @@ export const VendedorPedidosPage = () => {
                       setDispatchFile(files[0]);
                     }
                   }}
-                  className="w-full text-base text-slate-700 dark:text-white/90 file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-teal-500/10 file:text-teal-650 hover:file:bg-teal-500/20 file:cursor-pointer cursor-pointer border border-dashed border-slate-300 dark:border-white/10 rounded-xl p-3 bg-white dark:bg-neutral-950"
+                  className="w-full text-base text-slate-700 dark:text-white/90 file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-teal-500/10 file:text-teal-600 hover:file:bg-teal-500/20 file:cursor-pointer cursor-pointer border border-dashed border-slate-300 dark:border-white/10 rounded-xl p-3 bg-white dark:bg-neutral-950"
                   disabled={orderToDispatch.status !== 'En proceso'}
                 />
                 <p className="text-sm text-slate-500 dark:text-white/60 mt-2 font-medium opacity-85">
@@ -833,7 +833,7 @@ export const VendedorPedidosPage = () => {
             </div>
 
             {dispatchError && (
-              <div className="flex items-start gap-3 rounded-lg border border-red-500/20 bg-red-500/5 p-4 text-red-650 dark:text-red-300 text-sm font-semibold">
+              <div className="flex items-start gap-3 rounded-lg border border-red-500/20 bg-red-500/5 p-4 text-red-600 dark:text-red-300 text-sm font-semibold">
                 <AlertTriangle className="h-5 w-5 shrink-0 text-red-500 mt-0.5" />
                 <span>{dispatchError}</span>
               </div>
@@ -855,7 +855,7 @@ export const VendedorPedidosPage = () => {
                 className={`border font-bold px-6 py-3 rounded-xl text-base transition-all duration-200 ${
                   (isDispatching || orderToDispatch.status !== 'En proceso' || !dispatchFile)
                     ? 'bg-slate-100 dark:bg-white/5 text-slate-450 dark:text-white/30 border-slate-200 dark:border-white/10 cursor-not-allowed opacity-60'
-                    : 'bg-teal-650 hover:bg-teal-700 text-white border-teal-650 hover:border-teal-700 cursor-pointer shadow-lg shadow-teal-500/20 active:scale-95'
+                    : 'bg-teal-600 hover:bg-teal-700 text-white border-teal-600 hover:border-teal-700 cursor-pointer shadow-lg shadow-teal-500/20 active:scale-95'
                 }`}
               >
                 {isDispatching ? 'Despachando...' : 'Confirmar Envío'}
@@ -915,7 +915,7 @@ export const VendedorPedidosPage = () => {
                       setDeliveryPhotoFile(files[0]);
                     }
                   }}
-                  className="w-full text-base text-slate-700 dark:text-white/90 file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-teal-500/10 file:text-teal-655 hover:file:bg-teal-500/20 file:cursor-pointer cursor-pointer border border-dashed border-slate-300 dark:border-white/10 rounded-xl p-3 bg-white dark:bg-neutral-950"
+                  className="w-full text-base text-slate-700 dark:text-white/90 file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-teal-500/10 file:text-teal-600 hover:file:bg-teal-500/20 file:cursor-pointer cursor-pointer border border-dashed border-slate-300 dark:border-white/10 rounded-xl p-3 bg-white dark:bg-neutral-950"
                   disabled={orderToDeliver.status !== 'Enviado'}
                 />
                 <p className="text-sm text-slate-500 dark:text-white/60 mt-2 font-medium opacity-85">
@@ -941,7 +941,7 @@ export const VendedorPedidosPage = () => {
                       setCustomerSignatureFile(files[0]);
                     }
                   }}
-                  className="w-full text-base text-slate-700 dark:text-white/90 file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-teal-500/10 file:text-teal-655 hover:file:bg-teal-500/20 file:cursor-pointer cursor-pointer border border-dashed border-slate-300 dark:border-white/10 rounded-xl p-3 bg-white dark:bg-neutral-950"
+                  className="w-full text-base text-slate-700 dark:text-white/90 file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-teal-500/10 file:text-teal-600 hover:file:bg-teal-500/20 file:cursor-pointer cursor-pointer border border-dashed border-slate-300 dark:border-white/10 rounded-xl p-3 bg-white dark:bg-neutral-950"
                   disabled={orderToDeliver.status !== 'Enviado'}
                 />
                 <p className="text-sm text-slate-500 dark:text-white/60 mt-2 font-medium opacity-85">
@@ -951,7 +951,7 @@ export const VendedorPedidosPage = () => {
             </div>
 
             {deliveryError && (
-              <div className="flex items-start gap-3 rounded-lg border border-red-500/20 bg-red-500/5 p-4 text-red-650 dark:text-red-300 text-sm font-semibold">
+              <div className="flex items-start gap-3 rounded-lg border border-red-500/20 bg-red-500/5 p-4 text-red-600 dark:text-red-300 text-sm font-semibold">
                 <AlertTriangle className="h-5 w-5 shrink-0 text-red-500 mt-0.5" />
                 <span>{deliveryError}</span>
               </div>
@@ -973,7 +973,7 @@ export const VendedorPedidosPage = () => {
                 className={`border font-bold px-6 py-3 rounded-xl text-base transition-all duration-200 ${
                   (isDelivering || orderToDeliver.status !== 'Enviado' || !deliveryPhotoFile || !customerSignatureFile)
                     ? 'bg-slate-100 dark:bg-white/5 text-slate-450 dark:text-white/30 border-slate-200 dark:border-white/10 cursor-not-allowed opacity-60'
-                    : 'bg-teal-650 hover:bg-teal-700 text-white border-teal-650 hover:border-teal-700 cursor-pointer shadow-lg shadow-teal-500/20 active:scale-95'
+                    : 'bg-teal-600 hover:bg-teal-700 text-white border-teal-600 hover:border-teal-700 cursor-pointer shadow-lg shadow-teal-500/20 active:scale-95'
                 }`}
               >
                 {isDelivering ? 'Procesando...' : 'Confirmar Entrega'}
@@ -999,14 +999,14 @@ export const VendedorPedidosPage = () => {
                 <h4 className="text-lg md:text-xl font-medium text-slate-900 dark:text-white leading-snug">
                   ¿Confirmas la cancelación del pedido {orderToCancel.trackingCode || orderToCancel.id}?
                 </h4>
-                <p className="text-base text-slate-655 dark:text-white/80 mt-2 leading-relaxed opacity-90 font-medium">
+                <p className="text-base text-slate-600 dark:text-white/80 mt-2 leading-relaxed opacity-90 font-medium">
                   Esta acción actualizará el estado del pedido a <span className="font-bold text-rose-500">Cancelado</span> y liberará los recursos. Esta acción no se puede deshacer.
                 </p>
               </div>
             </div>
 
             {cancelError && (
-              <div className="flex items-start gap-3 rounded-lg border border-red-500/20 bg-red-500/5 p-4 text-red-650 dark:text-red-300 text-sm font-semibold">
+              <div className="flex items-start gap-3 rounded-lg border border-red-500/20 bg-red-500/5 p-4 text-red-600 dark:text-red-300 text-sm font-semibold">
                 <AlertTriangle className="h-5 w-5 shrink-0 text-red-500 mt-0.5" />
                 <span>{cancelError}</span>
               </div>

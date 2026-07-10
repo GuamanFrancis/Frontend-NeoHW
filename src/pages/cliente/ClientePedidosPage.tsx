@@ -343,7 +343,7 @@ export const ClientePedidosPage = () => {
                   setEndDate('');
                   setCurrentPage(1);
                 }}
-                className="w-full h-11 flex items-center justify-center gap-2 rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 font-bold px-4 py-2 transition shadow-sm text-sm cursor-pointer"
+                className="w-full h-11 flex items-center justify-center gap-2 rounded-lg border border-slate-900 text-slate-900 dark:border-white dark:text-white bg-transparent hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-black font-bold px-4 py-2 transition shadow-sm text-sm cursor-pointer"
               >
                 Limpiar filtros
               </button>
@@ -429,7 +429,7 @@ export const ClientePedidosPage = () => {
                                     type="button"
                                     disabled={payingOrderId === order.id}
                                     onClick={() => handlePayOrder(order.id)}
-                                    className="h-9 px-4 rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 font-bold text-xs uppercase transition shadow-sm cursor-pointer whitespace-nowrap disabled:opacity-50"
+                                    className="h-9 px-4 rounded-lg border border-slate-900 text-slate-900 dark:border-white dark:text-white bg-transparent hover:bg-teal-600 hover:border-teal-600 hover:text-white dark:hover:bg-teal-600 dark:hover:border-teal-600 dark:hover:text-white font-bold text-xs uppercase transition shadow-sm cursor-pointer whitespace-nowrap disabled:opacity-50"
                                   >
                                     {payingOrderId === order.id ? 'Cargando...' : 'Pagar'}
                                   </button>
@@ -437,7 +437,7 @@ export const ClientePedidosPage = () => {
                                     type="button"
                                     disabled={cancellingOrderId === order.id}
                                     onClick={() => setOrderIdToCancel(order.id)}
-                                    className="h-9 px-3 rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 font-bold text-xs uppercase flex items-center gap-1 transition shadow-sm cursor-pointer disabled:opacity-50"
+                                    className="h-9 px-3 rounded-lg border border-slate-900 text-slate-900 dark:border-white dark:text-white bg-transparent hover:bg-red-600 hover:border-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:border-red-600 dark:hover:text-white font-bold text-xs uppercase flex items-center gap-1 transition shadow-sm cursor-pointer disabled:opacity-50"
                                   >
                                     <Trash2 className="h-3.5 w-3.5" />
                                     Cancelar
@@ -447,7 +447,7 @@ export const ClientePedidosPage = () => {
                               <button
                                 type="button"
                                 onClick={() => setSelectedOrder(order)}
-                                className="h-9 px-3 rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 font-bold text-xs flex items-center gap-1 transition shadow-sm cursor-pointer whitespace-nowrap"
+                                className="h-9 px-3 rounded-lg border border-slate-900 text-slate-900 dark:border-white dark:text-white bg-transparent hover:bg-teal-600 hover:border-teal-600 hover:text-white dark:hover:bg-teal-600 dark:hover:border-teal-600 dark:hover:text-white font-bold text-xs flex items-center gap-1 transition shadow-sm cursor-pointer whitespace-nowrap"
                               >
                                 <Eye className="h-3.5 w-3.5" />
                                 Detalle
@@ -472,7 +472,7 @@ export const ClientePedidosPage = () => {
                       type="button"
                       onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                       disabled={currentPage === 1}
-                      className="h-9 px-3 rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 font-bold text-xs flex items-center gap-1 transition shadow-sm cursor-pointer disabled:opacity-50"
+                      className="h-9 px-3 rounded-lg border border-slate-900 text-slate-900 dark:border-white dark:text-white bg-transparent hover:bg-teal-600 hover:border-teal-600 hover:text-white dark:hover:bg-teal-600 dark:hover:border-teal-600 dark:hover:text-white font-bold text-xs flex items-center gap-1 transition shadow-sm cursor-pointer disabled:opacity-50"
                     >
                       <ChevronLeft className="h-4 w-4" />
                       Anterior
@@ -481,7 +481,7 @@ export const ClientePedidosPage = () => {
                       type="button"
                       onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                       disabled={currentPage === totalPages}
-                      className="h-9 px-3 rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 font-bold text-xs flex items-center gap-1 transition shadow-sm cursor-pointer disabled:opacity-50"
+                      className="h-9 px-3 rounded-lg border border-slate-900 text-slate-900 dark:border-white dark:text-white bg-transparent hover:bg-teal-600 hover:border-teal-600 hover:text-white dark:hover:bg-teal-600 dark:hover:border-teal-600 dark:hover:text-white font-bold text-xs flex items-center gap-1 transition shadow-sm cursor-pointer disabled:opacity-50"
                     >
                       Siguiente
                       <ChevronRight className="h-4 w-4" />
@@ -679,7 +679,7 @@ export const ClientePedidosPage = () => {
               <button
                 type="button"
                 onClick={() => setSelectedOrder(null)}
-                className="rounded-lg border border-slate-250 dark:border-neutral-800 px-4 py-2 text-xs font-bold text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 transition cursor-pointer"
+                className="rounded-lg border border-slate-900 text-slate-900 dark:border-white dark:text-white bg-transparent hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-black px-4 py-2 text-xs font-bold transition cursor-pointer"
               >
                 Cerrar
               </button>
@@ -689,7 +689,7 @@ export const ClientePedidosPage = () => {
                     type="button"
                     disabled={cancellingOrderId === selectedOrder.id}
                     onClick={() => setOrderIdToCancel(selectedOrder.id)}
-                    className="rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 font-bold px-4 py-2 transition text-xs shadow-sm cursor-pointer disabled:opacity-50"
+                    className="rounded-lg border border-slate-900 text-slate-900 dark:border-white dark:text-white bg-transparent hover:bg-red-600 hover:border-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:border-red-600 dark:hover:text-white font-bold px-4 py-2 transition text-xs shadow-sm cursor-pointer disabled:opacity-50"
                   >
                     {cancellingOrderId === selectedOrder.id ? 'Cancelando...' : 'Cancelar Pedido'}
                   </button>
@@ -697,7 +697,7 @@ export const ClientePedidosPage = () => {
                     type="button"
                     disabled={payingOrderId === selectedOrder.id}
                     onClick={() => handlePayOrder(selectedOrder.id)}
-                    className="rounded-lg border border-slate-955 dark:border-neutral-700 bg-transparent text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 font-bold px-4 py-2 transition text-xs shadow-sm cursor-pointer disabled:opacity-50"
+                    className="rounded-lg border border-slate-900 text-slate-900 dark:border-white dark:text-white bg-transparent hover:bg-teal-600 hover:border-teal-600 hover:text-white dark:hover:bg-teal-600 dark:hover:border-teal-600 dark:hover:text-white font-bold px-4 py-2 transition text-xs shadow-sm cursor-pointer disabled:opacity-50"
                   >
                     Pagar ahora con Stripe
                   </button>
@@ -732,7 +732,7 @@ export const ClientePedidosPage = () => {
             <button
               type="button"
               onClick={() => setOrderIdToCancel(null)}
-              className="rounded-lg border border-slate-200 dark:border-neutral-800 px-4 py-2 text-xs font-bold text-slate-955 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 transition cursor-pointer"
+              className="rounded-lg border border-slate-900 text-slate-900 dark:border-white dark:text-white bg-transparent hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-black px-4 py-2 text-xs font-bold transition cursor-pointer"
             >
               Cancelar
             </button>
@@ -745,7 +745,7 @@ export const ClientePedidosPage = () => {
                   await handleCancelOrder(id);
                 }
               }}
-              className="rounded-lg bg-rose-500 hover:bg-rose-600 text-white font-bold px-4 py-2 transition text-xs shadow-sm cursor-pointer"
+              className="rounded-lg border border-red-600 text-red-600 dark:border-white dark:text-white bg-transparent hover:bg-red-600 hover:border-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:border-red-600 dark:hover:text-white font-bold px-4 py-2 transition text-xs shadow-sm cursor-pointer"
             >
               Aceptar
             </button>

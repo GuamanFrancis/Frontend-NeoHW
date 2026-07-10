@@ -133,19 +133,10 @@ npm install
 ### 3. Configurar Variables de Entorno
 Crear un archivo `.env.local` en el directorio raíz de la carpeta del Frontend. Asegurarse de definir los valores según el entorno (desarrollo local o servidor de backend desplegado):
 ```env
-# URL base del Backend para llamadas directas de la API (opcional en desarrollo).
-VITE_API_URL=
-
-# URL de destino para el proxy de desarrollo de Vite (redirecciona las llamadas locales a la API).
+# URL de la API del Backend para desarrollo local (redirecciona las llamadas locales a la API).
 # Utilizar 'http://localhost:3000' si el backend se ejecuta localmente.
-# Utilizar la URL de producción si se desea probar contra el backend desplegado (ej. 'https://neohw-backend.onrender.com').
-VITE_DEV_PROXY_TARGET=http://localhost:3000
-
-# ID de Cliente de Google OAuth 2.0 (requerido para habilitar el inicio de sesión / registro con Google).
-VITE_GOOGLE_CLIENT_ID=su-id-de-cliente-google.apps.googleusercontent.com
-
-# ID de Aplicación de Facebook SDK (requerido para habilitar el inicio de sesión con Facebook).
-VITE_FACEBOOK_APP_ID=su-id-de-app-facebook
+# Utilizar la URL de producción si se desea probar contra el backend desplegado (ej. 'https://neohw-backend.onrender.com/api/v1').
+VITE_API_URL=http://localhost:3000
 ```
 
 ### 4. Iniciar el Servidor de Desarrollo
@@ -173,7 +164,7 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const backendTarget = env.VITE_DEV_PROXY_TARGET || 'http://localhost:3000';
+  const backendTarget = env.VITE_API_URL || 'http://localhost:3000';
 
   return {
     plugins: [react(), tailwindcss()],

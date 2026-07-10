@@ -318,7 +318,7 @@ export const MiCuentaPage = () => {
                   type="button"
                   onClick={() => void handleDeleteClick()}
                   disabled={isCheckingOrders}
-                  className="border border-red-655 text-red-655 bg-transparent hover:bg-red-655 hover:text-white dark:border-white dark:text-white dark:hover:bg-red-600 dark:hover:border-red-600 dark:hover:text-white font-semibold h-12 px-8 rounded-lg transition text-base flex items-center gap-2.5 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="border border-red-600 text-red-600 bg-transparent hover:bg-red-600 hover:text-white dark:border-white dark:text-white dark:hover:bg-red-600 dark:hover:border-red-600 dark:hover:text-white font-semibold h-12 px-8 rounded-lg transition text-base flex items-center gap-2.5 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   <Trash2 className="h-5 w-5 shrink-0" />
                   {isCheckingOrders ? 'Verificando pedidos...' : 'Eliminar mi cuenta'}
@@ -375,7 +375,7 @@ export const MiCuentaPage = () => {
                     setDeleteConfirmText('');
                   }
                 }}
-                className="border border-red-655 text-red-655 bg-transparent hover:bg-red-655 hover:text-white dark:border-white dark:text-white dark:hover:bg-red-600 dark:hover:border-red-600 dark:hover:text-white font-semibold px-4 py-2 transition disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm shadow-sm cursor-pointer"
+                className="border border-red-600 text-red-600 bg-transparent hover:bg-red-600 hover:text-white dark:border-white dark:text-white dark:hover:bg-red-600 dark:hover:border-red-600 dark:hover:text-white font-semibold px-4 py-2 transition disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm shadow-sm cursor-pointer"
               >
                 {isDeleting ? 'Eliminando...' : 'Confirmar eliminación'}
               </button>

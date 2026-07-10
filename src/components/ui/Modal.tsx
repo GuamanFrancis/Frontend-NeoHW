@@ -19,7 +19,7 @@ export const Modal = ({ open, title, text, children, footer, onClose, className 
       <div
         role="dialog"
         aria-modal="true"
-        className={`w-full rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/20 dark:border-neutral-800 dark:bg-neutral-950 dark:shadow-black/50 ${className}`}
+        className={`w-full rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/20 dark:border-neutral-800 dark:bg-neutral-950 dark:shadow-black/50 max-h-[calc(100vh-3rem)] overflow-y-auto scrollbar-thin ${className}`}
       >
         <div className="flex items-start justify-between gap-4">
           <div>
