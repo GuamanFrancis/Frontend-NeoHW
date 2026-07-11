@@ -17,7 +17,9 @@ export const streamAiChat = async (
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    const response = await fetch('/ai/chat', {
+    const baseUrl = import.meta.env.VITE_API_URL;
+    const cleanBaseUrl = baseUrl?.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const response = await fetch(`${cleanBaseUrl}/ai/chat`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ messages }),
