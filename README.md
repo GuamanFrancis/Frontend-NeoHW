@@ -69,7 +69,7 @@ Una plataforma web interactiva que digitaliza y asiste en el proceso de compra d
 ## 🏗️ Arquitectura del Sistema
 
 La arquitectura del sistema completo se basa en un diseño desacoplado de cliente-servidor:
-- **Frontend (React + Vite):** Capa del lado del cliente escrita en TypeScript que gestiona la interfaz tridimensional (Three.js), el estado del simulador, el procesamiento del carrito y los módulos de usuario (Administrador, Vendedor y Cliente). Se comunica con el servidor a través de peticiones HTTP con Axios y un proxy de desarrollo de Vite.
+- **Frontend (React + Vite):** Capa del lado del cliente escrita en TypeScript que gestiona la interfaz tridimensional (Three.js), el estado del simulador, el procesamiento del carrito y los módulos de usuario (Administrador, Vendedor y Cliente). Se comunica directamente con la API del servidor backend a través de peticiones HTTP con Axios.
 - **Backend (API NestJS):** Capa del servidor que expone servicios REST. Se encarga de la lógica de negocio, validación de autenticación mediante JWT, integración del modelo de IA (Gemini), procesamiento de pagos con la API de Stripe y comunicación con la base de datos.
 - **Base de Datos (PostgreSQL):** Almacenamiento relacional que gestiona los datos de usuarios, productos, categorías, atributos de compatibilidad y pedidos, mapeados en el servidor mediante un ORM (Prisma).
 
@@ -155,34 +155,18 @@ http://localhost:3000
 
 ## ⚙️ Configuración
 
-### 🌐 Configuración del Servidor y Proxy
-El archivo `vite.config.ts` establece el puerto local `3000` y define las rutas redirigidas hacia la API del backend:
+### 🌐 Configuración del Servidor
+El archivo `vite.config.ts` establece el puerto local `3000` para el servidor de desarrollo del Frontend:
 ```typescript
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
-  const backendTarget = env.VITE_API_URL || 'http://localhost:3000';
-
+export default defineConfig(() => {
   return {
     plugins: [react(), tailwindcss()],
     server: {
       port: 3000,
-      proxy: {
-        '/auth': { target: backendTarget, changeOrigin: true },
-        '/carts': { target: backendTarget, changeOrigin: true },
-        '/projects': { target: backendTarget, changeOrigin: true },
-        '/users': { target: backendTarget, changeOrigin: true },
-        '/products': { target: backendTarget, changeOrigin: true },
-        '/categories': { target: backendTarget, changeOrigin: true },
-        '/attributes': { target: backendTarget, changeOrigin: true },
-        '/compatibility': { target: backendTarget, changeOrigin: true },
-        '/ai': { target: backendTarget, changeOrigin: true },
-        '/orders': { target: backendTarget, changeOrigin: true },
-        '/payments': { target: backendTarget, changeOrigin: true }
-      }
     }
   };
 });
