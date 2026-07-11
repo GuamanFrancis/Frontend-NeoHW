@@ -79,6 +79,11 @@ export const ClientePedidosPage = () => {
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [orderIdToCancel, setOrderIdToCancel] = useState<string | null>(null);
+  const [infoModal, setInfoModal] = useState<{ open: boolean; title: string; message: string }>({
+    open: false,
+    title: '',
+    message: ''
+  });
 
   const loadOrders = async () => {
     if (!userId) return;
@@ -178,11 +183,19 @@ export const ClientePedidosPage = () => {
       if (sessionData.url) {
         window.location.replace(sessionData.url);
       } else {
-        alert('No se pudo iniciar el pago con Stripe. Reintente más tarde.');
+        setInfoModal({
+          open: true,
+          title: 'Error de Pago',
+          message: 'No se pudo iniciar el pago con Stripe. Reintente más tarde.',
+        });
       }
     } catch (err) {
       console.error(err);
-      alert('Error al iniciar el pago con Stripe.');
+      setInfoModal({
+        open: true,
+        title: 'Error de Pago',
+        message: 'Ocurrió un error al iniciar el pago con Stripe.',
+      });
     } finally {
       setPayingOrderId(null);
     }
@@ -192,12 +205,20 @@ export const ClientePedidosPage = () => {
     setCancellingOrderId(orderId);
     try {
       await updateOrderStatus(orderId, 'CANCELLED');
-      alert('Pedido cancelado exitosamente.');
+      setInfoModal({
+        open: true,
+        title: 'Pedido Cancelado',
+        message: 'El pedido ha sido cancelado exitosamente.',
+      });
       setSelectedOrder(null);
       loadOrders();
     } catch (err) {
       console.error(err);
-      alert('Para procesar la cancelación de tu pedido, por favor comunícate con un asesor de ventas o el soporte técnico de NeoHW.');
+      setInfoModal({
+        open: true,
+        title: 'Cancelación de Pedido',
+        message: 'Para procesar la cancelación de tu pedido, por favor comunícate con un asesor de ventas o el soporte técnico de NeoHW.',
+      });
     } finally {
       setCancellingOrderId(null);
     }
@@ -746,6 +767,35 @@ export const ClientePedidosPage = () => {
                 }
               }}
               className="rounded-lg border border-red-600 text-red-600 dark:border-white dark:text-white bg-transparent hover:bg-red-600 hover:border-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:border-red-600 dark:hover:text-white font-bold px-4 py-2 transition text-xs shadow-sm cursor-pointer"
+            >
+              Aceptar
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Informative Alert Modal */}
+      <Modal
+        open={infoModal.open}
+        title={infoModal.title}
+        onClose={() => setInfoModal({ ...infoModal, open: false })}
+      >
+        <div className="space-y-6">
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 shrink-0 flex items-center justify-center rounded-full bg-slate-500/10 text-slate-500 dark:bg-slate-500/20">
+              <Info className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-955 dark:text-white leading-relaxed mt-1">
+                {infoModal.message}
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setInfoModal({ ...infoModal, open: false })}
+              className="rounded-lg border border-slate-900 text-slate-900 dark:border-white dark:text-white bg-transparent hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-black px-4 py-2 text-xs font-bold transition cursor-pointer"
             >
               Aceptar
             </button>
