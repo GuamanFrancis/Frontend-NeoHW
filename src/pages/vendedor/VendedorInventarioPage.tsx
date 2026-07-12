@@ -3,7 +3,7 @@ import { Search, Filter, Eye } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { PageCard } from '../../components/ui/PageCard';
 import { Modal } from '../../components/ui/Modal';
-import { getCatalogComponents, updateCatalogComponent } from '../../services/catalogService';
+import { getCatalogComponents } from '../../services/catalogService';
 import { getCategories } from '../../services/categoryService';
 import type { CatalogComponent, CatalogStockStatus, BackendCategory } from '../../types/catalog';
 
@@ -47,29 +47,6 @@ export const VendedorInventarioPage = () => {
   const [totalItems, setTotalItems] = useState(0);
 
   const [selectedComponent, setSelectedComponent] = useState<CatalogComponent | null>(null);
-  const [isEditingStock, setIsEditingStock] = useState(false);
-  const [newStock, setNewStock] = useState(0);
-  const [isSavingStock, setIsSavingStock] = useState(false);
-  const [stockError, setStockError] = useState('');
-
-  const handleSaveStock = async () => {
-    if (!selectedComponent) return;
-    try {
-      setIsSavingStock(true);
-      setStockError('');
-      const updated = await updateCatalogComponent(selectedComponent.id, {
-        stock: newStock,
-      });
-      setItems((prev) => prev.map((item) => item.id === selectedComponent.id ? updated : item));
-      setSelectedComponent(updated);
-      setIsEditingStock(false);
-    } catch (err) {
-      console.error(err);
-      setStockError('No se pudo actualizar el stock.');
-    } finally {
-      setIsSavingStock(false);
-    }
-  };
 
   const [maxVisitedPage, setMaxVisitedPage] = useState(1);
 
@@ -352,11 +329,7 @@ export const VendedorInventarioPage = () => {
       {selectedComponent && (
         <Modal
           open={!!selectedComponent}
-          onClose={() => {
-            setSelectedComponent(null);
-            setIsEditingStock(false);
-            setStockError('');
-          }}
+          onClose={() => setSelectedComponent(null)}
           title={`Detalles de Componente: ${selectedComponent.name}`}
         >
           <div className="space-y-6 text-slate-900 dark:text-white max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin">
@@ -387,56 +360,9 @@ export const VendedorInventarioPage = () => {
                     <span className="block font-semibold text-slate-900 dark:text-white text-base">SKU</span>
                     <span className="block font-mono font-normal text-slate-955 dark:text-white text-base mt-0.5">{selectedComponent.sku || 'N/A'}</span>
                   </div>
-                  <div className="col-span-2 sm:col-span-1">
+                  <div>
                     <span className="block font-semibold text-slate-900 dark:text-white text-base">Stock actual</span>
-                    {isEditingStock ? (
-                      <div className="flex flex-col gap-1.5 mt-1">
-                        <div className="flex items-center gap-1.5">
-                          <input
-                            type="number"
-                            min="0"
-                            value={newStock}
-                            onChange={(e) => setNewStock(Math.max(0, parseInt(e.target.value) || 0))}
-                            className={`${fieldClass} w-20 h-9 px-2 text-sm`}
-                            disabled={isSavingStock}
-                          />
-                          <button
-                            type="button"
-                            onClick={handleSaveStock}
-                            disabled={isSavingStock}
-                            className="h-9 px-3 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs transition cursor-pointer disabled:opacity-50"
-                          >
-                            {isSavingStock ? 'Guardando...' : 'Guardar'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setIsEditingStock(false)}
-                            disabled={isSavingStock}
-                            className="h-9 px-3 rounded-lg border border-slate-300 dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-900 text-slate-700 dark:text-neutral-200 font-semibold text-xs transition cursor-pointer"
-                          >
-                            Cancelar
-                          </button>
-                        </div>
-                        {stockError && (
-                          <span className="text-xs text-rose-600 dark:text-rose-400 font-medium">{stockError}</span>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="font-normal text-slate-955 dark:text-white text-base">{selectedComponent.stock} unidades</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setNewStock(selectedComponent.stock);
-                            setIsEditingStock(true);
-                            setStockError('');
-                          }}
-                          className="text-xs font-semibold text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 hover:underline cursor-pointer transition"
-                        >
-                          (Editar stock)
-                        </button>
-                      </div>
-                    )}
+                    <span className="block font-normal text-slate-955 dark:text-white text-base mt-0.5">{selectedComponent.stock} unidades</span>
                   </div>
                 </div>
               </div>
