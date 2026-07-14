@@ -395,8 +395,6 @@ export const CatalogTab = ({
               onChange={(event) => updateFormField('stock', event.target.value)}
               placeholder="18"
               inputMode="numeric"
-              disabled={modalMode === 'edit'}
-              title={modalMode === 'edit' ? "El stock solo puede ser modificado por el Vendedor desde la pestaña de Inventario." : undefined}
               error={formErrors.stock}
             />
             <FormInput
