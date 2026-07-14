@@ -151,13 +151,6 @@ VITE_API_URL=
 
 ---
 
-## Pruebas Recomendadas para los Evaluadores
-* **Autenticación y Redirección**: Intente ingresar a las secciones privadas escribiendo el nombre del módulo en la barra de direcciones sin haber iniciado sesión. El sistema lo redirigirá inmediatamente al login.
-* **Bloqueo por Incompatibilidad**: En el simulador, intente montar un procesador de un socket distinto al de la placa madre seleccionada; el sistema bloqueará la colocación e informará el tipo de incompatibilidad.
-* **Checkout Simulado**: Complete un ensamble, añádalo al carrito de compras, realice el pago con Stripe en modo de prueba y verifique la creación automática de la orden.
-
----
-
 ## Autores
 - **Desarrollador:** Guaman Ilvis Francis Josue
 - **Tutor Académico:** Ing. Lorena Chulde - Escuela Politécnica Nacional (EPN)
